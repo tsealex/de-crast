@@ -70,7 +70,7 @@ git clone https://github.com/jeremyCloud/de-crast
 Now, you will have a new folder in your current dir called cd-crast with all
 the stuff that was on the website.
 
-#### Step Three: Ummm... everything else 
+#### Step Three: branches 
 Branches are gits way of organizing your project into independent 
 non-conflicting ... branches. Each new git project is created with a default
 branch called ```master```. **Do not do work on master**. When you create a new
@@ -98,21 +98,22 @@ Let's say I want to add a little README document about myself.
     ```
     echo "My name is Jeremy and I am learning git!" > README_jeremy
     ```
- 
- 4. calm down. We just added a file to our git repo. Now, we need to tell git 
-    about it.
+
+#### Step Four: commiting our changes
+ 1. Calm down. We just added a file to our git repo. Now, we need to tell git about 
+    it.
 
     ```
     git add README_jeremy
     ```
  
- 5. Lets check the status of our repo.
+ 2. Lets check the status of our repo.
     
     ```
     git status
     ```
 
- 6. Everything looks good let's ```commit``` (save) those changes.
+ 3. Everything looks good let's ```commit``` (save) those changes.
     
     ```
     git commit
@@ -126,7 +127,8 @@ Let's say I want to add a little README document about myself.
     git commit -m "This is a short README document about me!"
     ```
 
- 7. Now, we have our local repo up to date with all our new fancy changes. Now 
+#### Step Five: updateing Github
+ 1. Now, we have our local repo up to date with all our new fancy changes. Now 
     we need to push our local changes up to GitHub. 
 
     ```
@@ -136,22 +138,23 @@ Let's say I want to add a little README document about myself.
     if we break down that command we our pushing our local branch 
     (README_jeremy) to this repo's origin (GitHub).
 
- 8. That was easy right? I think we earned a little break from the command line.
-    Head on back to the projects GitHub page. You should see your branch name
-    highlighted above the repo's file explorer. If you are done with your 
-    branch, and you are ready for your changes to be incorporated into the 
-    master branch, go ahead and press the "compare and pull request" next to 
-    your branch.
+#### Step Six: pull requests
+That was easy right? I think we earned a little break from the command line.
+Head on back to the projects GitHub page. You should see your branch name
+highlighted above the repo's file explorer. If you are done with your 
+branch, and you are ready for your changes to be incorporated into the 
+master branch, go ahead and press the "compare and pull request" next to 
+your branch.
 
-    Go ahead and leave a small description of your branch for others to see. 
-    When you are finished press the "Create pull request" button.
+Go ahead and leave a small description of your branch for others to see. 
+When you are finished press the "Create pull request" button.
 
- 9. We are almost done. At this point GitHub does something fun. If your file 
-    conflicts with something in "master" GitHub lets us view and fix and 
-    conflicts. It also gives us a little place to talk about the code as a 
-    group before it is added to the master branch. Once we agree that it is 
-    safe and good to merge the branch all we have to do is press "merge pull 
-    request".
+We are almost done. At this point GitHub does something fun. If your file 
+conflicts with something in "master" GitHub lets us view and fix and 
+conflicts. It also gives us a little place to talk about the code as a 
+group before it is added to the master branch. Once we agree that it is 
+safe and good to merge the branch all we have to do is press "merge pull 
+request".
 
 #### That's It!
 We did it. Or rather you did. You made it through my long ass rambling document.
@@ -164,11 +167,17 @@ remember...
  4. git add <file> ...
  5. git commit -m "some message"
  6. git push origin <branch-name>
+ 7. submit a pull request
+ 8. review pull request
+ 9. merge pull request
 
 It's easy... or Google it ;)
+
+[git documentation][3]
 
 ## *Fin*
 
 
 [1]: https://github.com
 [2]: https://brew.sh 
+[3]: https://git-scm.com/documentation
