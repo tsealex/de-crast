@@ -70,7 +70,7 @@ git clone https://github.com/jeremyCloud/de-crast
 Now, you will have a new folder in your current dir called cd-crast with all
 the stuff that was on the website.
 
-#### Step Three: create a new branch
+#### Step Three: Ummm... everything else 
 Branches are gits way of organizing your project into independent 
 non-conflicting ... branches. Each new git project is created with a default
 branch called ```master```. **Do not do work on master**. When you create a new
