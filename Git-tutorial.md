@@ -140,7 +140,7 @@ Let's say I want to add a little README document about myself.
 
 #### Step Six: pull requests
 That was easy right? I think we earned a little break from the command line.
-Head on back to the projects GitHub page. You should see your branch name
+Head on back to the project's GitHub page. You should see your branch name
 highlighted above the repo's file explorer. If you are done with your 
 branch, and you are ready for your changes to be incorporated into the 
 master branch, go ahead and press the "compare and pull request" next to 
