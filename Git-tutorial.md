@@ -161,7 +161,7 @@ We did it. Or rather you did. You made it through my long ass rambling document.
 congratulations. I hope you have a better idea about how it works. Just 
 remember...
 
- 1. ```git clone```
+ 1. ```git clone https://github.com/username/myrepo```
  2. ```git branch some-branch-name```
  3. ```git checkout some-branch-name```
  4. ```git add file1 file2 ...```
