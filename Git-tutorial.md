@@ -10,7 +10,7 @@ your problem from there.
 
 Git is a very powerful tool, and the above description does not begin to touch
 all of the features git has to offer. The truth of the matter is most of the 
-time you will only use **$(some number)** main commands. Those commands are the ones
+time you will only use **7** main commands. Those commands are the ones
 I will cover here.
 
 Git is actually just a command line tool, but the website [GitHub][1] has made a
