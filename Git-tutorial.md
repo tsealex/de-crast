@@ -41,7 +41,7 @@ For you mac people there will be a short commercial break for [homebrew][2].
 Home brew is the package manager that Apple never made. To install homebrew go
 [here][2] and simply follow the instructions. You may get a prompt saying you 
 need to install some Xcode stuff. That is from Apple it is safe. Do what your 
-computer tell you to do. After homebrew is installed type
+computer tells you to do. After homebrew is installed type
 
 ```
 brew install git
