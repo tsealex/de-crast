@@ -162,12 +162,12 @@ congratulations. I hope you have a better idea about how it works. Just
 remember...
 
  1. git clone
- 2. git branch <branch-name>
- 3. git checkout <branch-name>
- 4. git add <file> ...
+ 2. git branch some-branch-name
+ 3. git checkout some-branch-name
+ 4. git add file1 file2 ...
  5. git commit -m "some message"
- 6. git push origin <branch-name>
- 7. submit a pull request
+ 6. git push origin some-branch-name
+ 7. submit a pull request on github
  8. review pull request
  9. merge pull request
 
