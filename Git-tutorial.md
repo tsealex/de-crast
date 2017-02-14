@@ -59,7 +59,7 @@ and it will be gone.
 #### Step Two: clone the repo
 Now, you want to get that repo onto you local computer. You will need the URL of
 the repo on GitHub. Navigate to de-crast's base page on git hub and copy the 
-URL. then you will use git's **clone** command to make a copy of the repo on 
+URL. then you will use git's ```clone``` command to make a copy of the repo on 
 your local machine. ```cd``` into where you want de-crast to live and type the
 following command into your terminal.
 
@@ -67,8 +67,8 @@ following command into your terminal.
 git clone https://github.com/jeremyCloud/de-crast
 ```
 
-Now, you will have a new folder in your current dir called cd-crast with all
-the stuff that was on the website.
+Now, you will have a new folder in your current dir called de-crast with all
+the stuff that was on Github.
 
 #### Step Three: branches 
 Branches are gits way of organizing your project into independent 
