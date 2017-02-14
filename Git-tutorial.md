@@ -156,10 +156,23 @@ group before it is added to the master branch. Once we agree that it is
 safe and good to merge the branch all we have to do is press "merge pull 
 request".
 
+#### Step Seven: git pull
+Do not confuse this stem with pull requests. Pull requests are handled on
+Github. The command ```git pull``` is used to update your local repo to 
+any changes that are on Github. Similar to how ```git push``` is used to
+update Github when you have local changes, ```git pull``` is used to
+update your local copy when there are changes remotely.
+
+Be careful with ```git pull```. If you have changes locally and you pull
+from Github, there is a possibility your local changes may get 
+overwritten. It is a good idea to always ```git commit``` before you
+```git pull```. This way if there is any issue you can always checkout
+your last commit and recover all your old work.
+
 #### That's It!
 We did it. Or rather you did. You made it through my long ass rambling document.
-congratulations. I hope you have a better idea about how it works. Just 
-remember...
+congratulations. This is not even close to everything that git is capable of. 
+I hope you have a better idea about how it works. Just remember...
 
  1. ```git clone https://github.com/username/myrepo```
  2. ```git branch some-branch-name```
@@ -170,6 +183,7 @@ remember...
  7. submit a pull request on github
  8. review pull request
  9. merge pull request
+ 10. ```git pull```
 
 It's easy... or Google it ;)
 
