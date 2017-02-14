@@ -128,15 +128,15 @@ Let's say I want to add a little README document about myself.
     ```
 
 #### Step Five: updateing Github
- 1. Now, we have our local repo up to date with all our new fancy changes. Now 
-    we need to push our local changes up to GitHub. 
+ 1. Now, we have our local repo up to date with all our new fancy changes, and 
+    we need to push our changes up to GitHub. 
 
     ```
     git push origin README_jeremy
     ```
 
-    if we break down that command we our pushing our local branch 
-    (README_jeremy) to this repo's origin (GitHub).
+    if we break down that command we our ***push***ing our local branch 
+    (***README_jeremy***) to this repo's ***origin*** (GitHub).
 
 #### Step Six: pull requests
 That was easy right? I think we earned a little break from the command line.
