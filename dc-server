@@ -5,7 +5,7 @@ Just a little prototype server
 '''
 import http.server, json, pprint, getopt, sys
 
-__decrast_server_version__= "0.2"
+__decrast_server_version__= "0.3"
 
 # define a custom request handler for our de-crast server
 class decrast_handler(http.server.BaseHTTPRequestHandler) :
@@ -27,6 +27,13 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
         # send back a big fuck you.
         self.respond_with_json(out_data)
 
+        # print the inbound and outbound json objects (debugging)
+        if self.server.verbose :
+            pp = pprint.PrettyPrinter()
+            print("GET requests are not supported at this time\n")
+            print("\nOutbound JSON:\n")
+            pp.pprint(out_data)
+    
     def do_POST(self) :
         """
         The server will mostly if not only handle POST requests
@@ -50,11 +57,12 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
         self.respond_with_json(out_data)
 
         # print the inbound and outbound json objects (debugging)
-        pp = pprint.PrettyPrinter()
-        print("\nInbound JSON:\n")
-        pp.pprint(in_data)
-        print("\nOutbound JSON:\n")
-        pp.pprint(out_data)
+        if self.server.verbose :
+            pp = pprint.PrettyPrinter()
+            print("\nInbound JSON:\n")
+            pp.pprint(in_data)
+            print("\nOutbound JSON:\n")
+            pp.pprint(out_data)
 
     def send_json_header(self, json_bytes) :
         """
@@ -84,7 +92,7 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
         # is not a valid json object this will throw an error.
         try :
             in_data = json.loads(in_data)
-        except json.decoder.JsonDecodeError :
+        except json.decoder.JSONDecodeError :
             return {"code" : "400",
                     "client-error" : "bad JSON"}
 
@@ -157,16 +165,14 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
         """
         return self.server_version
 
-        
-
-
-
-def setup_server(hostname="localhost", port=4443, cacert=None, privkey=None) :
+def setup_server(hostname="localhost", port=4443, cacert=None, 
+                 privkey=None, verbose=False) :
     # parameters
     server_addr = (hostname, port)
 
     # create an http server with our custom handler function
     httpd = http.server.HTTPServer(server_addr, decrast_handler)
+    httpd.verbose = verbose
 
     # wrap the server's socket in the ssl context that we created
     #httpd.socket = ssl.wrap_socket(httpd.socket, 
@@ -182,17 +188,17 @@ def usage() :
     prints a command line usage message
     """
     usage = """
-usage: dc-server [-h] [-s num] [-n hostname] [-p port] [-c cert] [-k key] 
+usage: dc-server [-hv] [-s num] [-n hostname] [-p port] [-c cert] [-k key] 
     [--host-name=hostname] [--cacert=cert] [--port=port] [--private-key=key] 
     [--serve-only=num] [--help]
 """
     print(usage)
 
-def process_args(argv) :
+def main(argv) :
     # process the command line args
     try :
         opts, args = getopt.getopt(argv, 
-                                   "hs:n:p:c:k:", 
+                                   "vhs:n:p:c:k:", 
                                    ["host-name=",
                                     "cacert=",
                                     "port=",
@@ -211,12 +217,14 @@ def process_args(argv) :
         sys.exit(1)
         
     # set default values
-    host, port, cert, key, n = "localhost", 4443, None, None, None
+    host, port, cert, key, n, verbose = "localhost", 4443, None, None, None, False
 
     for o, a in opts :
         if o in ("-h", "--help") :
             usage()
             sys.exit(0)
+        elif o in ("-v", ) :
+            verbose = True
         elif o in ("-s", "--serve-only") :
             n = int(a)
         elif o in ("-n", "--host-name") :
@@ -232,14 +240,8 @@ def process_args(argv) :
             usage()
             sys.exit(1)
     
-    return host, port, cert, key, n
-
-if __name__ == "__main__" :
-    #process the command line args
-    host, port, cert, key, n = process_args(sys.argv[1:])
-    
     # create the server
-    httpd = setup_server(host, port, cert, key)
+    httpd = setup_server(host, port, cert, key, verbose)
 
     print("you just got served...\n")
 
@@ -250,4 +252,8 @@ if __name__ == "__main__" :
         # serve n request and exit. (for debugging)
         for i in range(n) :
             httpd.handle_request()
+    
+# call main() if the script is called from the commandline
+if __name__ == "__main__" :
+    main(sys.argv[1 :])
 
