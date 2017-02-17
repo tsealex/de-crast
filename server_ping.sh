@@ -2,17 +2,17 @@
 
 # tool used to test our backend api
 
-SERVER="http://localhost"
+SERVER="http://localhosti:4443"
 JSON="{\"test\" : \"JSON\"}"
 INCLUDE_HEADERS=""
 
 usage() {
-  echo usage: "$0" "[-i]" -s http://foobar.com:port/some path/ -d "'"'{"some" : "json"}'"'"
+  echo usage: "$0" "[-i]" -s http://foobar.com:port/some/path/ -d "'"'{"some" : "json"}'"'"
   echo
-  echo "\t"-s "\t" address of your server
-  echo "\t"-i "\t" include the response header in the print out
-  echo "\t"-d "\t" some jason data to send to the server
-  echo "\t"-h "\t" print this help message
+  echo "\t-s \t address of your server"
+  echo "\t-i \t include the response header in the print out"
+  echo "\t-d \t some jason data to send to the server"
+  echo "\t-h \t print this help message"
   echo
 }
 

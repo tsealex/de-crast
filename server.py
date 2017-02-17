@@ -12,19 +12,23 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
     server_version = "decrast_api/" + __decrast_server_version__
     
     def do_GET(self) :
+        """
+        The server might not even support get requests. I makes sense to me to
+        just handle all server requests through POST requests.
+        """
         print("I just got a GET request")
         
-        # exerything is ok
-        self.send_response(200)
-    
-        # send the header
-        self.send_default_header()
-        self.end_headers()
+        # This is just some garbage return value for now
+        out_data = {"code" : "400",
+                    "description" : "GET request are not supported"}
 
-        # writeout some data
-        self.wfile.write("This was a GET request\r\n".encode("utf8"))
+        # send back a big fuck you.
+        self.respond_with_json(out_data)
 
     def do_POST(self) :
+        """
+        The server will mostly if not only handle POST requests
+        """
         print("I just got a POST request\n")
         
         # print the header (debugging)
@@ -55,21 +59,32 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
         writes a header for a json object response
         """
         self.send_header("Content-type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", len(json_bytes))
         self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Length", str(len(json_bytes)))
 
     def dump_json(self) :
         """
         TODO(Jeremy): this should check if the packet contains json or not
         """
-        # get the size of the json object from the headers
-        in_data_len = int(self.headers.get("Content-Length"))
-        
+        # get the size of the json object from the headers. If there is no 
+        # Content-Length header self.headers.get() will return None, and 
+        # int(None) throws a TypeError
+        try :
+            in_data_len = int(self.headers.get("Content-Length"))
+        except TypeError :
+            return {"code" : "400",
+                    "client-error" : "no 'Content-Length' header"}
+
         # read the data from the requests data buffer into a bytes object
         in_data = self.rfile.read(in_data_len)
-
-        # convert the bytes object into a python dict/list blob
-        in_data = json.loads(in_data)
+        
+        # convert the bytes object into a python dict/list blob. If the data
+        # is not a valid json object this will throw an error.
+        try :
+            in_data = json.loads(in_data)
+        except json.decoder.JsonDecodeError :
+            return {"code" : "400",
+                    "client-error" : "bad JSON"}
 
         return in_data
 
@@ -96,6 +111,14 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
                 501 : Not Implemented
 
         """
+        # if the json has a 'client-error' field then it is an internal error
+        # json so return it so it can be sent back to the user
+        try :
+            in_data["client-error"]
+            return in_data
+        except KeyError :
+            pass
+
         return {"code" : "501",
                 "discription" : "The programmer who made this " 
                                 "must be super lazy or something."
@@ -112,6 +135,7 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
     
         # turn the python dict/list blob back into json bytes
         json_bytes = json.dumps(out_data, indent=2).encode("utf-8")
+        json_bytes += b"\n"
 
         # send the header
         self.send_json_header(json_bytes)
@@ -158,8 +182,8 @@ if __name__ == "__main__" :
     print("you just got served...\n")
 
     # serve forever
-    httpd.serve_forever()
+    #httpd.serve_forever()
     
     ## serve one request and exit. (for debugging)
-    #httpd.handle_request()
+    httpd.handle_request()
 
