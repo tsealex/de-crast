@@ -5,7 +5,7 @@ Just a little prototype server
 '''
 import http.server, json, pprint, getopt, sys
 
-__decrast_server_version__= "0.1"
+__decrast_server_version__= "0.2"
 
 # define a custom request handler for our de-crast server
 class decrast_handler(http.server.BaseHTTPRequestHandler) :
