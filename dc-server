@@ -74,7 +74,7 @@ class decrast_handler(http.server.BaseHTTPRequestHandler) :
 
     def dump_json(self) :
         """
-        TODO(Jeremy): this should check if the packet contains json or not
+        dumps a json (dict/list blob) object from the http packet
         """
         # get the size of the json object from the headers. If there is no 
         # Content-Length header self.headers.get() will return None, and 
