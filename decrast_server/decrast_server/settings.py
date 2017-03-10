@@ -37,7 +37,24 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAdminUser',
+    ],
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    # will change these once the authentication scheme is implemented
+    'DEFAULT_AUTHENTICATION_CLASSES': [], # TODO: for now
+    'DEFAULT_PERMISSION_CLASSES': [], # TODO: for now
+    'PAGE_SIZE': 10
+}
+
+AUTH_USER_MODEL = 'rest.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
