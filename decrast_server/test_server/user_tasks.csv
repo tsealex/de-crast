@@ -1,0 +1,10 @@
+# FORMAT: task_id, user_id, task_name, timestamp, description, category
+# NOTE: Last column is unix timestamp. To generate a timestamp, visit:
+#         http://www.onlineconversion.com/unix_time.htm 
+
+1,8,Rock n Roll all Nite,1489110829,KISS classic,Rock n' Roll
+2,8,Party Every Day,14891108739,KISS hit,Rock n' Roll
+3,8,Pick up a Six String,14891108769,Just do it!,Rock n' Roll
+4,9,Live like User 8,1489110879,Aww no,Get good
+5,8,Learn to play the guitar,1489110879,Aww yeah,Rock n' Roll
+
