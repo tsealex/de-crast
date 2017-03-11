@@ -90,6 +90,6 @@ class RefreshSerializer(serializers.Serializer):
 			except User.DoesNotExist:
 				raise APIError(105)
 			except jwt.DecodeError:
-				raise APIError(80, details='DecodeError')
+				raise APIError(155, details='DecodeError')
 		else:
 			raise APIError(100)

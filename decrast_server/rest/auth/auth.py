@@ -26,7 +26,7 @@ class JWTAuthentication(BaseAuthentication):
 		except jwt.ExpiredSignature:
 			raise APIError(120)
 		except jwt.DecodeError:
-			raise APIError(80, details='DecodeError')
+			raise APIError(115, details='DecodeError')
 		except jwt.InvalidTokenError:
 			raise APIError(115)
 

@@ -6,6 +6,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 
 import datetime
+import time
 
 from .auth.serializers import JWTSerializer, RefreshSerializer
 from .auth.auth import JWTAuthentication
@@ -43,27 +44,29 @@ class AuthViewSet(viewsets.ViewSet):
 					'fb_id': request.data.get('facebookId'),
 					'fb_tk': request.data.get('facebookToken'),
 				})
+			# TODO: input check
 			if validator.is_valid():
 				return Response({
 					'userId': validator.object.get('user').id,
 					'accessToken': validator.object.get('ac_tk'),
 					'refreshToken': validator.object.get('rf_tk'),
-					'tokenExpiration': validator.object.get('ac_exp'),
+					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
 				})
 		else:
 			# for old user who wants to refresh the access token
 			uid = request.data.get('userId')
-			dc_token = request.data.get('refreshToken')
+			rf_token = request.data.get('refreshToken')
+			# TODO: input check
 			validator = RefreshSerializer(data={
-					'uid': request.data.get('userId'),
-					'rf_tk': request.data.get('refreshToken'),
+					'uid': uid,
+					'rf_tk': rf_token,
 				})
 			if validator.is_valid():
 				return Response({
 					'userId': validator.object.get('user').id,
 					'accessToken': validator.object.get('ac_tk'),
 					'refreshToken': validator.object.get('rf_tk'),
-					'tokenExpiration': validator.object.get('ac_exp'),
+					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
 				})
 
 '''
@@ -88,7 +91,7 @@ class UserViewSet(viewsets.ViewSet):
 		try:
 			uid = request.data['userId']
 			username = request.data['username']
-			
+			# TODO: input check
 			user = request.user
 
 			if uid != user.id:
