@@ -49,32 +49,20 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services'])
       }
     }
   })
-    .state('addTask', {
-      url: '/addTask',
-      views: {
-        'addTask': {
+      .state('addTask', {
+          url: '/addTask',
           templateUrl: 'templates/task.html',
           controller: 'AddTaskCtrl'
-        }
-      }
-    })
+      })
     .state('viewTask', {
       url: '/viewTask',
-      views: {
-        'viewTask': {
           templateUrl: 'templates/task.html',
           controller: 'ViewTaskCtrl'
-        }
-      }
     })
     .state('editTask', {
       url: '/editTask',
-      views: {
-        'editTask': {
           templateUrl: 'templates/task.html',
           controller: 'EditTaskCtrl'
-        }
-      }
     })
 
   .state('tab.ftasks', {
@@ -107,17 +95,47 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services'])
       }
     })
 
-    .state('tab.settings', {
+    .state('settings', {
       url: '/settings',
-      views: {
-        'settings': {
           templateUrl: 'templates/settings.html',
           controller: 'SettingsCtrl'
-        }
-      }
     });
 
   // if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise('/tab/home');
+
+});
+
+
+/*
+This factory will be used for creating task objects and processing changes to the tasks. We will also likely add functions
+to  update local storage and the server in this factory.
+ */
+decrast.factory('taskFact', function() {
+
+  return function() {
+
+      //task constructor?
+      self.addTask = function (name, descrip, category, time) {
+
+        var task = {};
+
+
+
+      return task;
+      };
+
+      //task editor?
+      self.editTask = function(task, name, descrip, category)
+      {
+
+
+
+      return task;
+      };
+
+
+      return self;
+  };
 
 });

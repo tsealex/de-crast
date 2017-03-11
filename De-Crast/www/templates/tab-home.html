@@ -1,10 +1,12 @@
-<ion-view view-title="Welcome to De-Crast!">
+<!--Main homeview for decrast-->
+<ion-view view-title="Welcome, {{name}}">
   <ion-nav-buttons>
-<button class="button icon ion-gear-a button-positive"></button>
-    <button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
+      <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
+<button class="button icon ion-gear-a button-positive" ng-click="goSettings()"></button><button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
   </ion-nav-buttons>
   <ion-content class="padding">
-
-test test test test
+Welcome to De-Crast! Use the button above to add a new task!
+<!--TODO add code here that pulls from our task dictionary and loads each task. Then, on click of task, load that task's
+TODO View page. We can use ng-repeat to load it-->
   </ion-content>
 </ion-view>
