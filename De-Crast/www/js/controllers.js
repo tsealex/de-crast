@@ -25,7 +25,13 @@ angular.module('decrast.controllers', [])
 })
   .controller('NotifCtrl', function($scope, $stateParams) {
   })
-.controller('FriendsCtrl', function($scope) {
+.controller('FriendsCtrl', function($scope, Friends) {
+  $scope.friends = Friends.all();
+  $scope.turnStar = function(index){
+    //console.log("You turn star");
+    document.getElementById("starRate"+index).className = 
+      (document.getElementById("starRate"+index).className == "icon ion-ios-star") ? "icon ion-ios-star-outline" : "icon ion-ios-star";
+  }
 })
 
   .controller('SettingsCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state) {

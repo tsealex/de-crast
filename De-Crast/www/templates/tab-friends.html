@@ -1,5 +1,32 @@
 <ion-view view-title="Friends">
-  <ion-content class="padding">
-    List of friends here
+  <ion-content>
+    <!--
+    <p class="padding">Favourite</p>
+    <ion-list>
+      <ion-item ng-repeat="friend in ffriends" class="item-icon-right">
+          {{friend.name}}
+          
+          <i id="starRate{{friend.id}}" class="icon ion-ios-star-outline" ng-click="turnStar({{friend.id}})"></i>
+      </ion-item>
+    </ion-list>
+    <p class="padding">Friends</p>
+    -->
+    <ion-list>
+      <ion-item ng-repeat="friend in friends" class="item-icon-right">
+          {{friend.name}}
+          <!--  icon-accessory make it samll -->
+          <i id="starRate{{friend.id}}" class="icon ion-ios-star-outline" ng-click="turnStar({{friend.id}})"></i>
+      </ion-item>
+    </ion-list>
+    <!--
+    <p class="padding">Blocked</p>
+    <ion-list>
+      <ion-item ng-repeat="friend in bfriends" class="item-icon-right">
+          {{friend.name}}
+          
+          <i id="starRate{{friend.id}}" class="icon ion-ios-star-outline" ng-click="turnStar({{friend.id}})"></i>
+      </ion-item>
+    </ion-list>
+    -->
   </ion-content>
 </ion-view>
