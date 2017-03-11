@@ -23,8 +23,8 @@ class User(AbstractBaseUser):
 	fb_id = models.BigIntegerField(unique=True, null=False)
 	access_ts = models.DateField(auto_now_add=True) # TODO: null=False
 
-	USERNAME_FIELD = 'fb_id'
-	REQUIRED_FIELDS = [] # only needed for createsuperuser command
+	USERNAME_FIELD = 'id'
+	REQUIRED_FIELDS = ['fb_id'] # only needed for createsuperuser command
 
 	objects = UserManager()
 	

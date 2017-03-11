@@ -3,16 +3,28 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
+from rest_framework.permissions import IsAuthenticated
+
 import datetime
 
+from .auth.serializers import JWTSerializer, RefreshSerializer
+from .auth.auth import JWTAuthentication
+from .errors import APIError
 from .models import User
 from .serializers import UserSerializer
 
 # ref: https://docs.djangoproject.com/en/1.10/topics/db/queries/
 
 # Create your views here.
-class UserViewSet(viewsets.ViewSet):
+
+'''
+
+'''
+class AuthViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
+	authentication_classes = ()
+	permission_classes = ()
+
 	'''
 	For testing purpose only
 	'''
@@ -26,99 +38,74 @@ class UserViewSet(viewsets.ViewSet):
 	'''
 	def create(self, request):
 		# for new user who wants to register
-		try:
-			user = None
-			fb_id = request.data['facebookId']
-			fb_token = request.data['facebookToken']
+		if request.data.get('facebookToken') is not None:
+			validator = JWTSerializer(data={
+					'fb_id': request.data.get('facebookId'),
+					'fb_tk': request.data.get('facebookToken'),
+				})
+			if validator.is_valid():
+				return Response({
+					'userId': validator.object.get('user').id,
+					'accessToken': validator.object.get('ac_tk'),
+					'refreshToken': validator.object.get('rf_tk'),
+					'tokenExpiration': validator.object.get('ac_exp'),
+				})
+		else:
+			# for old user who wants to refresh the access token
+			uid = request.data.get('userId')
+			dc_token = request.data.get('refreshToken')
+			validator = RefreshSerializer(data={
+					'uid': request.data.get('userId'),
+					'rf_tk': request.data.get('refreshToken'),
+				})
+			if validator.is_valid():
+				return Response({
+					'userId': validator.object.get('user').id,
+					'accessToken': validator.object.get('ac_tk'),
+					'refreshToken': validator.object.get('rf_tk'),
+					'tokenExpiration': validator.object.get('ac_exp'),
+				})
 
-			# TODO: input check
+'''
 
-			# TODO: authenticate the user with FB server		
+'''
+class UserViewSet(viewsets.ViewSet):
+	parser_classes = (JSONParser,)
+	permission_classes = (IsAuthenticated,)
 
-			# try to get the user, else create a new user here
-			try:
-				user = User.objects.get(fb_id=fb_id)
-			except:
-				pass
-
-			if user is None:
-				user = User.objects.create_user(fb_id=fb_id)
-
-			# TODO: access token, refresh token
-
-			response = self.pack(user, 'no_access_token_available', 
-				'no_refresh_token_available', datetime.datetime.now()
-				+ datetime.timedelta(weeks = 2))
-			return Response(response)
-		except:
-			pass
-
-		# for old user who wants to refresh the access token
-		try:
-			uid = request.data['userId']
-			dc_token = request.data['refreshToken']
-
-			# TODO: input check
-
-			if not User.objects.filter(id=uid).exists():
-				return Response({'error': 'user does not exist'})
-
-			# TODO: verify and refresh the token (also handle errors)
-
-			user = User.objects.get(id=uid)
-			response = self.pack(user, 'no_access_token_available', 
-				'no_refresh_token_available', datetime.datetime.now()
-				+ datetime.timedelta(weeks = 2))
-			return Response(response)
-		except:
-			pass
-
-		return Response({'error': 'malformatted request'})	
+	'''
+	For testing purpose only
+	'''
+	def list(self, request):
+		queryset = User.objects.all()
+		serializer = UserSerializer(queryset, many=True)
+		return Response(serializer.data)
 
 	'''
 	For initializing the username
 	'''
 	def update(self, request, pk=None):
-		# TODO: we're supposed to authenticate the user first
-		# but for now, we let the client to pass the uid through the request body
-
-		# TODO: this will be edited after authentication is implemented
-		# as we probably don't need a try block, it's not possible that a user
-		# doesn't exist but the access token is valid
 		try:
 			uid = request.data['userId']
 			username = request.data['username']
+			
+			user = request.user
 
-			# TODO: input check
-
-			# TODO: this will be removed
-			if not User.objects.filter(id=uid).exists():
-				return Response({'error': 'user does not exist'})
-
-			user = User.objects.get(id=uid)
+			if uid != user.id:
+				raise APIError(160)
 
 			if user.username is not None:
-				return Response({'error': 'username has been specified'})
+				raise APIError(125, details='username has been specified')
 
 			# TODO: check if it's a valid username
 
 			user.username = username
 			user.save()
 
-			response = {
+			return Response({
 				'userId': user.id,
 				'username': user.username
-			}
-			return Response(response)
-		except:
-			return Response({'error': 'malformatted request'})
-
-	def pack(self, user, ac_tk, rf_tk, exp):
-		return {
-			'userId': user.id,
-			'username': user.username,
-			'accessToken': ac_tk,
-			'refreshToken': rf_tk,
-			'tokenExpiration': exp,
-		}
+			})
+		except KeyError:
+			raise APIError(100)
 		

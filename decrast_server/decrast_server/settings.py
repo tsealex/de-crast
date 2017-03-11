@@ -42,14 +42,11 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAdminUser',
-    ],
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
     # will change these once the authentication scheme is implemented
-    'DEFAULT_AUTHENTICATION_CLASSES': [], # TODO: for now
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest.auth.auth.JWTAuthentication'], # TODO: for now
     'DEFAULT_PERMISSION_CLASSES': [], # TODO: for now
     'PAGE_SIZE': 10
 }
@@ -64,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'rest.errors.ExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'decrast_server.urls'
