@@ -51,7 +51,7 @@ OUTPUT:
 }
 ===========================================================
 SUGGESTED TOOLS FOR TESTING:
-$ curl -H ""Content-Type: application/json" -X <POST or GET> -d "JSON body" <url>
+$ curl -H "Content-Type: application/json" -X <POST or GET> -d "JSON body" <url>
 or you can also use Advanced REST client (Chrome ext) for making requests
 
 Also, you can access /list/ in your browser directly since it handles GET request and doesn't take any input.
