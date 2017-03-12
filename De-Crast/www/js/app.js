@@ -103,7 +103,27 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
       url: '/settings',
           templateUrl: 'templates/settings.html',
           controller: 'SettingsCtrl'
-    });
+    })
+      .state('manage-categories', {
+          url: '/manage-categories',
+          templateUrl: 'templates/manage-categories.html',
+          controller: 'ManageCategoriesCtrl'
+      })
+      .state('manage-notifications', {
+          url: '/manage-notifications',
+          templateUrl: 'templates/manage-notifications.html',
+          controller: 'ManageNotificationsCtrl'
+      })
+      .state('block', {
+          url: '/block',
+          templateUrl: 'templates/block-unblock-users.html',
+          controller: 'BlockCtrl'
+      })
+      .state('logout', {
+          url: '/logout',
+          templateUrl: 'templates/logout.html',
+          controller: 'LogoutCtrl'
+      });
 
   // if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise('/tab/home');

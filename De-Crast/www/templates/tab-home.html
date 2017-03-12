@@ -1,5 +1,5 @@
 <!--Main homeview for decrast-->
-<ion-view view-title="Welcome, {{name}}" ng-controller="MainCtrl">
+<ion-view view-title="Welcome, {{name}}">
 
     <ion-nav-buttons side="primary">
         <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
@@ -14,10 +14,10 @@
                 <h1 class="title">Settings</h1>
             </ion-header-bar>
             <ion-content>
-                <a class="item">Manage Category</a>
-                <a class="item">Manage Notifications</a>
-                <a class="item">Block/Unblock Users</a>
-                <a class="item">Logout</a>
+                <a class="item" ng-click="goCategories()">Manage Category</a>
+                <a class="item" ng-click="goNotif()">Manage Notifications</a>
+                <a class="item" ng-click="goBlock()">Block/Unblock Users</a>
+                <a class="item" ng-click="goLogout()">Logout</a>
             </ion-content>
         </ion-popover-view>
     </script>

@@ -1,7 +1,7 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', [])
 
-    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, Tasks, $stateParams) {
+    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams) {
     $scope.tasks = Tasks.all();
     $scope.name = "De-Crast User";
 
@@ -11,25 +11,63 @@ angular.module('decrast.controllers', [])
         $state.go('viewTask', {task: task});
         //console.log(task);
     }
-
+/*
     // function to fetch data from the server
     $rootScope.task_list = {};
     var listHold = angular.fromJson(localStorage.getItem('task_list'));
 
     if (listHold != null) {
         $rootScope.task_list = listHold;
-    }
+    }*/
 
 
     $scope.onClick = function () {
 
         $state.go('addTask', {});
     };
-    $scope.goSettings = function () {
-        $state.go('settings', {});
+
+    $scope.goBlock = function() {
+        $state.go('block', {});
     };
+        $scope.goNotif = function() {
+            $state.go('manage-notifications', {});
+        };
+        $scope.goLogout = function() {
+            $state.go('logout', {});
+        };
+        $scope.goCategories = function() {
+            $state.go('manage-categories', {});
+        };
+
+
+
+    //Settings popover
+        $ionicPopover.fromTemplateUrl('templates/settings.html', {
+            scope: $scope
+        }).then(function(popover) {
+            $scope.popover = popover;
+        });
+
+        $scope.openPopover = function($event) {
+            $scope.popover.show($event);
+        };
+        $scope.closePopover = function() {
+            $scope.popover.hide();
+        };
+        //Cleanup the popover when we're done with it!
+        $scope.$on('$destroy', function() {
+            $scope.popover.remove();
+        });
+        // Execute action on hidden popover
+        $scope.$on('popover.hidden', function() {
+            // Execute action
+        });
+        // Execute action on remove popover
+        $scope.$on('popover.removed', function() {
+            // Execute action
+        });
 })
-//  for some reason, can't inject a factory into addtaskctrl without breaking it
+
     .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -93,7 +131,7 @@ angular.module('decrast.controllers', [])
             viewData.enableBack = true;
         });
     })
-
+/*
     .controller('MainCtrl', function($scope, $ionicPopover) {
 
         // // .fromTemplate() method
@@ -128,5 +166,30 @@ angular.module('decrast.controllers', [])
         $scope.$on('popover.removed', function() {
             // Execute action
         });
+    })
+    */
+    .controller('LogoutCtrl', function ($scope, $state) {
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+        })
+
+    })
+    .controller('ManageCategoriesCtrl', function ($scope, $state) {
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+        })
+
+    })
+    .controller('ManageNotificationsCtrl', function ($scope, $state) {
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+        })
+
+    })
+    .controller('BlockCtrl', function ($scope, $state) {
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+        })
+
     });
 
