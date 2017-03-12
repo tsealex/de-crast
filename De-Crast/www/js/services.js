@@ -6,27 +6,27 @@ angular.module('decrast.services', [])
   // Some fake testing data
   var chats = [{
     id: 0,
-    name: 'Ben Sparrow',
+    title: 'Ben Sparrow',
     lastText: 'You on your way?',
     face: 'img/ben.png'
   }, {
     id: 1,
-    name: 'Max Lynx',
+    title: 'Max Lynx',
     lastText: 'Hey, it\'s me',
     face: 'img/max.png'
   }, {
     id: 2,
-    name: 'Adam Bradleyson',
+    title: 'Adam Bradleyson',
     lastText: 'I should buy a boat',
     face: 'img/adam.jpg'
   }, {
     id: 3,
-    name: 'Perry Governor',
+    title: 'Perry Governor',
     lastText: 'Look at my mukluks!',
     face: 'img/perry.png'
   }, {
     id: 4,
-    name: 'Mike Harrington',
+    title: 'Mike Harrington',
     lastText: 'This is wicked good ice cream.',
     face: 'img/mike.png'
   }];
@@ -49,6 +49,44 @@ angular.module('decrast.services', [])
   };
 })
 
+// dummy Tasks data
+.factory('Tasks', function() {
+// Might use a resource here that returns a JSON array
+
+// Some fake testing data
+  var tasks = [{
+    id: 0,
+    title: 'Ben Sparrow',
+    deadline: '2017-01-01'
+  }, {
+    id: 1,
+    title: 'Max Lynx',
+    deadline: '2017-01-03'
+  }, {
+    id: 2,
+    title: 'Adam Bradleyson',
+    deadline: '2017-01-02'
+  }];
+
+  return {
+    all: function() {
+      return tasks;
+    },
+    remove: function(tasks) {
+      tasks.splice(tasks.indexOf(task), 1);
+    },
+    get: function(taskId) {
+      for (var i = 0; i < tasks.length; i++) {
+        if (tasks[i].id === parseInt(taskId)) {
+          return tasks[i];
+        }
+      }
+      return null;
+    }
+  }
+})
+
+
 // friends dummy data
 .factory('Friends', function() {
 // Might use a resource here that returns a JSON array
@@ -65,7 +103,7 @@ angular.module('decrast.services', [])
   }, {
     id: 2,
     name: 'Adam Bradleyson',
-    star: 'block'
+    star: 'normal'
   }, {
     id: 3,
     name: 'Perry Governor',

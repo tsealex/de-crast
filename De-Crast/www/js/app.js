@@ -55,7 +55,11 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services'])
           controller: 'AddTaskCtrl'
       })
     .state('viewTask', {
-      url: '/viewTask',
+          url: '/viewTask',
+          params: {
+            task: 'Tasks'
+          },
+          cache: false,
           templateUrl: 'templates/task.html',
           controller: 'ViewTaskCtrl'
     })
