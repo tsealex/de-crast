@@ -13,6 +13,7 @@ from .auth.auth import JWTAuthentication
 from .errors import APIError
 from .models import User
 from .serializers import UserSerializer
+from .serializers import ModelSerializer
 
 # ref: https://docs.djangoproject.com/en/1.10/topics/db/queries/
 
@@ -112,3 +113,15 @@ class UserViewSet(viewsets.ViewSet):
 		except KeyError:
 			raise APIError(100)
 		
+
+class CategoryViewSet(viewsets.ViewSet):
+	parser_classes = (JSONParser,)
+	serializer = ModelSerializer()
+
+	def add(self, request, pk=None):
+		print("Adding a category")
+		return Response()
+
+	def list(self, request, pk=None):
+		print("Listing user's category IDs.")
+		return Response()

@@ -45,4 +45,5 @@ class Consequence(models.Model):
 	pass
 
 class Category(models.Model):
-	pass
+	id = models.AutoField(primary_key=True)
+	name = models.CharField(max_length=32, null=False)
