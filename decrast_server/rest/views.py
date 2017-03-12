@@ -116,7 +116,7 @@ class UserViewSet(viewsets.ViewSet):
 		
 
 class CategoryViewSet(viewsets.ViewSet):
-	parser_classes = (JSONParser,)''
+	parser_classes = (JSONParser,)
 
 	def add(self, request, pk=None):
 		try:
