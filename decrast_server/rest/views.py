@@ -116,18 +116,17 @@ class UserViewSet(viewsets.ViewSet):
 		
 
 class CategoryViewSet(viewsets.ViewSet):
-	parser_classes = (JSONParser,)
-	serializer = ModelSerializer()
+	parser_classes = (JSONParser,)''
 
 	def add(self, request, pk=None):
 		try:
 			user = request.user
-			cat_name = request.data['categoryName']
+			cat_name = request.data['name']
 
-			category = Category.objects.create(categoryName=cat_name, userId=user)
+			category = Category.objects.create(name=cat_name, user=user)
 			category.save()
 
-			return Response({"categoryId": str(category.categoryId)})
+			return Response({"categoryId": category.id})
 
 		except KeyError:
 			raise APIError(100)
@@ -136,9 +135,8 @@ class CategoryViewSet(viewsets.ViewSet):
 			raise APIError(170)
 
 	def list(self, request, pk=None):
-
 		try:
-			queryset = Category.objects.get_user_categories(request.user.id)
+			queryset = request.user.category_set.all()
 			serializer = ModelSerializer(queryset, many=True)
 			return Response(serializer.data)
 

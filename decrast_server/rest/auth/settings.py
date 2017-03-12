@@ -13,8 +13,8 @@ DEFAULTS = {
 
 	'JWT_SECRET_KEY': djg_settings.SECRET_KEY,
 
-	'JWT_AC_EXP': datetime.timedelta(seconds=1200),
-	'JWT_RF_EXP': datetime.timedelta(days=14),
+	'JWT_AC_EXP': datetime.timedelta(days=60), # seconds=1200
+	'JWT_RF_EXP': datetime.timedelta(days=60), # days=14
 
 	'JWT_VERIFY': True,
 	'JWT_VERIFY_EXPIRATION': True,

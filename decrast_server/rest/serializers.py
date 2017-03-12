@@ -10,4 +10,4 @@ class UserSerializer(serializers.ModelSerializer):
 class ModelSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Category
-		fields = ('categoryId', 'categoryName', 'userId')
+		fields = ('id', 'name', 'user')
