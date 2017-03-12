@@ -12,6 +12,7 @@ from .auth.serializers import JWTSerializer, RefreshSerializer
 from .auth.auth import JWTAuthentication
 from .errors import APIError
 from .models import User
+from .models import Category
 from .serializers import UserSerializer
 from .serializers import ModelSerializer
 
@@ -119,9 +120,30 @@ class CategoryViewSet(viewsets.ViewSet):
 	serializer = ModelSerializer()
 
 	def add(self, request, pk=None):
-		print("Adding a category")
-		return Response()
+		try:
+			user = request.user
+			cat_name = request.data['categoryName']
+
+			category = Category.objects.create(categoryName=cat_name, userId=user)
+			category.save()
+
+			return Response({"categoryId": str(category.categoryId)})
+
+		except KeyError:
+			raise APIError(100)
+		except Exception as e:
+			print("Category Add ERROR: " + str(e))
+			raise APIError(170)
 
 	def list(self, request, pk=None):
-		print("Listing user's category IDs.")
-		return Response()
+
+		try:
+			queryset = Category.objects.get_user_categories(request.user.id)
+			serializer = ModelSerializer(queryset, many=True)
+			return Response(serializer.data)
+
+		except KeyError:
+			raise APIError(100)
+		except Exception as e:
+			print("Category List ERROR: " + str(e))
+			raise APIError(170)

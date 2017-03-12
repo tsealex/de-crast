@@ -44,6 +44,18 @@ class Notification(models.Model):
 class Consequence(models.Model):
 	pass
 
+class CategoryManager(models.Manager):
+	def create_category(self, **kwargs):
+		category = super(CategoryManager, self).create(**kwargs)
+		return category
+
+	def get_user_categories(self, uid):
+		return Category.objects.filter(userId=uid)
+
 class Category(models.Model):
-	id = models.AutoField(primary_key=True)
-	name = models.CharField(max_length=32, null=False)
+	categoryId = models.AutoField(primary_key=True)
+	categoryName = models.CharField(max_length=32, null=False)
+	userId = models.ForeignKey(User)
+
+	objects = CategoryManager()
+
