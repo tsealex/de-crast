@@ -92,4 +92,59 @@ angular.module('decrast.services', [])
       return null;
     }
   }
+})
+/*
+ This factory will be used for creating task objects and processing changes to the tasks. We will also likely add functions
+ to  update local storage and the server in this factory.
+ */
+
+    .factory('TaskFact', function() {
+
+    return function() {
+
+        //task constructor?
+        self.addTask = function (name, descrip, category, time, partner, facebook, evidence) {
+
+            var task = { task_name: name, task_descrip: descrip, task_category: category, task_time: time, task_partner: partner,
+                task_facebook: facebook, task_evidence: evidence};
+
+            task.task_id = name+descrip+category+time;
+
+          /* CODE TO UPDATE MASTER LIST, LOCAL STORAGE, AND SERVER. NOT SURE IF IT SHOULD GO HERE OR IN CONTROLLER
+           $rootScope.task_list[task.task_id] = task;
+
+           localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+           //api call
+           */
+            return task;
+        };
+
+        //task editor?
+        self.editTask = function(task, name, descrip, category)
+        {
+            task.task_name = name;
+            task.task_descrip = descrip;
+            task.task_category = category;
+
+          /*
+           Could put code to update localStorage and server here or at the calls.
+           */
+            return task;
+        };
+
+        self.updateDue = function (task, update_bool, time) {
+            if(update_bool == true) {
+                task.task_time = time;
+            }
+
+            return task;
+          /*
+           Again, we can do local storage here or at the point of call.
+           */
+        };
+
+
+        return self;
+    };
+
 });
