@@ -49,6 +49,43 @@ angular.module('decrast.services', [])
   };
 })
 
+// ftasks dummy data
+.factory('Ftasks', function() {
+// Might use a resource here that returns a JSON array
+
+// Some fake testing data
+  var ftasks = [{
+      id: 0,
+      title: 'Ben Sparrow',
+      deadline: '2017-05-05'
+  }, {
+      id: 1,
+      title: 'Max Lynx',
+      deadline: '2017-05-06'
+  }, {
+      id: 2,
+      title: 'Adam Bradleyson',
+      deadline: '2017-05-07'
+  }];
+
+  return {
+      all: function() {
+          return ftasks;
+      },
+      remove: function(ftasks) {
+          ftasks.splice(ftasks.indexOf(ftask), 1);
+      },
+      get: function(ftaskId) {
+          for (var i = 0; i < ftasks.length; i++) {
+              if (ftasks[i].id === parseInt(ftaskId)) {
+                  return ftasks[i];
+              }
+          }
+          return null;
+      }
+  }
+})
+
 // friends dummy data
 .factory('Friends', function() {
 // Might use a resource here that returns a JSON array
@@ -91,5 +128,50 @@ angular.module('decrast.services', [])
       }
       return null;
     }
+  }
+})
+
+// notifications dummy data
+.factory('Notifications', function() {
+// Might use a resource here that returns a JSON array
+
+// Some fake testing data
+  var notifications = [{
+      id: 0,
+      title: 'Ben Sparrow',
+      relatedTask: 'on'
+  }, {
+      id: 1,
+      title: 'Max Lynx',
+      relatedTask: 'off'
+  }, {
+      id: 2,
+      title: 'Adam Bradleyson',
+      relatedTask: 'block'
+  }, {
+      id: 3,
+      title: 'Perry Governor',
+      relatedTask: 'off'
+  }, {
+      id: 4,
+      title: 'Mike Harrington',
+      relatedTask: 'on'
+  }];
+
+  return {
+      all: function() {
+          return notifications;
+      },
+      remove: function(notifications) {
+          notifications.splice(notifications.indexOf(notification), 1);
+      },
+      get: function(notificationId) {
+          for (var i = 0; i < notifications.length; i++) {
+              if (notifications[i].id === parseInt(notifications)) {
+                  return notifications[i];
+              }
+          }
+          return null;
+      }
   }
 });
