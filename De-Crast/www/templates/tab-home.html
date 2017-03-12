@@ -1,12 +1,31 @@
 <!--Main homeview for decrast-->
-<ion-view view-title="Welcome, {{name}}">
-  <ion-nav-buttons>
-      <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
-<button class="button icon ion-gear-a button-positive" ng-click="goSettings()"></button><button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
-  </ion-nav-buttons>
-  <ion-content class="padding">
-Welcome to De-Crast! Use the button above to add a new task!
-<!--TODO add code here that pulls from our task dictionary and loads each task. Then, on click of task, load that task's
-TODO View page. We can use ng-repeat to load it-->
-  </ion-content>
+<ion-view view-title="Welcome, {{name}}" ng-controller="MainCtrl">
+    <ion-nav-buttons>
+        <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
+        <button class="button icon ion-gear-a button-positive" ng-click="openPopover($event)"></button>
+        <button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
+    </ion-nav-buttons>
+
+    // script for settings popover
+    <script id="templates/settings.html" type="text/ng-template">
+        <ion-popover-view style="height: {{(70 * 3.7) + 'px'}};">
+            <ion-header-bar>
+                <h1 class="title">Settings</h1>
+            </ion-header-bar>
+            <ion-content>
+                <a class="item">Manage Category</a>
+                <a class="item">Manage Notifications</a>
+                <a class="item">Block/Unblock Users</a>
+                <a class="item">Logout</a>
+            </ion-content>
+        </ion-popover-view>
+    </script>
+
+    <ion-content class="padding">
+        Welcome to De-Crast! Use the button above to add a new task!
+        <!--TODO add code here that pulls from our task dictionary and loads each task. Then, on click of task, load that task's
+        TODO View page. We can use ng-repeat to load it-->
+    </ion-content>
 </ion-view>
+
+
