@@ -1,7 +1,14 @@
 <!--Test Friends' Task tab-->
 <ion-view view-title="Friends' Tasks">
-  <ion-content class="padding">
-    List of friends' tasks here
+  <ion-content>
       <!--TODO this will likely need some facebook api calls to load up friends. if not, ng-repeat-->
+    <ion-list>
+      <ion-item ng-repeat="ftask in ftasks" class="item-icon-right">
+        {{ftask.title}}
+        <!--  icon-accessory make it samll -->
+
+      </ion-item>
+    </ion-list>
+
   </ion-content>
 </ion-view>

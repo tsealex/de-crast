@@ -1,9 +1,10 @@
 <!--Main homeview for decrast-->
 <ion-view view-title="Welcome, {{name}}">
-  <ion-nav-buttons>
-     
-<button class="button icon ion-gear-a button-positive" ng-click="goSettings()"></button>
-<button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
+
+  <ion-nav-buttons side ="primary">
+      <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
+<button class="button icon ion-gear-a button-positive" ng-click="goSettings()"></button><button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
+
   </ion-nav-buttons>
   <ion-content>
     <ion-list>
