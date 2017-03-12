@@ -130,50 +130,7 @@ angular.module('decrast.services', [])
     }
   }
 })
-// notifications dummy data
-.factory('Notifications', function() {
-// Might use a resource here that returns a JSON array
-
-// Some fake testing data
-  var notifications = [{
-      id: 0,
-      title: 'Ben Sparrow',
-      relatedTask: 'on'
-  }, {
-      id: 1,
-      title: 'Max Lynx',
-      relatedTask: 'off'
-  }, {
-      id: 2,
-      title: 'Adam Bradleyson',
-      relatedTask: 'block'
-  }, {
-      id: 3,
-      title: 'Perry Governor',
-      relatedTask: 'off'
-  }, {
-      id: 4,
-      title: 'Mike Harrington',
-      relatedTask: 'on'
-  }];
-
-  return {
-      all: function() {
-          return notifications;
-      },
-      remove: function(notifications) {
-          notifications.splice(notifications.indexOf(notification), 1);
-      },
-      get: function(notificationId) {
-          for (var i = 0; i < notifications.length; i++) {
-              if (notifications[i].id === parseInt(notifications)) {
-                  return notifications[i];
-              }
-          }
-          return null;
-      }
-  }
-})
+<<<<<<< HEAD
 /*
  This factory will be used for creating task objects and processing changes to the tasks. We will also likely add functions
  to  update local storage and the server in this factory.
@@ -229,3 +186,50 @@ angular.module('decrast.services', [])
     };
 
 });
+=======
+
+// notifications dummy data
+.factory('Notifications', function() {
+// Might use a resource here that returns a JSON array
+
+// Some fake testing data
+  var notifications = [{
+      id: 0,
+      title: 'Ben Sparrow',
+      relatedTask: 'on'
+  }, {
+      id: 1,
+      title: 'Max Lynx',
+      relatedTask: 'off'
+  }, {
+      id: 2,
+      title: 'Adam Bradleyson',
+      relatedTask: 'block'
+  }, {
+      id: 3,
+      title: 'Perry Governor',
+      relatedTask: 'off'
+  }, {
+      id: 4,
+      title: 'Mike Harrington',
+      relatedTask: 'on'
+  }];
+
+  return {
+      all: function() {
+          return notifications;
+      },
+      remove: function(notifications) {
+          notifications.splice(notifications.indexOf(notification), 1);
+      },
+      get: function(notificationId) {
+          for (var i = 0; i < notifications.length; i++) {
+              if (notifications[i].id === parseInt(notifications)) {
+                  return notifications[i];
+              }
+          }
+          return null;
+      }
+  }
+});
+>>>>>>> 24afa6d003eb028d1b57ff8b1312680e94ece907

@@ -1,7 +1,14 @@
 <!--Notifications tab-->
 <ion-view view-title="Notifications">
-  <ion-content class="padding">
-    Here's where the notifications will be!
+  <ion-content>
     <!--TODO another ng-repeat directive to load notifications-->
+    <ion-list>
+      <ion-item ng-repeat="notification in notifications" class="item-icon-right">
+        {{notification.title}}
+        <!--  icon-accessory make it samll -->
+
+      </ion-item>
+    </ion-list>
+
   </ion-content>
 </ion-view>

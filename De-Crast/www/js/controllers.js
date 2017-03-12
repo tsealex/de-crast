@@ -45,9 +45,11 @@ angular.module('decrast.controllers', [])
 
   })
 
-.controller('FtasksCtrl', function($scope) {
+.controller('FtasksCtrl', function($scope, Ftasks) {
+    $scope.ftasks = Ftasks.all();
 })
-  .controller('NotifCtrl', function($scope, $stateParams) {
+  .controller('NotifCtrl', function($scope, $stateParams, Notifications) {
+      $scope.notifications = Notifications.all();
   })
 .controller('FriendsCtrl', function($scope, Friends, $stateParams) {
   $scope.friends = Friends.all();
