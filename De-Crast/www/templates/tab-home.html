@@ -1,6 +1,7 @@
 <!--Main homeview for decrast-->
 <ion-view view-title="Welcome, {{name}}" ng-controller="MainCtrl">
-    <ion-nav-buttons>
+
+    <ion-nav-buttons side="primary">
         <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
         <button class="button icon ion-gear-a button-positive" ng-click="openPopover($event)"></button>
         <button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
@@ -21,8 +22,14 @@
         </ion-popover-view>
     </script>
 
-    <ion-content class="padding">
-        Welcome to De-Crast! Use the button above to add a new task!
+    <ion-content>
+        <ion-list>
+            <ion-item ng-repeat="task in tasks" class="item-icon-right" ng-click="goDetail(task)">
+                {{task.title}}
+                <!--  icon-accessory make it samll -->
+                <i class="icon ion-chevron-right icon-accessory"></i>
+            </ion-item>
+        </ion-list>
         <!--TODO add code here that pulls from our task dictionary and loads each task. Then, on click of task, load that task's
         TODO View page. We can use ng-repeat to load it-->
     </ion-content>

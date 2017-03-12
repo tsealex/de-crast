@@ -5,7 +5,7 @@
 // the 2nd parameter is an array of 'requires'
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
-angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services'])
+angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', 'decrast.server'])
 
 .run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
@@ -55,7 +55,11 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services'])
           controller: 'AddTaskCtrl'
       })
     .state('viewTask', {
-      url: '/viewTask',
+          url: '/viewTask',
+          params: {
+            task: 'Tasks'
+          },
+          cache: false,
           templateUrl: 'templates/task.html',
           controller: 'ViewTaskCtrl'
     })
@@ -106,36 +110,3 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services'])
 
 });
 
-
-/*
-This factory will be used for creating task objects and processing changes to the tasks. We will also likely add functions
-to  update local storage and the server in this factory.
- */
-decrast.factory('taskFact', function() {
-
-  return function() {
-
-      //task constructor?
-      self.addTask = function (name, descrip, category, time) {
-
-        var task = {};
-
-
-
-      return task;
-      };
-
-      //task editor?
-      self.editTask = function(task, name, descrip, category)
-      {
-
-
-
-      return task;
-      };
-
-
-      return self;
-  };
-
-});
