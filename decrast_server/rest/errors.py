@@ -48,4 +48,5 @@ errors = {
 	155: 'invalid refresh token',
 	160: 'userId and access token do not match',
 	165: 'invalid input',
+	170: 'unknown error',
 }
