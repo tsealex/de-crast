@@ -28,15 +28,19 @@ angular.module('decrast.controllers', [])
 
     $scope.goBlock = function() {
         $state.go('block', {});
+        $scope.popover.hide();
     };
         $scope.goNotif = function() {
             $state.go('manage-notifications', {});
+            $scope.popover.hide();
         };
         $scope.goLogout = function() {
             $state.go('logout', {});
+            $scope.popover.hide();
         };
         $scope.goCategories = function() {
             $state.go('manage-categories', {});
+            $scope.popover.hide();
         };
 
 
