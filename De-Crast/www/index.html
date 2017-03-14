@@ -39,8 +39,8 @@
     <!--
       The nav bar that will be updated as we navigate between views.
     -->
-    <ion-nav-bar class="bar-positive">
-      <ion-nav-back-button>
+    <ion-nav-bar class="bar-positive" ng-controller="BackCtrl">
+      <ion-nav-back-button ng-click="onClick()">
       </ion-nav-back-button>
     </ion-nav-bar>
     <!--

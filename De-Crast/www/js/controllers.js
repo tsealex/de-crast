@@ -15,6 +15,7 @@ angular.module('decrast.controllers', [])
 
     $scope.goDetail = function (task) {
         //$stateParams.$state.go('viewTask', {});
+        $ionicViewSwitcher.nextDirection('forward');
         $state.go('viewTask', {task: task});
         //console.log(task);
     };
@@ -23,23 +24,28 @@ angular.module('decrast.controllers', [])
 
 
     $scope.onClick = function () {
+        $ionicViewSwitcher.nextDirection('forward');
 
         $state.go('addTask', {});
     };
 
     $scope.goBlock = function() {
+        $ionicViewSwitcher.nextDirection('forward');
         $state.go('block', {});
         $scope.popover.hide();
     };
         $scope.goNotif = function() {
+            $ionicViewSwitcher.nextDirection('forward');
             $state.go('manage-notifications', {});
             $scope.popover.hide();
         };
         $scope.goLogout = function() {
+            $ionicViewSwitcher.nextDirection('forward');
             $state.go('logout', {});
             $scope.popover.hide();
         };
         $scope.goCategories = function() {
+            $ionicViewSwitcher.nextDirection('forward');
             $state.go('manage-categories', {});
             $scope.popover.hide();
         };
@@ -213,5 +219,12 @@ angular.module('decrast.controllers', [])
             viewData.enableBack = true;
         })
 
+    })
+    .controller('BackCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();
+
+        }
     });
 
