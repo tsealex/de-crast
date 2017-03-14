@@ -6,7 +6,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
         
         if(window.localStorage.getItem("login") == null){
-            //$state.go('login', {});
+            $state.go('login', {});
         }
         
     });
@@ -49,26 +49,30 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.popover.hide();
         };
         $scope.goLogout = function() {
+            $scope.popover.hide();
             //$state.go('logout', {});
             var confirmPopup = $ionicPopup.confirm({
                 title: 'Are You Sure to Quit?'
-                //,cancelType:'button-positive'
             });
             confirmPopup.then(function(res) {
             if(res) {
-                console.log('You leave');
-                $scope.ignoreDirty = true; //Prevent loop
-                $ionicHistory.clearCache();
-                $ionicHistory.clearHistory();
-                $state.go('login'); 
-                window.localStorage.clear();
+                    ngFB.logout().then(
+                        function (response) { 
+                                console.log('Facebook logout succeeded');
+                                $scope.ignoreDirty = true; //Prevent loop
+                                window.localStorage.clear();
+                                $ionicHistory.clearCache();
+                                $ionicHistory.clearHistory();
+                                $state.go('login'); 
+                            
+                        });
             } else {
                 console.log('You stay');
             }
             });
 
             //$ionicViewSwitcher.nextDirection('forward');
-            $scope.popover.hide();
+            
         };
         $scope.goCategories = function() {
             $ionicViewSwitcher.nextDirection('forward');
@@ -262,15 +266,22 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         })
-        */
-
+        */ 
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            $ionicHistory.clearCache();
+            $ionicHistory.clearHistory();
+        });
+        
         $scope.fbLogin = function () {
-            //console.log(JSON.stringify({'foo':true, 'baz':false}))
+            var runningInCordova = false;
+            document.addEventListener("deviceready", function () {
+                var runningInCordova = true;
+            }, false);
             ngFB.login({scope: 'email,user_posts,publish_actions'}).then(
                 function (response) {
                     if (response.status === 'connected') {
@@ -291,7 +302,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             });
 
                         console.log('Facebook login succeeded');
-                        $scope.closeLogin();
+                        if (runningInCordova) {
+                            $scope.closeLogin();
+                        }
                     } else {
                         alert('Facebook login failed');
                     }
