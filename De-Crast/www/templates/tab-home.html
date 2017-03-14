@@ -3,8 +3,8 @@
 
     <ion-nav-buttons side="primary">
         <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
-        <button class="button icon ion-gear-a button-positive" ng-click="openPopover($event)"></button>
-        <button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
+        <button class="button icon ion-gear-a button-positive" ng-click="openPopover($event)"></button></ion-nav-buttons>
+        <ion-nav-buttons side="secondary"><button class="button icon ion-edit button-positive" ng-click="onClick()"></button>
     </ion-nav-buttons>
 
     // script for settings popover
@@ -24,8 +24,8 @@
 
     <ion-content>
         <ion-list>
-            <ion-item ng-repeat="task in tasks" class="item-icon-right" ng-click="goDetail(task)">
-                {{task.title}}
+            <ion-item ng-repeat="task in task_list" class="item-icon-right" ng-click="goDetail(task)">
+                {{task.task_name}}      <object align="right">Due: {{ task.task_time | date : 'short' }}</object>
                 <!--  icon-accessory make it small -->
                 <i class="icon ion-chevron-right icon-accessory"></i>
             </ion-item>

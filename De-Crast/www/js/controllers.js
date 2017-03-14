@@ -2,23 +2,24 @@
 angular.module('decrast.controllers', [])
 
     .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams) {
-    $scope.tasks = Tasks.all();
+    //$scope.tasks = Tasks.all();
     $scope.name = "De-Crast User";
+        // function to fetch data from the server
+        $rootScope.task_list = {};
 
+        var listHold = angular.fromJson(localStorage.getItem('task_list'));
+
+        if (listHold != null) {
+            $rootScope.task_list = listHold;
+        }
 
     $scope.goDetail = function (task) {
         //$stateParams.$state.go('viewTask', {});
         $state.go('viewTask', {task: task});
         //console.log(task);
-    }
-/*
-    // function to fetch data from the server
-    $rootScope.task_list = {};
-    var listHold = angular.fromJson(localStorage.getItem('task_list'));
+    };
 
-    if (listHold != null) {
-        $rootScope.task_list = listHold;
-    }*/
+
 
 
     $scope.onClick = function () {
@@ -72,14 +73,31 @@ angular.module('decrast.controllers', [])
         });
 })
 
-    .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact) {
+    .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
-        $scope.pagename = "Add";
+        $scope.title = "Add";
 
 
         $scope.myFactory = new TaskFact();
+
+        $scope.onSubmit = function() {
+
+           var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, $scope.category, $scope.time, null, null, null);
+
+           $rootScope.task_list[newTask.task_id] = newTask;
+           localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+
+           //update server here
+
+            $ionicLoading.show({ template: 'Task Saved!', noBackdrop: true, duration: 1000 });
+            $ionicViewSwitcher.nextDirection('back');
+            $timeout(function() {
+                $state.go('tab.home', {});
+            }, 1000);
+
+        };
 
 
     })
@@ -87,8 +105,8 @@ angular.module('decrast.controllers', [])
     .controller('EditTaskCtrl', function ($scope) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
-        })
-        $scope.pagename = "Edit";
+        });
+        $scope.title = "Edit";
 
         $scope.editTask = function () {
 
@@ -98,9 +116,9 @@ angular.module('decrast.controllers', [])
     .controller('ViewTaskCtrl', function ($scope, $state, $stateParams) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
-        })
+        });
         $scope.task = $stateParams.task;
-        $scope.pagename = "View";
+        $scope.title = "View";
     })
 
     .controller('FtasksCtrl', function ($scope, Ftasks) {

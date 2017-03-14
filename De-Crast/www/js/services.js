@@ -229,10 +229,12 @@ angular.module('decrast.services', [])
 
             task.task_id = name+descrip+category+time;
 
-          /* CODE TO UPDATE MASTER LIST, LOCAL STORAGE, AND SERVER. NOT SURE IF IT SHOULD GO HERE OR IN CONTROLLER
+            /*
+          // CODE TO UPDATE MASTER LIST, LOCAL STORAGE, AND SERVER. NOT SURE IF IT SHOULD GO HERE OR IN CONTROLLER
            $rootScope.task_list[task.task_id] = task;
 
            localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+
            //api call
            */
             return task;
