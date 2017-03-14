@@ -5,9 +5,13 @@
 // the 2nd parameter is an array of 'requires'
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
-angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', 'decrast.server', 'ngCordova'])
 
-.run(function($ionicPlatform) {
+angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', 'decrast.server', 'ngOpenFB', 'ngCordova'])
+
+.run(function($ionicPlatform, ngFB) {
+  
+  ngFB.init({appId: '859339004207573'});
+
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
@@ -42,6 +46,7 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
 
   .state('tab.home', {
     url: '/home',
+    cache:false,
     views: {
       'tab-home': {
         templateUrl: 'templates/tab-home.html',
@@ -124,6 +129,11 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           url: '/logout',
           templateUrl: 'templates/logout.html',
           controller: 'LogoutCtrl'
+      })
+      .state('login', {
+          url: '/login',
+          templateUrl: 'templates/login.html',
+          controller: 'LoginCtrl'
       });
 
   // if none of the above states are matched, use this as the fallback
