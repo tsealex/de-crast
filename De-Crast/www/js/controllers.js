@@ -24,6 +24,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     $scope.goDetail = function (task) {
         //$stateParams.$state.go('viewTask', {});
+        $ionicViewSwitcher.nextDirection('forward');
         $state.go('viewTask', {task: task});
         //console.log(task);
     };
@@ -32,15 +33,18 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
 
     $scope.onClick = function () {
+        $ionicViewSwitcher.nextDirection('forward');
 
         $state.go('addTask', {});
     };
 
     $scope.goBlock = function() {
+        $ionicViewSwitcher.nextDirection('forward');
         $state.go('block', {});
         $scope.popover.hide();
     };
         $scope.goNotif = function() {
+            $ionicViewSwitcher.nextDirection('forward');
             $state.go('manage-notifications', {});
             $scope.popover.hide();
         };
@@ -62,9 +66,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 console.log('You stay');
             }
             });
+
+            //$ionicViewSwitcher.nextDirection('forward');
             $scope.popover.hide();
         };
         $scope.goCategories = function() {
+            $ionicViewSwitcher.nextDirection('forward');
             $state.go('manage-categories', {});
             $scope.popover.hide();
         };
@@ -166,8 +173,22 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         });
         $scope.turnStar = function (index) {
             //console.log("You turn star");
+            var star = "icon ion-ios-star";
+            var starOutline = "icon ion-ios-star-outline";
+            var starStatus = document.getElementById("starRate" + index).className;
+            if(starStatus == star){
+                document.getElementById("starRate" + index).className = starOutline;
+                //console.log("this is a star");
+            }
+            if(starStatus == starOutline){
+                document.getElementById("starRate" + index).className = star;
+                //console.log("this is a outline");
+            }
+            //console.log("click star");
+            /*
             document.getElementById("starRate" + index).className =
-                (document.getElementById("starRate" + index).className == "icon ion-ios-star") ? "icon ion-ios-star-outline" : "icon ion-ios-star";
+                (document.getElementById("starRate" + index).className == "icon ion-ios-star") ? "" : "icon ion-ios-star";
+                */
 
         }
     })
@@ -240,6 +261,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         })    
 
     })
+
     .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
@@ -248,10 +270,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         */
 
         $scope.fbLogin = function () {
+            //console.log(JSON.stringify({'foo':true, 'baz':false}))
             ngFB.login({scope: 'email,user_posts,publish_actions'}).then(
                 function (response) {
                     if (response.status === 'connected') {
                         window.localStorage.setItem("login", "true"); 
+                        
                         ngFB.api({
                             path: '/me',
                             params: {fields: 'id,name'}
@@ -259,12 +283,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             function (user) {
                                 //$scope.user = user;
                                 window.localStorage.setItem("user", user.name);
-                                alert(user.name);
+                                //alert(user.name);
                                 $state.go('tab.home', {});
                             },
                             function (error) {
                                 alert('Facebook error: ' + error.error_description);
                             });
+
                         console.log('Facebook login succeeded');
                         $scope.closeLogin();
                     } else {
@@ -273,6 +298,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 });
             
         };
-        
+    })
+
+    .controller('BackCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();
+
+        }
+
     });
 

@@ -1,9 +1,9 @@
 <!---Formatting for any of our Add, View, Edit task views. For now, I've put in general text boxes that don't necessarily
 link up to anything in particular in the controllers. We'll want to hook these up to the controllers and the task factory.
 -->
-<ion-view view-title="{{task.task_name}} Task">
+<ion-view view-title="Create New Task">
   <ion-content class="padding">
-Now we will {{title}} a task!<br>
+Create a task below
       <!--Task name-->
     <div class="bottom">
       <div style="float: left; width: 100%;">
@@ -27,16 +27,15 @@ Now we will {{title}} a task!<br>
         </label>
       </div>
 
-<!--Due Time-->
+<!--Due Time. For some reason it does not show up well on iOS. Needs to be checked on Android-->
       <div class="bottom">
         <div style="float: left; width: 50%;">
           <label class="item item-input">
-            <input type="datetime-local" name="time" id="time-textarea" ng-model="$parent.time" placeholder="Due Time">
+            <input type="text" name="time" id="time-textarea" ng-model="$parent.time" placeholder="Due Date" onclick="this.type='datetime-local'">
           </label>
         </div>
       </div>
-        <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
-        TODO file can be used by add, view, and edit -->
+
         <button class="button button-full" ng-click="onSubmit()">Create Task</button>
   </ion-content>
 </ion-view>
