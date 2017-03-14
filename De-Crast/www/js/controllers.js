@@ -1,17 +1,26 @@
 //Home of controllers. Most of our logic will go here.
-angular.module('decrast.controllers', [])
+angular.module('decrast.controllers', ['ngOpenFB'])
 
-    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams) {
+    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup) {
     //$scope.tasks = Tasks.all();
-    $scope.name = "De-Crast User";
-        // function to fetch data from the server
-        $rootScope.task_list = {};
-
-        var listHold = angular.fromJson(localStorage.getItem('task_list'));
-
-        if (listHold != null) {
-            $rootScope.task_list = listHold;
+    $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+        
+        if(window.localStorage.getItem("login") == null){
+            //$state.go('login', {});
         }
+        
+    });
+    
+    $scope.name = window.localStorage.getItem("user");
+
+    // function to fetch data from the server
+    $rootScope.task_list = {};
+
+    var listHold = angular.fromJson(localStorage.getItem('task_list'));
+
+    if (listHold != null) {
+        $rootScope.task_list = listHold;
+    }
 
     $scope.goDetail = function (task) {
         //$stateParams.$state.go('viewTask', {});
@@ -36,7 +45,23 @@ angular.module('decrast.controllers', [])
             $scope.popover.hide();
         };
         $scope.goLogout = function() {
-            $state.go('logout', {});
+            //$state.go('logout', {});
+            var confirmPopup = $ionicPopup.confirm({
+                title: 'Are You Sure to Quit?'
+                //,cancelType:'button-positive'
+            });
+            confirmPopup.then(function(res) {
+            if(res) {
+                console.log('You leave');
+                $scope.ignoreDirty = true; //Prevent loop
+                $ionicHistory.clearCache();
+                $ionicHistory.clearHistory();
+                $state.go('login'); 
+                window.localStorage.clear();
+            } else {
+                console.log('You stay');
+            }
+            });
             $scope.popover.hide();
         };
         $scope.goCategories = function() {
@@ -190,10 +215,11 @@ angular.module('decrast.controllers', [])
         });
     })
     */
-    .controller('LogoutCtrl', function ($scope, $state) {
+    
+    .controller('LogoutCtrl', function ($scope,$ionicHistory,$state,$window) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
-        })
+        });
 
     })
     .controller('ManageCategoriesCtrl', function ($scope, $state) {
@@ -211,7 +237,42 @@ angular.module('decrast.controllers', [])
     .controller('BlockCtrl', function ($scope, $state) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
-        })
+        })    
 
+    })
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window) {
+        /*
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+        })
+        */
+
+        $scope.fbLogin = function () {
+            ngFB.login({scope: 'email,user_posts,publish_actions'}).then(
+                function (response) {
+                    if (response.status === 'connected') {
+                        window.localStorage.setItem("login", "true"); 
+                        ngFB.api({
+                            path: '/me',
+                            params: {fields: 'id,name'}
+                        }).then(
+                            function (user) {
+                                //$scope.user = user;
+                                window.localStorage.setItem("user", user.name);
+                                alert(user.name);
+                                $state.go('tab.home', {});
+                            },
+                            function (error) {
+                                alert('Facebook error: ' + error.error_description);
+                            });
+                        console.log('Facebook login succeeded');
+                        $scope.closeLogin();
+                    } else {
+                        alert('Facebook login failed');
+                    }
+                });
+            
+        };
+        
     });
 
