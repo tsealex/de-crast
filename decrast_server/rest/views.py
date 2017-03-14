@@ -13,8 +13,10 @@ from .auth.auth import JWTAuthentication
 from .errors import APIError
 from .models import User
 from .models import Category
+from .models import Task
 from .serializers import UserSerializer
 from .serializers import ModelSerializer
+from .serializers import TaskSerializer
 
 # ref: https://docs.djangoproject.com/en/1.10/topics/db/queries/
 
@@ -144,4 +146,43 @@ class CategoryViewSet(viewsets.ViewSet):
 			raise APIError(100)
 		except Exception as e:
 			print("Category List ERROR: " + str(e))
+			raise APIError(170)
+
+
+'''
+	The Task view set class implementation.
+'''
+class TaskViewSet(viewsets.ViewSet):
+	parser_classes = (JSONParser,)
+
+	def list(self, request):
+		queryset = Task.objects.filter(owner=request.user)
+		serializer = TaskSerializer(queryset, many=True)
+		return Response(serializer.data)
+
+	def add(self, request):
+
+		try:
+			t_name = request.data['name']
+			t_deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
+			t_desc = request.data['description']
+			t_category = request.data['category']
+
+			task = Task(name=t_name, description=t_desc,
+				deadline=t_deadline, owner=request.user)
+
+			task.category_id = t_category
+			task.viewer_id = request.data['viewer']
+			task.last_notify_ts = datetime.datetime.now()
+
+			print("t_deadline = " + str(t_deadline))
+			print("task.deadline = " + str(task.deadline))
+
+			task.save()
+			return Response({'taskId': task.id})
+
+		except KeyError:
+			raise APIError(100)
+		except Exception as e:
+			print("ERROR adding task: " + str(e))
 			raise APIError(170)

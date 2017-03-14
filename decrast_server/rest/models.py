@@ -32,8 +32,20 @@ class User(AbstractBaseUser):
 	def is_superuser(self):
 		return False
 
+class Category(models.Model):
+	name = models.CharField(max_length=32, null=False)
+	user = models.ForeignKey(User)
+
 class Task(models.Model):
-	pass
+	owner = models.ForeignKey(User, related_name='owner', on_delete=models.CASCADE)
+	viewer = models.ForeignKey(User, related_name='viewer', on_delete=models.SET_NULL, null=True)
+	category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+
+	deadline = models.DateTimeField(null=False)
+	last_notify_ts = models.DateTimeField(null=False)
+
+	name = models.CharField(max_length=32, null=False)
+	description = models.CharField(max_length=128)
 
 class Evidence(models.Model):
 	pass
@@ -43,8 +55,4 @@ class Notification(models.Model):
 
 class Consequence(models.Model):
 	pass
-
-class Category(models.Model):
-	name = models.CharField(max_length=32, null=False)
-	user = models.ForeignKey(User)
 
