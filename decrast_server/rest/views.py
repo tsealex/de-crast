@@ -156,9 +156,19 @@ class TaskViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 
 	def list(self, request):
-		queryset = Task.objects.filter(owner=request.user)
-		serializer = TaskSerializer(queryset, many=True)
-		return Response(serializer.data)
+		try:
+			ids = request.GET.getlist('id')
+
+			if(len(ids) > 0):
+				filter_string = "pk__in"+str(ids)
+				queryset = Task.objects.filter(pk__in=ids)
+			else:
+				queryset = Task.objects.filter(owner=request.user)
+			serializer = TaskSerializer(queryset, many=True)
+			return Response(serializer.data)
+		except Exception as e:
+			print("ERROR: " + str(e))
+			raise APIError(170)
 
 	def add(self, request):
 
