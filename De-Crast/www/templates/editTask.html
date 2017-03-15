@@ -1,20 +1,20 @@
 <!---Formatting for any of our Add, View, Edit task views. For now, I've put in general text boxes that don't necessarily
 link up to anything in particular in the controllers. We'll want to hook these up to the controllers and the task factory.
 -->
-<ion-view view-title="{{task.task_name}} Task">
+<ion-view view-title="Edit Task">
     <ion-content class="padding">
-        Now we will {{title}} a task!<br>
+        Edit your task:<br>
         <!--Task name-->
         <div class="bottom">
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="taskName" id="taskName-textarea"  value={{task.task_name}} readonly>
+                    <input type="text" name="taskName" id="taskName-textarea" ng-model="$parent.taskName" placeholder="Task Name">
                 </label>
             </div>
             <!--Task description-->
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="descrip" id="descrip-textarea" value={{task.task_descrip}} readonly>
+                    <input type="text" name="descrip" id="descrip-textarea" ng-model="$parent.descrip" placeholder="Task Description" >
                 </label>
             </div>
         </div>
@@ -23,7 +23,7 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
-                    <input type="text" name="category" id="category-textarea" value={{task.task_category}} readonly>
+                    <input type="text" name="category" id="category-textarea" ng-model="$parent.category" placeholder="Category">
                 </label>
             </div>
 
@@ -37,6 +37,6 @@ link up to anything in particular in the controllers. We'll want to hook these u
             </div>
             <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
             TODO file can be used by add, view, and edit -->
-            <button class="button button-full" ng-click="onSubmit(task)">Edit This Task</button>
+            <button class="button button-full" ng-click="editTask()">Save Changes</button>
     </ion-content>
 </ion-view>

@@ -1,5 +1,5 @@
 <!--Main homeview for decrast-->
-<ion-view view-title="Welcome, {{name}}">
+<ion-view view-title="Home">
 
     <ion-nav-buttons side="primary">
         <!--Couldn't get the pencil icon to align right. Maybe someone with better HTML/CSS skills can fix it!-->
@@ -23,7 +23,9 @@
     </script>
 
     <ion-content>
-        <ion-list>
+        <h4>&nbsp;&nbsp;&nbsp;Welcome, {{name}} </h4>
+
+           <ion-list>
             <ion-item ng-repeat="task in task_list" class="item-icon-right" ng-click="goDetail(task)">
                 {{task.task_name}}      <object align="right">Due: {{ task.task_time | date : 'short' }}</object>
                 <!--  icon-accessory make it small -->

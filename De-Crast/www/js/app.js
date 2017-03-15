@@ -77,7 +77,11 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
     })
     .state('editTask', {
       url: '/editTask',
-          templateUrl: 'templates/task.html',
+        params: {
+            task: 'Tasks'
+        },
+        cache: false,
+          templateUrl: 'templates/editTask.html',
           controller: 'EditTaskCtrl'
     })
 
