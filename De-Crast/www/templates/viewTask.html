@@ -8,13 +8,13 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="taskName" id="taskName-textarea"  value={{task.task_name}} readonly>
+                    <textarea disabled type="text" name="taskName" id="taskName-textarea" style="background: transparent; resize: none;">{{task.task_name}}</textarea>
                 </label>
             </div>
             <!--Task description-->
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="descrip" id="descrip-textarea" value={{task.task_descrip}} readonly>
+                    <textarea disabled type="text" name="descrip" id="descrip-textarea" style="background: transparent; resize: none;">{{task.task_descrip}}</textarea>
                 </label>
             </div>
         </div>
@@ -23,15 +23,16 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
-                    <input type="text" name="category" id="category-textarea" value={{task.task_category}} readonly>
+                    <textarea disabled type="text" name="category" id="category-textarea" style="background: transparent; resize: none;">{{task.task_category}}</textarea>
                 </label>
             </div>
+        </div>
 
             <!--Due Time: I don't like how this is displaying so we should fix this-->
             <div class="bottom">
                 <div style="float: left; width: 50%;">
                     <label class="item item-input">
-                        <!--input type="text" name="time" id="time-textarea" readonly--> {{task.task_time | date: 'medium'}}
+                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium'}}</textarea>
                     </label>
                 </div>
             </div>

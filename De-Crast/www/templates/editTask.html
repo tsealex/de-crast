@@ -7,14 +7,14 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <!--Task name-->
         <div class="bottom">
             <div style="float: left; width: 100%;">
-                <label class="item item-input">
-                    <input type="text" name="taskName" id="taskName-textarea" ng-model="$parent.taskName" placeholder="Task Name">
+                <label class="item item-input" >
+                    <textarea type="text" name="taskName" id="taskName-textarea" ng-model="$parent.taskName" placeholder="Task Name" style="background: transparent; resize: none;"></textarea>
                 </label>
             </div>
             <!--Task description-->
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="descrip" id="descrip-textarea" ng-model="$parent.descrip" placeholder="Task Description" >
+                    <textarea type="text" name="descrip" id="descrip-textarea" ng-model="$parent.descrip" placeholder="Task Description" style="background: transparent; resize: none;"></textarea>
                 </label>
             </div>
         </div>
@@ -23,7 +23,7 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
-                    <input type="text" name="category" id="category-textarea" ng-model="$parent.category" placeholder="Category">
+                    <textarea type="text" name="category" id="category-textarea" ng-model="$parent.category" placeholder="Category" style="background: transparent; resize: none;"></textarea>
                 </label>
             </div>
 
@@ -31,10 +31,11 @@ link up to anything in particular in the controllers. We'll want to hook these u
             <div class="bottom">
                 <div style="float: left; width: 50%;">
                     <label class="item item-input">
-                        <!--input type="text" name="time" id="time-textarea" readonly--> {{task.task_time | date: 'medium'}}
+                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium'}}</textarea>
                     </label>
                 </div>
             </div>
+            
             <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
             TODO file can be used by add, view, and edit -->
             <button class="button button-full" ng-click="editTask()">Save Changes</button>
