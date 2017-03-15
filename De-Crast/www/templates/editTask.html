@@ -8,13 +8,13 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="taskName" id="taskName-textarea" ng-model="$parent.taskName" value={{task.task_name}}>
+                    <input type="text" name="taskName" id="taskName-textarea" ng-model="$parent.taskName" placeholder="Task Name">
                 </label>
             </div>
             <!--Task description-->
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <input type="text" name="descrip" id="descrip-textarea" ng-model="$parent.descrip" value={{task.task_descrip}} >
+                    <input type="text" name="descrip" id="descrip-textarea" ng-model="$parent.descrip" placeholder="Task Description" >
                 </label>
             </div>
         </div>
@@ -23,11 +23,11 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
-                    <input type="text" name="category" id="category-textarea" ng-model="$parent.category" value={{task.task_category}}>
+                    <input type="text" name="category" id="category-textarea" ng-model="$parent.category" placeholder="Category">
                 </label>
             </div>
 
-            <!--Due Time-->
+            <!--Due Time: I don't like how this is displaying so we should fix this-->
             <div class="bottom">
                 <div style="float: left; width: 50%;">
                     <label class="item item-input">
@@ -37,6 +37,6 @@ link up to anything in particular in the controllers. We'll want to hook these u
             </div>
             <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
             TODO file can be used by add, view, and edit -->
-            <button class="button button-full" ng-click="onSubmit()">Edit This Task</button>
+            <button class="button button-full" ng-click="editTask()">Save Changes</button>
     </ion-content>
 </ion-view>

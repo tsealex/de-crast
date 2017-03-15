@@ -10,7 +10,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         
     });
-    
     $scope.name = window.localStorage.getItem("user");
 
     // function to fetch data from the server
@@ -29,15 +28,18 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         //console.log(task);
     };
 
-
-
-
+        /*
+        Function to transition to adding a task
+         */
     $scope.onClick = function () {
         $ionicViewSwitcher.nextDirection('forward');
 
         $state.go('addTask', {});
     };
 
+    /*
+    Transition functions for popover menu
+     */
     $scope.goBlock = function() {
         $ionicViewSwitcher.nextDirection('forward');
         $state.go('block', {});
@@ -119,42 +121,82 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.myFactory = new TaskFact();
 
         $scope.onSubmit = function() {
+            if($scope.taskName == null) {
+                $ionicLoading.show({template: 'Please Enter A Task Name', noBackdrop: true, duration: 1000});
+            }
+            else if($scope.time == null) {
+                $ionicLoading.show({template: 'Please Enter A Due Time', noBackdrop: true, duration: 1000});
+            }
+            else {
+                var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, $scope.category, $scope.time, null, null, null);
 
-           var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, $scope.category, $scope.time, null, null, null);
+                $rootScope.task_list[newTask.task_id] = newTask;
+                localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
 
-           $rootScope.task_list[newTask.task_id] = newTask;
-           localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+                //update server here
 
-           //update server here
-
-            $ionicLoading.show({ template: 'Task Saved!', noBackdrop: true, duration: 1000 });
-            $ionicViewSwitcher.nextDirection('back');
-            $timeout(function() {
-                $state.go('tab.home', {});
-            }, 1000);
-
+                $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
+                $ionicViewSwitcher.nextDirection('back');
+                $timeout(function () {
+                    $state.go('tab.home', {});
+                }, 1000);
+            }
         };
 
 
     })
 
-    .controller('EditTaskCtrl', function ($scope) {
+    .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
+        $scope.task = $stateParams.task;
         $scope.title = "Edit";
+        $scope.taskName = $scope.task.task_name;
+        $scope.category = $scope.task.task_category;
+        $scope.descrip = $scope.task.task_descrip;
+        $scope.myFactory = new TaskFact();
 
         $scope.editTask = function () {
+
+            if($scope.taskName == null) {
+                $ionicLoading.show({template: 'Please Enter A Task Name', noBackdrop: true, duration: 1000});
+            }
+            else {
+              var tempTask = $scope.myFactory.editTask($scope.task, $scope.taskName, $scope.descrip, $scope.category);
+              // $rootScope.task_list[tempTask.id] = tempTask;
+
+                localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+
+                //update server here
+
+                $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
+                $ionicViewSwitcher.nextDirection('back');
+
+                /*
+                $timeout(function () {
+                    $state.go('tab.home', {});
+                }, 1000);*/
+                $state.go('tab.home');
+            }
 
         }
     })
 
-    .controller('ViewTaskCtrl', function ($scope, $state, $stateParams) {
+    .controller('ViewTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
         $scope.task = $stateParams.task;
         $scope.title = "View";
+
+
+        $scope.onSubmit = function(task) {
+            $ionicViewSwitcher.nextDirection('forward');
+            $state.go('editTask', {task: task});
+        }
+
+
     })
 
     .controller('FtasksCtrl', function ($scope, Ftasks) {
