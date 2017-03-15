@@ -8,6 +8,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         if(window.localStorage.getItem("login") == null){
             $state.go('login', {});
         }
+        $ionicHistory.clearCache();
+        $ionicHistory.clearHistory();
         
     });
     
@@ -266,7 +268,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory, $http) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -295,6 +297,64 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 //$scope.user = user;
                                 window.localStorage.setItem("user", user.name);
                                 //alert(user.name);
+                                console.log(JSON.stringify(user));
+                                
+                                /* TEST 1
+                                var http = new XMLHttpRequest();
+                                var url = 'http://alext.se:8000/auth/';
+                                var facebookId = user.id; 
+                                var facebookToken = "RANDOM-STRING";
+                                var params = "facebookId=" + facebookId + "&facebookToken=" + facebookToken;
+                                http.open("POST", url, true);
+
+                                //Send the proper header information along with the request
+                                http.setRequestHeader("Content-type", "application/json");
+                                http.setRequestHeader("Access-Control-Allow-Origin", "localhost:8100");
+
+                                http.onreadystatechange = function() {//Call a function when the state changes.
+                                    if(http.readyState == 4 && http.status == 200) {
+                                        alert(http.responseText);
+                                    }
+                                }
+                                http.send(params);*/ 
+                                
+                                /* TEST 2
+                                var obj = {
+                                    method: "POST",
+                                    path: "",
+                                    params: {
+                                        facebookId: user.id,
+                                        facebookToken:"RANDOM-STRING"}
+                                    };
+
+                                createRequest(obj);*/
+                                
+                                var headers = {
+                                    'Access-Control-Allow-Origin' : '*',
+                                    'Access-Control-Allow-Methods' : 'POST, GET, OPTIONS, PUT',
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'Access-Control-Allow-Credentials': 'true'
+                                };
+                                $http({
+                                    method: "POST",
+                                    headers: headers,
+                                    url: 'http://alext.se:8000/auth/',
+                                    data: {
+                                        facebookId: user.id,
+                                        facebookToken:"RANDOM-STRING"}
+                                    })
+                                        
+                                    .success(function(data,status,headers,config){
+                                        console.log("You got it: " + JSON.stringify(data));
+                                        alert("You got it: " + JSON.stringify(data));
+                                        }
+                                    ).error(function(data){
+                                        console.log(JSON.stringify(headers));
+                                        alert("You fail");
+                                        });
+
+
                                 $state.go('tab.home', {});
                             },
                             function (error) {
