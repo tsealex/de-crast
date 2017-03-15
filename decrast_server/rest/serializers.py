@@ -17,3 +17,8 @@ class TaskSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Task
 		fields = ('id', 'name', 'owner', 'viewer', 'deadline', 'last_notify_ts', 'category')
+
+class IdSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Task
+		fields = ('id',)

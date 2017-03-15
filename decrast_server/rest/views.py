@@ -17,6 +17,7 @@ from .models import Task
 from .serializers import UserSerializer
 from .serializers import ModelSerializer
 from .serializers import TaskSerializer
+from .serializers import IdSerializer
 
 # ref: https://docs.djangoproject.com/en/1.10/topics/db/queries/
 
@@ -195,4 +196,13 @@ class TaskViewSet(viewsets.ViewSet):
 			raise APIError(100)
 		except Exception as e:
 			print("ERROR adding task: " + str(e))
+			raise APIError(170)
+
+	def viewing_list(self, request):
+		try:
+			queryset = Task.objects.filter(viewer=request.user)
+			serializer = IdSerializer(queryset, many=True)
+			return Response(serializer.data)
+		except Exception as e:
+			print("ERROR listing viewed tasks: " + str(e))
 			raise APIError(170)
