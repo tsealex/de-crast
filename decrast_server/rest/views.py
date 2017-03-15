@@ -172,25 +172,40 @@ class TaskViewSet(viewsets.ViewSet):
 			raise APIError(170)
 
 	def add(self, request):
-
 		try:
-			t_name = request.data['name']
-			t_deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
-			t_desc = request.data['description']
-			t_category = request.data['category']
+			# URL params are ALWAYS in GET
+			id_param = request.GET.get('id', None)
 
-			task = Task(name=t_name, description=t_desc,
-				deadline=t_deadline, owner=request.user)
+			if(id_param is not None):
+				print("ID param: " + id_param)
+				print(str(type(id_param)))
 
-			task.category_id = t_category
-			task.viewer_id = request.data['viewer']
-			task.last_notify_ts = datetime.datetime.now()
+				curr_task = Task.objects.get(pk=id_param)
+				curr_task.name = request.data['name']
+				curr_task.description = request.data['description']
+				curr_task.deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
 
-			print("t_deadline = " + str(t_deadline))
-			print("task.deadline = " + str(task.deadline))
+				curr_task.save()
+				return Response({'taskId': curr_task.id})
 
-			task.save()
-			return Response({'taskId': task.id})
+			else:
+				t_name = request.data['name']
+				t_deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
+				t_desc = request.data['description']
+				t_category = request.data['category']
+
+				task = Task(name=t_name, description=t_desc,
+					deadline=t_deadline, owner=request.user)
+
+				task.category_id = t_category
+				task.viewer_id = request.data['viewer']
+				task.last_notify_ts = datetime.datetime.now()
+
+				print("t_deadline = " + str(t_deadline))
+				print("task.deadline = " + str(task.deadline))
+
+				task.save()
+				return Response({'taskId': task.id})
 
 		except KeyError:
 			raise APIError(100)
