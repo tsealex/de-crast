@@ -138,13 +138,20 @@ class CategoryViewSet(viewsets.ViewSet):
 	def add(self, request, pk=None):
 		try:
 			user = request.user
-			cat_name = request.data['name']
+			cat_id = request.GET.get('id', None)
 
-			category = Category.objects.create(name=cat_name, user=user)
-			category.save()
+			if(cat_id is not None):
+				curr_cat = Category.objects.get(pk=cat_id)
+				curr_cat.name = request.data['name']
+				curr_cat.save()
 
-			return Response({"categoryId": category.id})
+				return Response({"categoryId": curr_cat.id})
+			else:
+				cat_name = request.data['name']
+				category = Category.objects.create(name=cat_name, user=user)
+				category.save()
 
+				return Response({"categoryId": category.id})
 		except KeyError:
 			raise APIError(100)
 		except Exception as e:

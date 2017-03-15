@@ -8,8 +8,7 @@ urlpatterns = [
 	url(r'^users/$', UserViewSet.as_view({'get': 'list'})),
 	url(r'^user/$', UserViewSet.as_view({'post': 'update'})),
 	url(r'^user/category/$', CategoryViewSet.as_view({'put': 'add'})),
-	url(r'^user/categories/$', CategoryViewSet.as_view({'get': 'list'})),
-	url(r'^user/categories/$', CategoryViewSet.as_view({'get': 'list'})),
+	url(r'^user/categories/$', CategoryViewSet.as_view({'get': 'list', 'put': 'add'})),
 	url(r'^user/tasks/$', TaskViewSet.as_view({'get': 'list', 'post': 'add'})),
 	url(r'^user/tasks/viewing/$', TaskViewSet.as_view({'get': 'viewing_list'})),
 	url(r'search/$', UserViewSet.as_view({'get': 'search'}))
