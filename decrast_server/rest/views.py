@@ -116,7 +116,21 @@ class UserViewSet(viewsets.ViewSet):
 			})
 		except KeyError:
 			raise APIError(100)
-		
+
+	def search(self, request):
+		try:
+			users = request.GET.get('username', None)
+
+			if(users is not None):
+				queryset = User.objects.filter(username__contains=users)
+				serializer = UserSerializer(queryset, many=True)
+				return Response(serializer.data)
+			else:
+				raise APIError(175)
+		except Exception as e:
+			print("ERROR searching users: " + str(e))
+			raise APIError(170)
+
 
 class CategoryViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)

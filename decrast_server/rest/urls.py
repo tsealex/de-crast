@@ -12,4 +12,5 @@ urlpatterns = [
 	url(r'^user/categories/$', CategoryViewSet.as_view({'get': 'list'})),
 	url(r'^user/tasks/$', TaskViewSet.as_view({'get': 'list', 'post': 'add'})),
 	url(r'^user/tasks/viewing/$', TaskViewSet.as_view({'get': 'viewing_list'})),
+	url(r'search/$', UserViewSet.as_view({'get': 'search'}))
 ]

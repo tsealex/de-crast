@@ -49,4 +49,5 @@ errors = {
 	160: 'userId and access token do not match',
 	165: 'invalid input',
 	170: 'unknown error',
+	175: 'illegal URL parameters',
 }
