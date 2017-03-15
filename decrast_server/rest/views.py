@@ -7,6 +7,9 @@ from rest_framework.permissions import IsAuthenticated
 
 import datetime
 import time
+import http.client
+import json
+import os
 
 from .auth.serializers import JWTSerializer, RefreshSerializer
 from .auth.auth import JWTAuthentication
@@ -19,6 +22,8 @@ from .serializers import ModelSerializer
 from .serializers import TaskSerializer
 from .serializers import IdSerializer
 
+APP_ID = "859339004207573"
+
 # ref: https://docs.djangoproject.com/en/1.10/topics/db/queries/
 
 # Create your views here.
@@ -30,6 +35,8 @@ class AuthViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 	authentication_classes = ()
 	permission_classes = ()
+
+	app_access_token=""
 
 	'''
 	For testing purpose only
@@ -51,6 +58,9 @@ class AuthViewSet(viewsets.ViewSet):
 				})
 			# TODO: input check
 			if validator.is_valid():
+# TODO: Uncomment this line to perform FB token validation
+#				self.validate_fb_token(request.data['facebookToken'])
+
 				return Response({
 					'userId': validator.object.get('user').id,
 					'accessToken': validator.object.get('ac_tk'),
@@ -73,6 +83,64 @@ class AuthViewSet(viewsets.ViewSet):
 					'refreshToken': validator.object.get('rf_tk'),
 					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
 				})
+
+	def validate_fb_token(self, fb_token):
+		'''
+		Validate the provided Facebook token.
+		'''
+
+		self.app_access_token = self.get_app_access_token()
+		legal_token = self.verify_fb_token(fb_token)
+		if(legal_token == False):
+			raise APIError(110)
+
+
+	def get_app_access_token(self):
+		'''
+		This function gets our application's access token.
+	 	The application access token is used to verify a user's
+	 	Facebook access token for authorization.
+
+		Per: https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
+		'''
+
+		try:
+			# App's secret key is stored in a local env var.
+			secret_key = os.environ['FB_SECRET_KEY']
+
+			conn = http.client.HTTPSConnection("graph.facebook.com")
+			conn.request("GET", "/oauth/access_token?client_id={}&client_secret={}&" \
+			"grant_type=client_credentials".format(APP_ID, secret_key))
+			resp = conn.getresponse()
+			resp_str = resp.read().decode("utf-8")
+			equals_index = resp_str.index('=')
+
+			return resp_str[(equals_index+1):]
+
+		except ValueError as ve:
+			print("Illegal access token response: " + str(ve))
+			raise APIError(170)
+		except Exception as e:
+			print("Access token response error: " + str(e))
+			raise APIError(170)
+
+	def verify_fb_token(self, fb_token):
+		'''
+		This function checks to see if the provided FB user access
+		token is valid.
+
+		Per: https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow#checktoken
+		'''
+
+		conn = http.client.HTTPSConnection("graph.facebook.com")
+		conn.request("GET", "/debug_token?input_token={}&access_token={}"
+			.format(fb_token, self.app_access_token))
+		resp = conn.getresponse()
+		bytes = resp.read()
+
+		as_json = json.loads(bytes.decode("utf-8"))
+		return as_json['data']['is_valid']
+
 
 '''
 
