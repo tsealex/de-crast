@@ -1,6 +1,6 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', ['ngOpenFB'])
-
+    
     .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup) {
     //$scope.tasks = Tasks.all();
     $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
@@ -310,7 +310,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory, $http, ApiEndpoint) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -336,73 +336,33 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             params: {fields: 'id,name'}
                         }).then(
                             function (user) {
-                                //$scope.user = user;
                                 window.localStorage.setItem("user", user.name);
-                                //alert(user.name);
                                 console.log(JSON.stringify(user));
-                                
-                                /* TEST 1
-                                var http = new XMLHttpRequest();
-                                var url = 'http://alext.se:8000/auth/';
-                                var facebookId = user.id; 
-                                var facebookToken = "RANDOM-STRING";
-                                var params = "facebookId=" + facebookId + "&facebookToken=" + facebookToken;
-                                http.open('GET', url, true);
-
-                                //Send the proper header information along with the request
-                                http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                                http.setRequestHeader('Access-Control-Allow-Origin', '*');
-                                http.setRequestHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT');
-
-                                http.onreadystatechange = function() {//Call a function when the state changes.
-                                    if(http.readyState == 4 && http.status == 200) {
-                                        alert(http.responseText);
-                                    }
-                                }
-                                http.send();
-                                */
-                                // TEST 2
-                                var headers = {
-                                    'Access-Control-Allow-Origin' : '*',
-                                    'Access-Control-Allow-Methods' : 'POST, GET, OPTIONS, PUT',
-                                    'Access-Control-Allow-Credentials': 'true',
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                };
-                                $http({
-                                    method: 'POST',
-                                    headers: headers,
-                                    url: ApiEndpoint.url + 'auth/',
-                                    data: {
-                                        facebookId: user.id,
-                                        facebookToken:"RANDOM-STRING"}
-                                    })
+                                var userId; // user's De-Crast Id
+                                var accessToken;
+                                // user facebookId to login user
+                                Server.loginUser(user.id).then(function(data) {
+                                    userId = data.data.userId;
+                                    accessToken = data.data.accessToken;
+                                    window.localStorage.setItem("userId", userId);
+                                    console.log(userId, accessToken);
+                                    Server.fetchUsers(accessToken).then(function(data) {
                                         
-                                    .success(function(data,status,headers,config){
-                                        console.log(JSON.stringify(status));
-                                        console.log(JSON.stringify(headers));
-                                        console.log(JSON.stringify(config));
-                                        console.log("You got it: " + JSON.stringify(data));
-                                        alert("You got it: " + JSON.stringify(data));
+                                        console.log(JSON.stringify(data.data));
+                                        var userList = data.data;
+                                        for(i=0; i<userList.length;i++){
+                                            if(userList[i].id == userId){
+                                                if(userList[i].username == null){
+
+                                                    // Popup for new user
+                                                    $scope.myPopup(user.name, userId, accessToken);
+                                                }else{
+                                                    $state.go('tab.home', {});
+                                                }
+                                            }
                                         }
-                                    ).error(function(data){
-                                        console.log(JSON.stringify(headers));
-                                        console.log(JSON.stringify(data));
-                                        alert("You fail");
                                     });
-                                /* TEST GET
-                                $http.get("http://alext.se:8000/auth/")
-        
-                                    .success(function(data,status,headers,config){
-                                        console.log(JSON.stringify(data));
-                                        console.log(JSON.stringify(status));
-                                        console.log(JSON.stringify(headers));
-                                        console.log(JSON.stringify(config));
-                                    }).error(function(data){
-                                        console.log(JSON.stringify(data));
-                                    });
-                                */
-                                $state.go('tab.home', {});
+                                });
                             },
                             function (error) {
                                 alert('Facebook error: ' + error.error_description);
@@ -418,6 +378,46 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 });
             
         };
+
+
+        $scope.myPopup = function (userFBName, userId, accessToken) {
+            var myPopup = $ionicPopup.show({
+                template: '<label class="item item-input"><input type="text" id="DCname" placeholder="De-Crast Name" value=\"'+userFBName+'\"></label>',
+                title: 'Create De-Crast Name',
+                buttons: [{
+                    text: 'Later',
+                    type: 'button-negative',
+                }, {
+                    text: 'Confirm',
+                    type: 'button-positive',
+                    onTap: function(e) {
+                        var userDCName = document.getElementById('DCname').value;
+                        if (userDCName == null || userDCName == "") {
+                            alert("Cannot leave De-Crast name blank!")
+                            //window.plugins.toast.show("Cannot leave username blank", 'long', 'center', function(a){console.log('nothing')}, function(b){alert('toast error: ' + b)});
+                            console.log("toasthere, plz complete");
+                            e.preventDefault();
+                        }else{
+                            return userDCName;
+                        }
+                    }
+                }, ]
+            });
+
+            myPopup.then(function(res) {
+                if (res) {
+                    window.localStorage.setItem("user", res);
+                    Server.changeUsername(userId, accessToken, res).then(function(data) {
+                        console.log(JSON.stringify(data));
+                    });
+                    $state.go('tab.home', {});
+                } else {
+                    console.log('Later');
+                    $state.go('tab.home', {});
+                }
+            });
+        }
+
     })
 
     .controller('BackCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory) {
@@ -426,6 +426,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.goBack();
 
         }
+    })
 
-    });
-
+/* localStorage List:
+"userId", userId
+"accessToken", accessToken
+"login", true/false
+"user", user
+*/

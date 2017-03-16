@@ -217,7 +217,7 @@ angular.module('decrast.services', [])
  to  update local storage and the server in this factory.
  */
 
-    .factory('TaskFact', function() {
+.factory('TaskFact', function() {
 
     return function() {
 

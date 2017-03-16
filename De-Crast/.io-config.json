@@ -1,8 +1,8 @@
-{"app_id":"670e0fd1",
+{"app_id":"670e0fd1"/*,
  "proxies": [
     {
     "path": "",
     "proxyUrl": "http://alext.se:8000/"
     }
- ]
+ ]*/
  }

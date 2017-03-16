@@ -49,7 +49,7 @@ gulp.task('git-check', function(done) {
   }
   done();
 });
-
+/*
 var replace = require('replace');
 var replaceFiles = ['./www/js/app.js'];
 
@@ -61,7 +61,7 @@ gulp.task('add-proxy', function() {
     recursive: false,
     silent: false,
   });
-})
+});
 
 gulp.task('remove-proxy', function() {
   return replace({
@@ -71,4 +71,4 @@ gulp.task('remove-proxy', function() {
     recursive: false,
     silent: false,
   });
-})
+});*/
