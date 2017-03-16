@@ -42,33 +42,40 @@ angular.module('decrast.server', [])
                             headers: {'Authorization': 'JWT ' + accessToken},
                             data: {userId: uid, username: username}
                         }).then(function(response){
-                            console.log(accessToken);
                             return response;
                         }, function(response){
                             return response;
                         });
+            },
+            addNewTask: function(accessToken, name, deadline, description, category, viewer) {
+                return $http({
+                            method:'POST',
+                            url: ApiEndpoint.url + 'user/tasks/',
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                            data: {
+                                name: name,
+                                deadline: deadline,
+                                description: description,
+                                category: category,
+                                viewer: null
+                            }
+                        }).then(function(response){
+                            return response;
+                        }, function(response){
+                            return response;
+                });
+            },
+            getUserTasks: function(accessToken){
+                return $http({
+                            method:'GET',
+                            url: ApiEndpoint.url + 'user/tasks/',
+                            headers: {'Authorization': 'JWT ' + accessToken}
+                        }).then(function(response){
+                            return response;
+                        }, function(response){
+                            return response;
+                });
             }
             
         }
     });
-/*
-
-                                $http({
-                                    method: 'POST',
-                                    headers: headers,
-                                    url: ,
-                                    data: 
-                                        
-                                    .success(function(data,status,headers,config){
-                                        console.log(JSON.stringify(status));
-                                        console.log(JSON.stringify(headers));
-                                        console.log(JSON.stringify(config));
-                                        console.log("You got it: " + JSON.stringify(data));
-                                        alert("You got it: " + JSON.stringify(data));
-                                        }
-                                    ).error(function(data){
-                                        console.log(JSON.stringify(headers));
-                                        console.log(JSON.stringify(data));
-                                        alert("You fail");
-                                    });
-*/
