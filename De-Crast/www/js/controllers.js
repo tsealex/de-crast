@@ -169,7 +169,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
         };
 
-
     })
 
     .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading) {
@@ -302,11 +301,38 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         });
 
     })
-    .controller('ManageCategoriesCtrl', function ($scope, $state) {
+    .controller('ManageCategoriesCtrl', function ($scope, $state, $rootScope, Categories, Server, $ionicLoading) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
-        })
+            // populate the category list
+            $rootScope.category_list = {};
+            $scope.populateCategories();
+            
+            var categoryHold = angular.fromJson(localStorage.getItem('category_list'));
 
+            if (categoryHold != null) {
+                $rootScope.category_list = categoryHold;
+            }
+            
+        })
+        
+        $scope.addCategory = function(name){
+            Server.addCategory($rootScope.accessToken, name).then(function(data){
+                var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
+                $rootScope.category_list[data.data.categoryId] = newCategory;
+            });
+        }
+        $scope.populateCategories = function(){
+            Server.getCategory($rootScope.accessToken).then(function(data){
+                if(data.data.length == 0){
+                    $ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
+                }
+                for(i=0;i<data.data.length;i++){
+                    $rootScope.category_list[data.data[i].id] = data.data[i];
+                }
+            });
+            localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
+        }
     })
     .controller('ManageNotificationsCtrl', function ($scope, $state) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {

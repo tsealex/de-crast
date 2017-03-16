@@ -76,7 +76,32 @@ angular.module('decrast.server', [])
                         }, function(response){
                             return response;
                 });
+            },
+            addCategory: function(accessToken, name){
+                return $http({
+                            method:'PUT',
+                            url: ApiEndpoint.url + 'user/category/',
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                            data: {
+                                name: name
+                            }
+                        }).then(function(response){
+                            return response;
+                        }, function(response){
+                            return response;
+                });
+
+            },
+            getCategory: function(accessToken){
+                return $http({
+                            method:'GET',
+                            url: ApiEndpoint.url + 'user/categories/',
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                        }).then(function(response){
+                            return response;
+                        }, function(response){
+                            return response;
+                });
             }
-            
         }
     });

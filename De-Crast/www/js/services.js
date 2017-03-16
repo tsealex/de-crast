@@ -287,4 +287,16 @@ angular.module('decrast.services', [])
         return self;
     };
 
+})
+
+.factory('Categories', function() {
+  return function() {
+      // currently the uid input is fbId, later will be De-Crast userId
+      self.addCategory = function (id, name) {
+          var category = { id: id, name: name};
+          return category;
+      };
+      return self;
+  };
+
 });
