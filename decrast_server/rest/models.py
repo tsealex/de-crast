@@ -33,7 +33,7 @@ class User(AbstractBaseUser):
 		return False
 
 class Category(models.Model):
-	name = models.CharField(max_length=32, null=False)
+	name = models.CharField(max_length=64, null=False)
 	user = models.ForeignKey(User)
 
 class Task(models.Model):
@@ -44,7 +44,7 @@ class Task(models.Model):
 	deadline = models.DateTimeField(null=False)
 	last_notify_ts = models.DateTimeField(null=False)
 
-	name = models.CharField(max_length=32, null=False)
+	name = models.CharField(max_length=64, null=False)
 	description = models.CharField(max_length=128)
 
 class Evidence(models.Model):
