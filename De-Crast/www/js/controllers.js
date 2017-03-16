@@ -1,139 +1,139 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', ['ngOpenFB'])
     
-    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server,TaskFact) {
-    //$scope.tasks = Tasks.all();
-    $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
-        
-        if(window.localStorage.getItem("login") == null){
-            $state.go('login', {});
-        }
-        $ionicHistory.clearCache();
-        $ionicHistory.clearHistory();
+    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact, $window) {
+        //$scope.tasks = Tasks.all();
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            
+            if(window.localStorage.getItem("login") == null){
+                $state.go('login', {});
+            }
+            $ionicHistory.clearCache();
+            $ionicHistory.clearHistory();
 
-        Server.getUserTasks($rootScope.accessToken).then(function(data){
-            //console.log(JSON.stringify(data));
-            $scope.populateTasks(data.data);
+            Server.getUserTasks($rootScope.accessToken).then(function(data){
+                //console.log(JSON.stringify(data));
+                $scope.populateTasks(data.data);
+            });
+            
         });
+        $scope.name = window.localStorage.getItem("user");
+
+        // function to fetch data from the server
+        $rootScope.task_list = {};
         
-    });
-    $scope.name = window.localStorage.getItem("user");
+        var listHold = angular.fromJson(localStorage.getItem('task_list'));
 
-    // function to fetch data from the server
-    $rootScope.task_list = {};
-    
-    var listHold = angular.fromJson(localStorage.getItem('task_list'));
+        if (listHold != null) {
+            $rootScope.task_list = listHold;
+        }
 
-    if (listHold != null) {
-        $rootScope.task_list = listHold;
-    }
-
-    $scope.goDetail = function (task) {
-        //$stateParams.$state.go('viewTask', {});
-        $ionicViewSwitcher.nextDirection('forward');
-        $state.go('viewTask', {task: task});
-        //console.log(task);
-    };
+        /*
+        Function to display Task Detail Page
+        */
+        $scope.goDetail = function (task) {
+            //$stateParams.$state.go('viewTask', {});
+            $ionicViewSwitcher.nextDirection('forward');
+            $state.go('viewTask', {task: task});
+            //console.log(task);
+        };
 
         /*
         Function to transition to adding a task
-         */
-    $scope.onClick = function () {
-        $ionicViewSwitcher.nextDirection('forward');
+        */
+        $scope.onClick = function () {
+            $ionicViewSwitcher.nextDirection('forward');
 
-        $state.go('addTask', {});
-    };
+            $state.go('addTask', {});
+        };
 
-    /*
-    Transition functions for popover menu
-     */
-    $scope.goBlock = function() {
-        $ionicViewSwitcher.nextDirection('forward');
-        $state.go('block', {});
-        $scope.popover.hide();
-    };
-    $scope.goNotif = function() {
-        $ionicViewSwitcher.nextDirection('forward');
-        $state.go('manage-notifications', {});
-        $scope.popover.hide();
-    };
-    $scope.goLogout = function() {
-        $scope.popover.hide();
-        //$state.go('logout', {});
-        var confirmPopup = $ionicPopup.confirm({
-            title: 'Are You Sure to Quit?'
+        /*
+        Transition functions for popover menu
+        */
+        $scope.goBlock = function() {
+            $ionicViewSwitcher.nextDirection('forward');
+            $state.go('block', {});
+            $scope.popover.hide();
+        };
+        $scope.goNotif = function() {
+            $ionicViewSwitcher.nextDirection('forward');
+            $state.go('manage-notifications', {});
+            $scope.popover.hide();
+        };
+        $scope.goLogout = function() {
+            $scope.popover.hide();
+            //$state.go('logout', {});
+            var confirmPopup = $ionicPopup.confirm({
+                title: 'Are You Sure to Quit?'
+            });
+            confirmPopup.then(function(res) {
+            if(res) {
+                    ngFB.logout().then(
+                        function (response) { 
+                                console.log('Facebook logout succeeded');
+                                $scope.ignoreDirty = true; //Prevent loop
+                                window.localStorage.clear();
+                                $ionicHistory.clearCache();
+                                $ionicHistory.clearHistory();
+                                $state.go('login'); 
+                        });
+            } else {
+                console.log('You stay');
+            }
+            });
+            //$ionicViewSwitcher.nextDirection('forward');
+        };
+        $scope.goCategories = function() {
+            $ionicViewSwitcher.nextDirection('forward');
+            $state.go('manage-categories', {});
+            $scope.popover.hide();
+        };
+
+
+        //Settings popover
+        $ionicPopover.fromTemplateUrl('templates/settings.html', {
+            scope: $scope
+        }).then(function(popover) {
+            $scope.popover = popover;
         });
-        confirmPopup.then(function(res) {
-        if(res) {
-                ngFB.logout().then(
-                    function (response) { 
-                            console.log('Facebook logout succeeded');
-                            $scope.ignoreDirty = true; //Prevent loop
-                            window.localStorage.clear();
-                            $ionicHistory.clearCache();
-                            $ionicHistory.clearHistory();
-                            $state.go('login'); 
-                        
-                    });
-        } else {
-            console.log('You stay');
-        }
+
+        $scope.openPopover = function($event) {
+            $scope.popover.show($event);
+        };
+        $scope.closePopover = function() {
+            $scope.popover.hide();
+        };
+        //Cleanup the popover when we're done with it!
+        $scope.$on('$destroy', function() {
+            $scope.popover.remove();
         });
-
-        //$ionicViewSwitcher.nextDirection('forward');
-        
-    };
-    $scope.goCategories = function() {
-        $ionicViewSwitcher.nextDirection('forward');
-        $state.go('manage-categories', {});
-        $scope.popover.hide();
-    };
-
-
-
-    //Settings popover
-    $ionicPopover.fromTemplateUrl('templates/settings.html', {
-        scope: $scope
-    }).then(function(popover) {
-        $scope.popover = popover;
-    });
-
-    $scope.openPopover = function($event) {
-        $scope.popover.show($event);
-    };
-    $scope.closePopover = function() {
-        $scope.popover.hide();
-    };
-    //Cleanup the popover when we're done with it!
-    $scope.$on('$destroy', function() {
-        $scope.popover.remove();
-    });
-    // Execute action on hidden popover
-    $scope.$on('popover.hidden', function() {
-        // Execute action
-    });
-    // Execute action on remove popover
-    $scope.$on('popover.removed', function() {
-        // Execute action
-    });
-
-    $scope.populateTasks = function(data){
-        
-        for(i=0;i<data.length;i++){
-            var newTask = (new TaskFact()).addTask(data[i].name, data[i].description, data[i].category, data[i].deadline, null, null, null);
-            $rootScope.task_list[data[i].id] = newTask;
+        // Execute action on hidden popover
+        $scope.$on('popover.hidden', function() {
+            // Execute action
+        });
+        // Execute action on remove popover
+        $scope.$on('popover.removed', function() {
+            // Execute action
+        });
+        /*
+        Function to display the task list
+        */
+        $scope.populateTasks = function(data){
+            console.log(JSON.stringify(data));
+            for(i=0;i<data.length;i++){
+                var newTask = (new TaskFact()).addTask(data[i].name, data[i].description, data[i].category, data[i].deadline, null, null, null);
+                $rootScope.task_list[data[i].id] = newTask;
+            }
+            localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+            
         }
-        localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
-        
-    }
-})
+    })
 
     .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
         $scope.title = "Add";
-
 
         $scope.myFactory = new TaskFact();
 
@@ -145,15 +145,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 $ionicLoading.show({template: 'Please Enter A Due Time', noBackdrop: true, duration: 1000});
             }
             else {
-                /* local add task
+                /* Add Task to localStorage
                 var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, $scope.category, $scope.time, null, null, null);
 
                 $rootScope.task_list[newTask.task_id] = newTask;
                 localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
                 */
-                //update server here, null for category, viewer
-                
-                var myDate = new Date($scope.time); // Your timezone!
+                /*
+                Add Task to localStorage and Server
+                */
+                // convert from readable time to UNIX
+                var myDate = new Date($scope.time); 
                 var myEpoch = myDate.getTime()/1000.0;
                 
                 Server.addNewTask($rootScope.accessToken, $scope.taskName, myEpoch, $scope.descrip, null, null).then(function(data) {
@@ -223,23 +225,18 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('FtasksCtrl', function ($scope, Ftasks) {
+    .controller('FtasksCtrl', function ($scope, Ftasks, $ionicLoading) {
         $scope.ftasks = Ftasks.all();
+        //$ionicLoading.show({template: 'No friends\' Tasks found', noBackdrop: true, duration: 2500});
     })
     .controller('NotifCtrl', function ($scope, $stateParams, Notifications) {
         $scope.notifications = Notifications.all();
     })
-    .controller('FriendsCtrl', function ($scope, Friends, $stateParams) {
-        $scope.friends = Friends.all();
-        $scope.$on("$ionicView.afterEnter", function () {
-            for (var i = 0; i < $scope.friends.length; i++) {
-                $scope.currentFriend = Friends.get(i);
-                if ($scope.currentFriend.star == 'on') {
-                    //console.log("star on");
-                    document.getElementById("starRate" + i).className = "icon ion-ios-star";
-                }
-
-            }
+    .controller('FriendsCtrl', function ($scope, Friends, $stateParams, $rootScope, ngFB, Server, $ionicLoading) {
+        
+        //$scope.friends = Friends.all();
+        $scope.$on("$ionicView.beforeEnter", function () {
+            $scope.fetchFBfriends();
         });
         $scope.turnStar = function (index) {
             //console.log("You turn star");
@@ -248,18 +245,47 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             var starStatus = document.getElementById("starRate" + index).className;
             if(starStatus == star){
                 document.getElementById("starRate" + index).className = starOutline;
-                //console.log("this is a star");
             }
             if(starStatus == starOutline){
                 document.getElementById("starRate" + index).className = star;
-                //console.log("this is a outline");
             }
-            //console.log("click star");
-            /*
-            document.getElementById("starRate" + index).className =
-                (document.getElementById("starRate" + index).className == "icon ion-ios-star") ? "" : "icon ion-ios-star";
-                */
+        }
 
+        $scope.fetchFBfriends = function(){
+            // prepare friends container
+            $rootScope.friend_list = {};
+            
+            // FB get friends who is also using the app
+            ngFB.api({
+                path: '/me/friends',
+                params: {}
+            }).then(
+                function (list) {
+                    if(list.data.length == 0){
+                        $ionicLoading.show({template: 'Cannot find FB friends using the app', noBackdrop: true, duration: 2500});
+                    }
+                    
+                    for(i=0;i<list.data.length;i++){
+                        var friendId = list.data[i].id;
+                        var friendName = list.data[i].name;
+                        // TODO: api call to fetch De-Crast userId and username using FBId
+
+                        // currentId and name is facebookId and name, later need to inject De-Crast userId
+                        // default status as normal
+                        var newFriend = (new Friends()).addFriend(friendId, friendName, 'normal');
+                        $rootScope.friend_list[friendId] = newFriend;
+                    }
+                    localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
+                },
+                function (error) {
+                    alert('Facebook error: ' + error.error_description);
+                });
+
+            // populate view
+            var friendList = angular.fromJson(localStorage.getItem('friend_list'));
+            if(friendList != null){
+                $rootScope.friend_list = friendList;
+            }
         }
     })
 
@@ -269,43 +295,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             viewData.enableBack = true;
         });
     })
-/*
-    .controller('MainCtrl', function($scope, $ionicPopover) {
-
-        // // .fromTemplate() method
-        // var template = '<ion-popover-view><ion-header-bar><h1 class="title">My Popover Title</h1></ion-header-bar><ion-contentHello!</ion-content></ion-popover-view>';
-        //
-        // $scope.popover = $ionicPopover.fromTemplate(template, {
-        //     scope: $scope
-        // });
-
-        // .fromTemplateUrl() method
-        $ionicPopover.fromTemplateUrl('templates/settings.html', {
-            scope: $scope
-        }).then(function(popover) {
-            $scope.popover = popover;
-        });
-
-        $scope.openPopover = function($event) {
-            $scope.popover.show($event);
-        };
-        $scope.closePopover = function() {
-            $scope.popover.hide();
-        };
-        //Cleanup the popover when we're done with it!
-        $scope.$on('$destroy', function() {
-            $scope.popover.remove();
-        });
-        // Execute action on hidden popover
-        $scope.$on('popover.hidden', function() {
-            // Execute action
-        });
-        // Execute action on remove popover
-        $scope.$on('popover.removed', function() {
-            // Execute action
-        });
-    })
-    */
     
     .controller('LogoutCtrl', function ($scope,$ionicHistory,$state,$window) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
@@ -348,10 +337,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             document.addEventListener("deviceready", function () {
                 var runningInCordova = true;
             }, false);
-            ngFB.login({scope: 'email,user_posts,publish_actions'}).then(
+            ngFB.login({scope: 'email,user_posts, publish_actions, user_friends'}).then(
                 function (response) {
                     if (response.status === 'connected') {
                         window.localStorage.setItem("login", "true"); 
+                        $rootScope.fbAccessToken = response.authResponse.accessToken;
                         
                         ngFB.api({
                             path: '/me',
@@ -359,6 +349,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         }).then(
                             function (user) {
                                 window.localStorage.setItem("user", user.name);
+                                $rootScope.userFBId = user.id;
                                 console.log(JSON.stringify(user));
                                 var userId; // user's De-Crast Id
                                 var accessToken;
@@ -451,8 +442,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     })
 
 /* localStorage List:
-"userId", userId
-"accessToken", accessToken
+"userId", decrastId
+"userFBId", FBId
 "login", true/false
-"user", user
+"user", username, default FB name, specify on De-Crast name
+"task_list"
+"friend_list"
 */

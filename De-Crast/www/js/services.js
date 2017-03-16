@@ -129,7 +129,7 @@ angular.module('decrast.services', [])
 // Might use a resource here that returns a JSON array
 
 // Some fake testing data
-  var friends = [{
+  /*var friends = [{
     id: 0,
     name: 'Ben Sparrow',
     star: 'on'
@@ -166,7 +166,26 @@ angular.module('decrast.services', [])
       }
       return null;
     }
-  }
+  }*/
+
+  return function() {
+      // currently the uid input is fbId, later will be De-Crast userId
+      self.addFriend = function (uid, name, status) {
+          var friend = { friend_uid: uid, friend_name: name, friend_status: status };
+          return friend;
+      };
+      // change the friend's status
+      self.statusHandler = function(friend, status)
+      {
+          friend.friend_status = status;
+          return friend;
+      };
+      // other potential handler
+      // dropdown menu/popup selection page when creating a new task
+      // Be blocked detector
+      return self;
+  };
+
 })
 // notifications dummy data
 .factory('Notifications', function() {

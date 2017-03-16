@@ -9,6 +9,7 @@ angular.module('decrast.server', [])
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
         };
+        var fbApi = 'https://graph.facebook.com/';
 
        
         return {
