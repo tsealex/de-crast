@@ -310,7 +310,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory, $http) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory, $http, ApiEndpoint) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -347,56 +347,61 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 var facebookId = user.id; 
                                 var facebookToken = "RANDOM-STRING";
                                 var params = "facebookId=" + facebookId + "&facebookToken=" + facebookToken;
-                                http.open("POST", url, true);
+                                http.open('GET', url, true);
 
                                 //Send the proper header information along with the request
-                                http.setRequestHeader("Content-type", "application/json");
-                                http.setRequestHeader("Access-Control-Allow-Origin", "localhost:8100");
+                                http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                                http.setRequestHeader('Access-Control-Allow-Origin', '*');
+                                http.setRequestHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT');
 
                                 http.onreadystatechange = function() {//Call a function when the state changes.
                                     if(http.readyState == 4 && http.status == 200) {
                                         alert(http.responseText);
                                     }
                                 }
-                                http.send(params);*/ 
-                                
-                                /* TEST 2
-                                var obj = {
-                                    method: "POST",
-                                    path: "",
-                                    params: {
-                                        facebookId: user.id,
-                                        facebookToken:"RANDOM-STRING"}
-                                    };
-
-                                createRequest(obj);*/
-                                
+                                http.send();
+                                */
+                                // TEST 2
                                 var headers = {
                                     'Access-Control-Allow-Origin' : '*',
                                     'Access-Control-Allow-Methods' : 'POST, GET, OPTIONS, PUT',
+                                    'Access-Control-Allow-Credentials': 'true',
                                     'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'Access-Control-Allow-Credentials': 'true'
+                                    'Accept': 'application/json'
                                 };
                                 $http({
-                                    method: "POST",
+                                    method: 'POST',
                                     headers: headers,
-                                    url: 'http://alext.se:8000/auth/',
+                                    url: ApiEndpoint.url + 'auth/',
                                     data: {
                                         facebookId: user.id,
                                         facebookToken:"RANDOM-STRING"}
                                     })
                                         
                                     .success(function(data,status,headers,config){
+                                        console.log(JSON.stringify(status));
+                                        console.log(JSON.stringify(headers));
+                                        console.log(JSON.stringify(config));
                                         console.log("You got it: " + JSON.stringify(data));
                                         alert("You got it: " + JSON.stringify(data));
                                         }
                                     ).error(function(data){
                                         console.log(JSON.stringify(headers));
+                                        console.log(JSON.stringify(data));
                                         alert("You fail");
-                                        });
-
-
+                                    });
+                                /* TEST GET
+                                $http.get("http://alext.se:8000/auth/")
+        
+                                    .success(function(data,status,headers,config){
+                                        console.log(JSON.stringify(data));
+                                        console.log(JSON.stringify(status));
+                                        console.log(JSON.stringify(headers));
+                                        console.log(JSON.stringify(config));
+                                    }).error(function(data){
+                                        console.log(JSON.stringify(data));
+                                    });
+                                */
                                 $state.go('tab.home', {});
                             },
                             function (error) {
