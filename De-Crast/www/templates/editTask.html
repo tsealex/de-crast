@@ -31,7 +31,7 @@ link up to anything in particular in the controllers. We'll want to hook these u
             <div class="bottom">
                 <div style="float: left; width: 50%;">
                     <label class="item item-input">
-                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium'}}</textarea>
+                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
                     </label>
                 </div>
             </div>

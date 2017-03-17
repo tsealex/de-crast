@@ -27,7 +27,7 @@
 
            <ion-list>
             <ion-item ng-repeat="task in task_list" class="item-icon-right" ng-click="goDetail(task)">
-                {{task.task_name}}      <object align="right">Due: {{ task.task_time | date : 'short' }}</object>
+                {{task.task_name}}      <object align="right">Due: {{ task.task_time | date : 'short' : 'UTC'}}</object>
                 <!--  icon-accessory make it small -->
                 <i class="icon ion-chevron-right icon-accessory"></i>
             </ion-item>
