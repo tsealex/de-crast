@@ -77,13 +77,25 @@ angular.module('decrast.server', [])
                             return response;
                 });
             },
-            addCategory: function(accessToken, name){
+            getTask: function(accessToken, taskId){
+                return $http({
+                            method:'GET',
+                            url: ApiEndpoint.url + 'user/tasks/' + taskId + '/',
+                            headers: {'Authorization': 'JWT ' + accessToken}
+                        }).then(function(response){
+                            console.log(JSON.stringify(response));
+                            return response;
+                        }, function(response){
+                            return response;
+                });
+            },
+            addCategory: function(accessToken, categoryName){
                 return $http({
                             method:'PUT',
-                            url: ApiEndpoint.url + 'user/category/',
+                            url: ApiEndpoint.url + 'user/categories/',
                             headers: {'Authorization': 'JWT ' + accessToken},
                             data: {
-                                name: name
+                                name: categoryName
                             }
                         }).then(function(response){
                             return response;

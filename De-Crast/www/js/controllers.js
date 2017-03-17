@@ -12,7 +12,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.clearHistory();
 
             Server.getUserTasks($rootScope.accessToken).then(function(data){
-                //console.log(JSON.stringify(data));
                 $scope.populateTasks(data.data);
             });
             
@@ -118,12 +117,16 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         /*
         Function to display the task list
         */
-        $scope.populateTasks = function(data){
-            console.log(JSON.stringify(data));
-            for(i=0;i<data.length;i++){
-                var newTask = (new TaskFact()).addTask(data[i].name, data[i].description, data[i].category, data[i].deadline, null, null, null);
-                $rootScope.task_list[data[i].id] = newTask;
+        $scope.populateTasks = function(response){
+            console.log(JSON.stringify(response));
+            
+            for(i=0;i<response.length;i++){
+                Server.getTask($rootScope.accessToken, response[i].taskId).then(function(data){
+                    var newTask = (new TaskFact()).addTask(data.data[0].name, data.data[0].description, data.data[0].category, data.data[0].deadline, null, null, null);
+                    $rootScope.task_list[data.data[0].taskId] = newTask;
+                });
             }
+            console.log(JSON.stringify($rootScope.task_list));
             localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
             
         }
@@ -328,7 +331,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     $ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
                 }
                 for(i=0;i<data.data.length;i++){
-                    $rootScope.category_list[data.data[i].id] = data.data[i];
+                    $rootScope.category_list[data.data[i].categoryId] = data.data[i];
                 }
             });
             localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
@@ -388,10 +391,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                     //console.log(userId, accessToken);
                                     Server.fetchUsers(accessToken).then(function(data) {
                                         
-                                        //console.log(JSON.stringify(data.data));
+                                        console.log(JSON.stringify(data.data));
                                         var userList = data.data;
                                         for(i=0; i<userList.length;i++){
-                                            if(userList[i].id == userId){
+                                            if(userList[i].userId == userId){
                                                 if(userList[i].username == null){
 
                                                     // Popup for new user
