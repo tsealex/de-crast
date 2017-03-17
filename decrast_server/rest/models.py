@@ -37,8 +37,8 @@ class Category(models.Model):
 	user = models.ForeignKey(User)
 
 class Task(models.Model):
-	owner = models.ForeignKey(User, related_name='owner', on_delete=models.CASCADE)
-	viewer = models.ForeignKey(User, related_name='viewer', on_delete=models.SET_NULL, null=True)
+	owner = models.ForeignKey(User, related_name='owned_tasks', on_delete=models.CASCADE)
+	viewer = models.ForeignKey(User, related_name='viewing_tasks', on_delete=models.SET_NULL, null=True)
 	category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
 
 	deadline = models.DateTimeField(null=False)

@@ -10,17 +10,13 @@ import time
 import http.client
 import json
 import os
+import re
 
 from .auth.serializers import JWTSerializer, RefreshSerializer
 from .auth.auth import JWTAuthentication
 from .errors import APIError
-from .models import User
-from .models import Category
-from .models import Task
-from .serializers import UserSerializer
-from .serializers import ModelSerializer
-from .serializers import TaskSerializer
-from .serializers import IdSerializer
+from .models import *
+from .serializers import *
 
 APP_ID = "859339004207573"
 
@@ -36,7 +32,7 @@ class AuthViewSet(viewsets.ViewSet):
 	authentication_classes = ()
 	permission_classes = ()
 
-	app_access_token=""
+	app_access_token = ''
 
 	'''
 	For testing purpose only
@@ -58,8 +54,8 @@ class AuthViewSet(viewsets.ViewSet):
 				})
 			# TODO: input check
 			if validator.is_valid():
-# TODO: Uncomment this line to perform FB token validation
-#				self.validate_fb_token(request.data['facebookToken'])
+				# TODO: Uncomment this line to perform FB token validation
+				# self.validate_fb_token(request.data['facebookToken'])
 
 				return Response({
 					'userId': validator.object.get('user').id,
@@ -84,25 +80,23 @@ class AuthViewSet(viewsets.ViewSet):
 					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
 				})
 
+	'''
+	Validate the provided Facebook token.
+	'''
 	def validate_fb_token(self, fb_token):
-		'''
-		Validate the provided Facebook token.
-		'''
-
 		self.app_access_token = self.get_app_access_token()
 		legal_token = self.verify_fb_token(fb_token)
 		if(legal_token == False):
 			raise APIError(110)
 
+	'''
+	This function gets our application's access token.
+ 	The application access token is used to verify a user's
+ 	Facebook access token for authorization.
 
+	Per: https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
+	'''
 	def get_app_access_token(self):
-		'''
-		This function gets our application's access token.
-	 	The application access token is used to verify a user's
-	 	Facebook access token for authorization.
-
-		Per: https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
-		'''
 
 		try:
 			# App's secret key is stored in a local env var.
@@ -110,7 +104,7 @@ class AuthViewSet(viewsets.ViewSet):
 
 			conn = http.client.HTTPSConnection("graph.facebook.com")
 			conn.request("GET", "/oauth/access_token?client_id={}&client_secret={}&" \
-			"grant_type=client_credentials".format(APP_ID, secret_key))
+				"grant_type=client_credentials".format(APP_ID, secret_key))
 			resp = conn.getresponse()
 			resp_str = resp.read().decode("utf-8")
 			equals_index = resp_str.index('=')
@@ -124,14 +118,13 @@ class AuthViewSet(viewsets.ViewSet):
 			print("Access token response error: " + str(e))
 			raise APIError(170)
 
+	'''
+	This function checks to see if the provided FB user access
+	token is valid.
+
+	Per: https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow#checktoken
+	'''
 	def verify_fb_token(self, fb_token):
-		'''
-		This function checks to see if the provided FB user access
-		token is valid.
-
-		Per: https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow#checktoken
-		'''
-
 		conn = http.client.HTTPSConnection("graph.facebook.com")
 		conn.request("GET", "/debug_token?input_token={}&access_token={}"
 			.format(fb_token, self.app_access_token))
@@ -140,7 +133,6 @@ class AuthViewSet(viewsets.ViewSet):
 
 		as_json = json.loads(bytes.decode("utf-8"))
 		return as_json['data']['is_valid']
-
 
 '''
 
@@ -171,9 +163,10 @@ class UserViewSet(viewsets.ViewSet):
 				raise APIError(160)
 
 			if user.username is not None:
-				raise APIError(125, details='username has been specified')
+				raise APIError(125, 'username has been specified')
 
 			# TODO: check if it's a valid username
+			# TODO: check if username has been taken by others
 
 			user.username = username
 			user.save()
@@ -185,128 +178,221 @@ class UserViewSet(viewsets.ViewSet):
 		except KeyError:
 			raise APIError(100)
 
-	def search(self, request):
-		try:
-			users = request.GET.get('username', None)
+'''
 
-			if(users is not None):
-				queryset = User.objects.filter(username__contains=users)
-				serializer = UserSerializer(queryset, many=True)
-				return Response(serializer.data)
-			else:
-				raise APIError(175)
-		except Exception as e:
-			print("ERROR searching users: " + str(e))
-			raise APIError(170)
-
-
+'''
 class CategoryViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 
-	def add(self, request, pk=None):
+	'''
+	Create a category: /user/categories/ PUT
+	'''
+	def create(self, request):
 		try:
-			user = request.user
-			cat_id = request.GET.get('id', None)
-
-			if(cat_id is not None):
-				curr_cat = Category.objects.get(pk=cat_id)
-				curr_cat.name = request.data['name']
-				curr_cat.save()
-
-				return Response({"categoryId": curr_cat.id})
-			else:
-				cat_name = request.data['name']
-				category = Category.objects.create(name=cat_name, user=user)
-				category.save()
-
-				return Response({"categoryId": category.id})
-		except KeyError:
+			cat_name = request.data['name']
+			# TODO: input check
+			# TODO: check if cat_name is a valid category name
+			# TODO: investigate if we can use user.category_set here
+			cat, created = Category.objects.get_or_create(
+				name=cat_name,
+				user=request.user
+			)
+			if not created: raise APIError(190, 'category name')
+			cat.save()
+			return Response(CategorySerializer(cat).data)
+		except KeyError: # malformed body
 			raise APIError(100)
-		except Exception as e:
-			print("Category Add ERROR: " + str(e))
-			raise APIError(170)
 
+	'''
+	Update a category: /user/categories/id/ PUT
+	'''
+	def update(self, request, query):
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIError(195, 'more than one id')
+		try:
+			cat_name = request.data['name']
+			# TODO: input check
+			# TODO: check if cat_name is a valid category name
+			cat = request.user.category_set.get(id=ids[0])
+			cat.name = cat_name
+			cat.save()
+			return Response(CategorySerializer(cat).data)
+		except KeyError: # malformed body
+			raise APIError(100)
+		except ObjectDoesNotExist:
+			raise APIError(180, 'category id')
+				
+	'''
+	List all user's categories: /user/categories/ GET
+	'''
 	def list(self, request, pk=None):
 		try:
 			queryset = request.user.category_set.all()
-			serializer = ModelSerializer(queryset, many=True)
+			serializer = CategorySerializer(queryset, many=True)
 			return Response(serializer.data)
-
 		except KeyError:
 			raise APIError(100)
-		except Exception as e:
-			print("Category List ERROR: " + str(e))
-			raise APIError(170)
-
 
 '''
-	The Task view set class implementation.
+
+'''
+class OwnedTaskViewSet(viewsets.ViewSet):
+	parser_classes = (JSONParser,)
+
+	'''
+	List all user's tasks: /user/tasks/ GET
+	'''
+	def list(self, request):
+		quesyset = request.user.owned_tasks.all()
+		return Response(TaskIdSerializer(quesyset, many=True).data)
+
+	''''
+	Create a task: /user/tasks/ POST
+	'''
+	def create(self, request):
+		user = request.user
+		t_deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
+		t_category = request.data.get('category', None)
+
+		try:
+			t_name = request.data['name']
+			t_desc = request.data['description']
+			# TODO: input check
+			if t_category is not None:
+				t_category = user.category_set.get(id=t_category)
+
+			task = Task(name=t_name, description=t_desc, deadline=t_deadline, 
+				owner=user, last_notify_ts=datetime.datetime.now())
+
+			if t_category is not None:
+				task.category = t_category
+
+			task.save()
+			return Response({'taskId': task.id})
+		except KeyError: # malformed body
+			raise APIError(100)
+		except ObjectDoesNotExist:
+			raise APIError(180, 'category id')
+
+'''
+The Task view set class implementation.
 '''
 class TaskViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 
-	def list(self, request):
+	'''
+	Get tasks by id(s): /user/tasks/?id&.../ GET
+	'''
+	def retrieve(self, request, query):
+		ids = extract_ids(query)
+		user = request.user
+		
+		queryset = Task.objects.filter(pk__in=ids)
+		queryset = queryset.filter(viewer=user) | queryset.filter(owner=user)
+		serializer = TaskSerializer(queryset, many=True)
+		return Response(serializer.data)
+
+	'''
+	Update the task info: /user/tasks/?id/ POST
+	'''
+	def update(self, request, query):
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIError(195, 'more than one id')
+		
 		try:
-			ids = request.GET.getlist('id')
+			t_name = request.data['name']
+			t_desc = request.data['description']
+			t_category = request.data.get('category', None)
 
-			if(len(ids) > 0):
-				filter_string = "pk__in"+str(ids)
-				queryset = Task.objects.filter(pk__in=ids)
-			else:
-				queryset = Task.objects.filter(owner=request.user)
-			serializer = TaskSerializer(queryset, many=True)
-			return Response(serializer.data)
-		except Exception as e:
-			print("ERROR: " + str(e))
-			raise APIError(170)
+			if t_category is not None:
+				t_category = user.category_set.get(id=t_category) 
 
-	def add(self, request):
-		try:
-			# URL params are ALWAYS in GET
-			id_param = request.GET.get('id', None)
+			# TODO: input check
 
-			if(id_param is not None):
-				print("ID param: " + id_param)
-				print(str(type(id_param)))
+			if not request.user.owned_tasks.filter(id=ids[0]).exists():
+				raise APIError(180, 'task id')
 
-				curr_task = Task.objects.get(pk=id_param)
-				curr_task.name = request.data['name']
-				curr_task.description = request.data['description']
-				curr_task.deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
+			curr_task = request.user.owned_tasks.get(id=ids[0])
+			curr_task.name = t_name
+			curr_task.description = t_desc
 
-				curr_task.save()
-				return Response({'taskId': curr_task.id})
+			if t_category is not None:
+				curr_task.category = t_category
 
-			else:
-				t_name = request.data['name']
-				t_deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
-				t_desc = request.data['description']
-				t_category = request.data['category']
-
-				task = Task(name=t_name, description=t_desc,
-					deadline=t_deadline, owner=request.user)
-
-				task.category_id = t_category
-				task.viewer_id = request.data['viewer']
-				task.last_notify_ts = datetime.datetime.now()
-
-				print("t_deadline = " + str(t_deadline))
-				print("task.deadline = " + str(task.deadline))
-
-				task.save()
-				return Response({'taskId': task.id})
-
+			curr_task.save()
+			return Response({'taskId': curr_task.id})
 		except KeyError:
 			raise APIError(100)
-		except Exception as e:
-			print("ERROR adding task: " + str(e))
-			raise APIError(170)
+		except ObjectDoesNotExist:
+			raise APIError(180, 'category id')
 
-	def viewing_list(self, request):
-		try:
-			queryset = Task.objects.filter(viewer=request.user)
-			serializer = IdSerializer(queryset, many=True)
-			return Response(serializer.data)
-		except Exception as e:
-			print("ERROR listing viewed tasks: " + str(e))
-			raise APIError(170)
+'''
+
+'''
+class ViewedTaskViewSet(viewsets.ViewSet):
+	parser_classes = (JSONParser,)
+
+	''''
+	List all viewing tasks: /user/tasks/viewing/ GET
+	'''
+	def list(self, request):
+		quesyset = request.user.viewing_tasks.all()
+		return Response(TaskIdSerializer(quesyset, many=True).data)
+
+'''
+
+'''
+class SpecialViewSet(viewsets.ViewSet):
+	parser_classes = (JSONParser,)
+	'''
+
+	'''
+	def perform_action(self, request, action, query):
+		if action == 0: # add user to be the viewer of a task
+			ids = extract_ids(query)
+			if len(ids) != 1: raise APIError(195, 'more than one id')
+			# TODO: check if user has been invited for viewing a task
+			queryset = Task.objects.filter(id=ids[0])
+			if queryset.exists():
+				task = queryset.get()
+				task.viewer = request.user
+				task.save()
+				return Response({'success': True})
+		elif action == 4: # change deadline
+			ids = extract_ids(query)
+			if len(ids) != 1: raise APIError(195, 'more than one id')
+			queryset = request.user.viewing_tasks.filter(id=ids[0])
+			if not queryset.exists():
+				return Response({'success': False})
+			# TODO: change the deadline to the one specified in the notification
+			return Response({'success': True})
+
+		return Response({'success': False})
+
+	'''
+
+	'''
+	def get_user_friends(self, request, query):
+		# TODO: may need to change in the future
+		fb_ids = extract_ids(query)
+		queryset = User.objects.filter(fb_id__in=fb_ids)
+		serializer = UserSerializer(queryset, many=True)
+		return Response(serializer.data)
+
+	'''
+
+	'''
+	def search_user(self, request, username):
+		# TODO: input check
+		queryset = User.objects.filter(username__contains=username)
+		serializer = UserSerializer(queryset, many=True)
+		return Response(serializer.data)
+
+'''
+Returns a list of ids extracted from the url query string
+'''
+def extract_ids(query):
+	m = re.split('&', query)
+	if any(not i.isdigit() for i in m):
+		raise APIError(195, 'invalid id value')
+	return [int(i) for i in m]
