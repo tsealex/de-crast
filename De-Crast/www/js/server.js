@@ -77,7 +77,7 @@ angular.module('decrast.server', [])
                             return response;
                 });
             },
-            /*
+
             getTask: function(accessToken, taskId){
                 return $http({
                             method:'GET',
@@ -89,7 +89,7 @@ angular.module('decrast.server', [])
                         }, function(response){
                             return response;
                 });
-            },*/
+            },
             addCategory: function(accessToken, categoryName){
                 return $http({
                             method:'PUT',
