@@ -15,3 +15,6 @@ If you wish, you may view the server code by downloading the backend-master bran
 	https://github.com/timdohm/de-crast/tree/backend-master	
 
 NOTE: Our server is running on an AWS instance, so you will not need to run it locally.
+
+Backend server tag: sprint_one
+Frontend server tag: sprint_one_frontend
