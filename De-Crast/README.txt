@@ -11,3 +11,7 @@ If you run into any issues (particularly on OSX) you may need to update cordova 
 
 We will need to authorize you to use Facebook with our app, specially we will need either your fbid or your username. Please contact tdohm@wisc.edu or ganders2@wisc.edu
 
+If you wish, you may view the server code by downloading the backend-master branch from:
+	https://github.com/timdohm/de-crast/tree/backend-master	
+
+NOTE: Our server is running on an AWS instance, so you will not need to run it locally.
