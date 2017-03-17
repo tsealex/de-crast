@@ -122,7 +122,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             
             for(i=0;i<response.length;i++){
                 Server.getTask($rootScope.accessToken, response[i].taskId).then(function(data){
-                    var newTask = (new TaskFact()).addTask(data.data[0].name, data.data[0].description, data.data[0].category, data.data[0].deadline, null, null, null);
+                    var myDate = new Date( data.data[0].deadline *1000);
+                    
+                    var newTask = (new TaskFact()).addTask(data.data[0].name, data.data[0].description, data.data[0].category, myDate, null, null, null);
                     $rootScope.task_list[data.data[0].taskId] = newTask;
                 });
             }
