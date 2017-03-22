@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import IntegrityError
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
@@ -14,7 +15,7 @@ import re
 
 from .auth.serializers import JWTSerializer, RefreshSerializer
 from .auth.auth import JWTAuthentication
-from .errors import APIError
+from .errors import APIError, APIErrors, missing
 from .models import *
 from .serializers import *
 
@@ -49,14 +50,13 @@ class AuthViewSet(viewsets.ViewSet):
 		# for new user who wants to register
 		if request.data.get('facebookToken') is not None:
 			validator = JWTSerializer(data={
-					'fb_id': request.data.get('facebookId'),
-					'fb_tk': request.data.get('facebookToken'),
-				})
-			# TODO: input check
+				'fb_id': request.data.get('facebookId'),
+				'fb_tk': request.data.get('facebookToken'),
+			})
+
 			if validator.is_valid():
 				# TODO: Uncomment this line to perform FB token validation
 				# self.validate_fb_token(request.data['facebookToken'])
-
 				return Response({
 					'userId': validator.object.get('user').id,
 					'accessToken': validator.object.get('ac_tk'),
@@ -67,11 +67,11 @@ class AuthViewSet(viewsets.ViewSet):
 			# for old user who wants to refresh the access token
 			uid = request.data.get('userId')
 			rf_token = request.data.get('refreshToken')
-			# TODO: input check
+
 			validator = RefreshSerializer(data={
-					'uid': uid,
-					'rf_tk': rf_token,
-				})
+				'uid': uid,
+				'rf_tk': rf_token,
+			})
 			if validator.is_valid():
 				return Response({
 					'userId': validator.object.get('user').id,
@@ -79,6 +79,7 @@ class AuthViewSet(viewsets.ViewSet):
 					'refreshToken': validator.object.get('rf_tk'),
 					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
 				})
+		raise APIErrors.MalformedRequestBody()
 
 	'''
 	Validate the provided Facebook token.
@@ -143,6 +144,7 @@ class UserViewSet(viewsets.ViewSet):
 
 	'''
 	For testing purpose only
+	TODO: remove this method
 	'''
 	def list(self, request):
 		queryset = User.objects.all()
@@ -154,29 +156,36 @@ class UserViewSet(viewsets.ViewSet):
 	'''
 	def update(self, request, pk=None):
 		try:
-			uid = request.data['userId']
-			username = request.data['username']
-			# TODO: input check
 			user = request.user
 
+			if user.username is not None: # unpermitted action
+				raise APIErrors.InvalidInput('username has been specified')
+
+			uid = request.data['userId']
+			username = request.data['username']
+
+			# input check (throw invalid input error)
+			if uid is None: raise APIError(165, 'userId')
+			if username is None: raise APIError(165, 'username')
+
+			# check if userId matches the one stored in access token
 			if uid != user.id:
-				raise APIError(160)
+				raise APIError(160, 'userId & access token')
 
-			if user.username is not None:
-				raise APIError(125, 'username has been specified')
+			# check if username is valid
+			if len(username) > 18 or re.match(r'([0-9a-zA-Z-]+)', \
+				username).group(0) != username:
+				raise APIError(165, 'username') # invalid username
 
-			# TODO: check if it's a valid username
-			# TODO: check if username has been taken by others
-
+			# update username
 			user.username = username
 			user.save()
+			return Response(UserSerializer(user).data)
 
-			return Response({
-				'userId': user.id,
-				'username': user.username
-			})
-		except KeyError:
-			raise APIError(100)
+		except KeyError as e: # malformed body
+			raise APIError(100, missing(e.args[0]))
+		except IntegrityError: # username already exists
+			raise APIError(190, 'username')
 
 '''
 
@@ -190,48 +199,49 @@ class CategoryViewSet(viewsets.ViewSet):
 	def create(self, request):
 		try:
 			cat_name = request.data['name']
-			# TODO: input check
-			# TODO: check if cat_name is a valid category name
-			# TODO: investigate if we can use user.category_set here
-			cat, created = Category.objects.get_or_create(
-				name=cat_name,
-				user=request.user
-			)
-			if not created: raise APIError(190, 'category name')
+			# input check
+			if cat_name is None: raise APIErrors.InvalidInput('name')
+			# create a new category
+			cat, created = request.user.category_set.get_or_create(name=cat_name)
+			if not created: raise APIErrors.AlreadyExists('category name')
+
 			cat.save()
-			return Response(CategorySerializer(cat).data)
-		except KeyError: # malformed body
-			raise APIError(100)
+			serializer = CategorySerializer(cat)
+			return Response(serializer.data)
+
+		except KeyError as e: # malformed body
+			raise APIErrors.MalformedRequestBody(missing(e.args[0]))
 
 	'''
 	Update a category: /user/categories/id/ PUT
 	'''
 	def update(self, request, query):
 		ids = extract_ids(query)
-		if len(ids) != 1: raise APIError(195, 'more than one id')
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
 		try:
 			cat_name = request.data['name']
-			# TODO: input check
-			# TODO: check if cat_name is a valid category name
+			# input check
+			if cat_name is None: raise APIErrors.InvalidInput('name')
+			# retrieve the category
 			cat = request.user.category_set.get(id=ids[0])
+
 			cat.name = cat_name
 			cat.save()
-			return Response(CategorySerializer(cat).data)
-		except KeyError: # malformed body
-			raise APIError(100)
-		except ObjectDoesNotExist:
-			raise APIError(180, 'category id')
+			serializer = CategorySerializer(cat)
+			return Response(serializer.data)
+
+		except KeyError as e: # malformed body
+			raise APIErrors.MalformedRequestBody(missing(e.args[0]))
+		except Category.DoesNotExist:
+			raise APIErrors.DoesNotExist('category id')
 				
 	'''
 	List all user's categories: /user/categories/ GET
 	'''
 	def list(self, request, pk=None):
-		try:
-			queryset = request.user.category_set.all()
-			serializer = CategorySerializer(queryset, many=True)
-			return Response(serializer.data)
-		except KeyError:
-			raise APIError(100)
+		queryset = request.user.category_set.all()
+		serializer = CategorySerializer(queryset, many=True)
+		return Response(serializer.data)
 
 '''
 
@@ -244,35 +254,44 @@ class OwnedTaskViewSet(viewsets.ViewSet):
 	'''
 	def list(self, request):
 		quesyset = request.user.owned_tasks.all()
-		return Response(TaskIdSerializer(quesyset, many=True).data)
+		serializer = TaskIdSerializer(quesyset, many=True)
+		return Response(serializer.data)
 
 	''''
 	Create a task: /user/tasks/ POST
 	'''
 	def create(self, request):
 		user = request.user
-		t_deadline = datetime.datetime.fromtimestamp(request.data['deadline'])
-		t_category = request.data.get('category', None)
 
 		try:
-			t_name = request.data['name']
-			t_desc = request.data['description']
-			# TODO: input check
-			if t_category is not None:
-				t_category = user.category_set.get(id=t_category)
+			name = request.data['name']
+			desc = request.data['description']
+			deadline = request.data['deadline']
+			category = request.data['category']
 
-			task = Task(name=t_name, description=t_desc, deadline=t_deadline, 
+			# input check
+			if name is None: raise APIErrors.InvalidInput('name')
+			if deadline is None: raise APIErrors.InvalidInput('deadline')
+			deadline = datetime.datetime.fromtimestamp(deadline)
+			# retrieve the user category from database
+			if category is not None: category = user.category_set.get(id=category)
+			# create a new task
+			task = Task(name=name, description=desc, deadline=deadline, 
 				owner=user, last_notify_ts=datetime.datetime.now())
 
-			if t_category is not None:
-				task.category = t_category
+			if category is not None:
+				task.category = category
 
 			task.save()
-			return Response({'taskId': task.id})
-		except KeyError: # malformed body
-			raise APIError(100)
-		except ObjectDoesNotExist:
-			raise APIError(180, 'category id')
+			serializer = TaskIdSerializer(task)
+			return Response(serializer.data)
+
+		except KeyError as e: # malformed body
+			raise APIErrors.MalformedRequestBody(missing(e.args[0]))
+		except Category.DoesNotExist:
+			raise APIErrors.DoesNotExist('category id')
+		except TypeError:
+			raise APIErrors.InvalidInput('deadline')
 
 '''
 The Task view set class implementation.
@@ -287,8 +306,8 @@ class TaskViewSet(viewsets.ViewSet):
 		ids = extract_ids(query)
 		user = request.user
 		
-		queryset = Task.objects.filter(pk__in=ids)
-		queryset = queryset.filter(viewer=user) | queryset.filter(owner=user)
+		queryset = Task.objects.filter(viewer=user) | Task.objects.filter(owner=user)
+		queryset = queryset.filter(pk__in=ids)
 		serializer = TaskSerializer(queryset, many=True)
 		return Response(serializer.data)
 
@@ -297,30 +316,33 @@ class TaskViewSet(viewsets.ViewSet):
 	'''
 	def update(self, request, query):
 		ids = extract_ids(query)
-		if len(ids) != 1: raise APIError(195, 'more than one id')
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
 		
 		try:
-			t_name = request.data['name']
-			t_desc = request.data['description']
-			t_category = request.data.get('category', None)
+			name = request.data['name']
+			desc = request.data['description']
+			category = request.data['category']
 
-			if t_category is not None:
-				t_category = user.category_set.get(id=t_category) 
+			# input check
+			if name is None: raise APIErrors.InvalidInput('name')
 
-			# TODO: input check
+			if category is not None:
+				category = user.category_set.get(id=category)
 
 			if not request.user.owned_tasks.filter(id=ids[0]).exists():
 				raise APIError(180, 'task id')
 
-			curr_task = request.user.owned_tasks.get(id=ids[0])
-			curr_task.name = t_name
-			curr_task.description = t_desc
+			task = request.user.owned_tasks.get(id=ids[0])
+			task.name = name
+			task.description = desc
 
-			if t_category is not None:
-				curr_task.category = t_category
+			if category is not None:
+				task.category = category
 
-			curr_task.save()
-			return Response({'taskId': curr_task.id})
+			task.save()
+			serializer = TaskIdSerializer(task)
+			return Response(serializer.data)
+
 		except KeyError:
 			raise APIError(100)
 		except ObjectDoesNotExist:
@@ -350,7 +372,7 @@ class SpecialViewSet(viewsets.ViewSet):
 	def perform_action(self, request, action, query):
 		if action == 0: # add user to be the viewer of a task
 			ids = extract_ids(query)
-			if len(ids) != 1: raise APIError(195, 'more than one id')
+			if len(ids) != 1: raise APIError(195, 'multiple ids')
 			# TODO: check if user has been invited for viewing a task
 			queryset = Task.objects.filter(id=ids[0])
 			if queryset.exists():
@@ -360,7 +382,7 @@ class SpecialViewSet(viewsets.ViewSet):
 				return Response({'success': True})
 		elif action == 4: # change deadline
 			ids = extract_ids(query)
-			if len(ids) != 1: raise APIError(195, 'more than one id')
+			if len(ids) != 1: raise APIError(195, 'multiple ids')
 			queryset = request.user.viewing_tasks.filter(id=ids[0])
 			if not queryset.exists():
 				return Response({'success': False})
@@ -396,3 +418,4 @@ def extract_ids(query):
 	if any(not i.isdigit() for i in m):
 		raise APIError(195, 'invalid id value')
 	return [int(i) for i in m]
+

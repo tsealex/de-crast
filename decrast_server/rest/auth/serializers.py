@@ -43,10 +43,7 @@ class JWTSerializer(serializers.Serializer):
 				'ac_tk': encode_header(ac_payload),
 				'rf_tk': encode_header(rf_payload),
 				'ac_exp': ac_exp,
-				'rf_exp': rf_exp,
 			}
-		else:
-			raise APIError(100)
 
 class RefreshSerializer(serializers.Serializer):
 	def __init__(self, *args, **kwargs):
@@ -91,5 +88,3 @@ class RefreshSerializer(serializers.Serializer):
 				raise APIError(105)
 			except jwt.DecodeError:
 				raise APIError(155, details='DecodeError')
-		else:
-			raise APIError(100)
