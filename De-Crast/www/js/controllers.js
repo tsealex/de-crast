@@ -1,22 +1,22 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', ['ngOpenFB'])
     
-    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact, $window) {
+    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             
-            if(window.localStorage.getItem("login") == null){
+            if(localStorage.getItem('login') == null){
                 $state.go('login', {});
             }
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();
-
-            Server.getUserTasks($rootScope.accessToken).then(function(data){
+            Server.getUserTasks().then(function(data){
                 $scope.populateTasks(data.data);
             });
+            $scope.populateCategories();
             
         });
-        $scope.name = window.localStorage.getItem("user");
+        $scope.name = localStorage.getItem('user');
 
         // function to fetch data from the server
         $rootScope.task_list = {};
@@ -71,7 +71,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         function (response) { 
                                 console.log('Facebook logout succeeded');
                                 $scope.ignoreDirty = true; //Prevent loop
-                                window.localStorage.clear();
+                                localStorage.clear();
                                 $ionicHistory.clearCache();
                                 $ionicHistory.clearHistory();
                                 $state.go('login'); 
@@ -118,18 +118,42 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         Function to display the task list
         */
         $scope.populateTasks = function(response){
-            console.log(JSON.stringify(response));
-            
             for(i=0;i<response.length;i++){
-                Server.getTask($rootScope.accessToken, response[i].taskId).then(function(data){
+                
+                Server.getTask(response[i].taskId).then(function(data){
                     var myDate = new Date( data.data[0].deadline *1000);
-                    
-                    var newTask = (new TaskFact()).addTask(data.data[0].name, data.data[0].description, data.data[0].category, myDate, null, null, null);
+                    //console.log(JSON.stringify(data));
+                    var taskCategoryName = $scope.categoryIdConverName(data.data[0].category);
+                    var newTask = (new TaskFact()).addTask(data.data[0].name, data.data[0].description, taskCategoryName, myDate, null, null, null);
                     $rootScope.task_list[data.data[0].taskId] = newTask;
                 });
             }
-            console.log(JSON.stringify($rootScope.task_list));
+            
             localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+            
+        }
+
+        $scope.populateCategories = function(){
+            $rootScope.category_list = {};
+            Server.getCategory().then(function(data){
+                if(data.data.length == 0){
+                    //$ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
+                }
+                for(i=0;i<data.data.length;i++){
+                    $rootScope.category_list[data.data[i].categoryId] = data.data[i];
+                }
+                localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
+            });
+        
+        $scope.categoryIdConverName = function(cid){
+            var taskCategory = $rootScope.category_list[cid];
+            if(taskCategory == null){
+                return "None";
+            }else{
+                return taskCategory.name;
+            }
+            
+        }
             
         }
     })
@@ -162,8 +186,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 // convert from readable time to UNIX
                 var myDate = new Date($scope.time); 
                 var myEpoch = myDate.getTime()/1000.0;
-                
-                Server.addNewTask($rootScope.accessToken, $scope.taskName, myEpoch, $scope.descrip, null, null).then(function(data) {
+                var mySelector = document.getElementById('category-select');
+                var myCategory = mySelector.options[mySelector.selectedIndex].value;
+                console.log(myCategory);
+                if(myCategory == ""){
+                    myCategory = null;
+                }
+                //console.log(mySelector, myCategory);
+                Server.addNewTask($scope.taskName, myEpoch, $scope.descrip, myCategory, null).then(function(data) {
                     //console.log(JSON.stringify(data));
                 });
                 $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
@@ -300,7 +330,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         });
     })
     
-    .controller('LogoutCtrl', function ($scope,$ionicHistory,$state,$window) {
+    .controller('LogoutCtrl', function ($scope,$ionicHistory,$state) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
@@ -311,10 +341,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             viewData.enableBack = true;
             // populate the category list
             $rootScope.category_list = {};
-            $scope.populateCategories();
             
             var categoryHold = angular.fromJson(localStorage.getItem('category_list'));
-
+            console.log(localStorage.getItem('category_list'));
             if (categoryHold != null) {
                 $rootScope.category_list = categoryHold;
             }
@@ -322,22 +351,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         })
         
         $scope.addCategory = function(name){
-            Server.addCategory($rootScope.accessToken, name).then(function(data){
+            Server.addCategory(name).then(function(data){
                 var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
                 $rootScope.category_list[data.data.categoryId] = newCategory;
             });
         }
-        $scope.populateCategories = function(){
-            Server.getCategory($rootScope.accessToken).then(function(data){
-                if(data.data.length == 0){
-                    $ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
-                }
-                for(i=0;i<data.data.length;i++){
-                    $rootScope.category_list[data.data[i].categoryId] = data.data[i];
-                }
-            });
-            localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
-        }
+        
     })
     .controller('ManageNotificationsCtrl', function ($scope, $state) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
@@ -352,7 +371,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $window, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -371,15 +390,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             ngFB.login({scope: 'email,user_posts, publish_actions, user_friends'}).then(
                 function (response) {
                     if (response.status === 'connected') {
-                        window.localStorage.setItem("login", "true"); 
-                        $rootScope.fbAccessToken = response.authResponse.accessToken;
+                        localStorage.setItem('login', 'true'); 
+                        localStorage.setItem('fbAccessToken', response.authResponse.accessToken);
                         
                         ngFB.api({
                             path: '/me',
                             params: {fields: 'id,name'}
                         }).then(
                             function (user) {
-                                window.localStorage.setItem("user", user.name);
+                                localStorage.setItem('user', user.name);
                                 $rootScope.userFBId = user.id;
                                 console.log(JSON.stringify(user));
                                 var userId; // user's De-Crast Id
@@ -388,10 +407,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 Server.loginUser(user.id).then(function(data) {
                                     userId = data.data.userId;
                                     accessToken = data.data.accessToken;
-                                    $rootScope.accessToken = accessToken;
-                                    window.localStorage.setItem("userId", userId);
-                                    //console.log(userId, accessToken);
-                                    Server.fetchUsers(accessToken).then(function(data) {
+                                    localStorage.setItem('userId', userId);
+                                    localStorage.setItem('accessToken', accessToken);
+                                    Server.fetchUsers().then(function(data) {
                                         
                                         console.log(JSON.stringify(data.data));
                                         var userList = data.data;
@@ -400,9 +418,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                                 if(userList[i].username == null){
 
                                                     // Popup for new user
-                                                    $scope.myPopup(user.name, userId, accessToken);
+                                                    $scope.myPopup(user.name, userId);
                                                 }else{
-                                                    window.localStorage.setItem("user", userList[i].username); 
+                                                    localStorage.setItem('user', userList[i].username); 
                                                     $state.go('tab.home', {});
                                                 }
                                             }
@@ -426,7 +444,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
 
 
-        $scope.myPopup = function (userFBName, userId, accessToken) {
+        $scope.myPopup = function (userFBName, userId) {
             var myPopup = $ionicPopup.show({
                 template: '<label class="item item-input"><input type="text" id="DCname" placeholder="De-Crast Name" value=\"'+userFBName+'\"></label>',
                 title: 'Create De-Crast Name',
@@ -450,8 +468,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
             myPopup.then(function(res) {
                 if (res) {
-                    window.localStorage.setItem("user", res);
-                    Server.changeUsername(userId, accessToken, res).then(function(data) {
+                    localStorage.setItem('user', res);
+                    Server.changeUsername(userId, res).then(function(data) {
                         //console.log(JSON.stringify(data));
                     });
                     $state.go('tab.home', {});
@@ -476,6 +494,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 "userId", decrastId
 "userFBId", FBId
 "login", true/false
+'fbAccessToken'
 "user", username, default FB name, specify on De-Crast name
 "task_list"
 "friend_list"

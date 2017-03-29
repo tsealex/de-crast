@@ -10,6 +10,7 @@ angular.module('decrast.server', [])
                 'Accept': 'application/json'
         };
         var fbApi = 'https://graph.facebook.com/';
+        var accessToken = localStorage.getItem('accessToken');
 
        
         return {
@@ -25,7 +26,7 @@ angular.module('decrast.server', [])
                                 return data;
                             });
             },
-            fetchUsers: function(accessToken) {
+            fetchUsers: function() {
                 return $http({
                             method:'GET',
                             url: ApiEndpoint.url + 'users/',
@@ -36,7 +37,7 @@ angular.module('decrast.server', [])
                             return response;
                         });
             },
-            changeUsername: function(uid, accessToken, username) {
+            changeUsername: function(uid, username) {
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/',
@@ -48,7 +49,7 @@ angular.module('decrast.server', [])
                             return response;
                         });
             },
-            addNewTask: function(accessToken, name, deadline, description, category, viewer) {
+            addNewTask: function(name, deadline, description, category, viewer) {
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/tasks/',
@@ -66,7 +67,7 @@ angular.module('decrast.server', [])
                             return response;
                 });
             },
-            getUserTasks: function(accessToken){
+            getUserTasks: function(){
                 return $http({
                             method:'GET',
                             url: ApiEndpoint.url + 'user/tasks/',
@@ -78,19 +79,20 @@ angular.module('decrast.server', [])
                 });
             },
 
-            getTask: function(accessToken, taskId){
+            getTask: function(taskId){
                 return $http({
                             method:'GET',
                             url: ApiEndpoint.url + 'user/tasks/' + taskId + '/',
                             headers: {'Authorization': 'JWT ' + accessToken}
                         }).then(function(response){
-                            console.log(JSON.stringify(response));
+                            //console.log(JSON.stringify(response));
                             return response;
                         }, function(response){
+                            console.log(response);
                             return response;
                 });
             },
-            addCategory: function(accessToken, categoryName){
+            addCategory: function(categoryName){
                 return $http({
                             method:'PUT',
                             url: ApiEndpoint.url + 'user/categories/',
@@ -105,7 +107,7 @@ angular.module('decrast.server', [])
                 });
 
             },
-            getCategory: function(accessToken){
+            getCategory: function(){
                 return $http({
                             method:'GET',
                             url: ApiEndpoint.url + 'user/categories/',

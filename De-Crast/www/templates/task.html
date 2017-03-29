@@ -19,14 +19,19 @@ Create a task below
       </div>
     </div>
 
-<!--Task Category. A text box for now but this should change.-->
     <div class="bottom">
       <div style="float: left; width: 50%;">
         <label class="item item-input">
-          <input type="text" name="category" id="category-textarea" ng-model="$parent.category" placeholder="Category">
+<!--set height absolutely as 36px to match with other input textbox, may cause problem-->
+<!--and the text color may need further change-->
+        <select id="category-select" class="item item-input" style="height:36px; border: 0px;">
+          <option disabled selected value="">Category</option>
+          <option ng-repeat="category in category_list" value="{{category.categoryId}}">{{category.name}}</option>
+          <option value="">None</option>
+        </select>
         </label>
+        
       </div>
-
 <!--Due Time. For some reason it does not show up well on iOS. Needs to be checked on Android-->
       <div class="bottom">
         <div style="float: left; width: 50%;">
