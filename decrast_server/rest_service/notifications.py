@@ -124,6 +124,9 @@ def respond_viewer_invite(user, notification, decision):
 		task = notification.task
 		task.viewers.add(viewer)
 		task.save()
+	else:
+		# TODO: send a system message to the task owner
+		pass
 
 '''
 
@@ -145,6 +148,9 @@ def respond_deadline_ext(user, notification, decision):
 			tf.save()
 		except:
 			raise APIErrors.UnpermittedAction('purposed deadline expired')
+	else:
+		# TODO: send a system message to the task owner
+		pass
 	
 '''
 

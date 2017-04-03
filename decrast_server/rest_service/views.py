@@ -28,10 +28,6 @@ from .settings import rest_settings
 from .notifications import *
 
 
-class UploadForm(forms.Form):
-	file = forms.FileField()
-	message = forms
-
 '''
 Authentication-related viewset
 '''
@@ -63,6 +59,7 @@ class AuthViewSet(viewsets.ViewSet):
 		validate(factory)
 		return Response({
 			'userId': factory.object.get('user').id,
+			'username': factory.object.get('user').username,
 			'accessToken': factory.object.get('ac_tk'),
 			'refreshToken': factory.object.get('rf_tk'),
 			'tokenExpiration': calendar.timegm(factory.object
@@ -84,6 +81,7 @@ class AuthViewSet(viewsets.ViewSet):
 		validate(factory)
 		return Response({
 			'userId': factory.object.get('user').id,
+			'username': factory.object.get('user').username,
 			'accessToken': factory.object.get('ac_tk'),
 			'refreshToken': factory.object.get('rf_tk'),
 			'tokenExpiration': calendar.timegm(factory.object
