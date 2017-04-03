@@ -30,7 +30,6 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
   url: 'http://alext.se:8000/'
 })
 .config(function($stateProvider, $urlRouterProvider) {
-
   // Ionic uses AngularUI Router which uses the concept of states
   // Learn more here: https://github.com/angular-ui/ui-router
   // Set up the various states which the app can be in.
@@ -140,6 +139,11 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           url: '/login',
           templateUrl: 'templates/login.html',
           controller: 'LoginCtrl'
+      })
+      .state('setUsername', {
+          url: '/setUsername',
+          templateUrl: 'templates/setUsername.html',
+          controller: 'setUsernameCtrl'
       });
 
   // if none of the above states are matched, use this as the fallback

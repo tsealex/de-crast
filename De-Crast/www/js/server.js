@@ -37,29 +37,50 @@ angular.module('decrast.server', [])
                             return response;
                         });
             },
-            changeUsername: function(uid, username) {
+            changeUsername: function(username) {
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/',
                             headers: {'Authorization': 'JWT ' + accessToken},
-                            data: {userId: uid, username: username}
+                            data: {username: username}
                         }).then(function(response){
                             return response;
                         }, function(response){
                             return response;
                         });
             },
-            addNewTask: function(name, deadline, description, category, viewer) {
+            addNewTask: function(name, description, deadline, category, type) {
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/tasks/',
                             headers: {'Authorization': 'JWT ' + accessToken},
                             data: {
                                 name: name,
-                                deadline: deadline,
                                 description: description,
+                                deadline: deadline,
                                 category: category,
-                                viewer: null
+                                type: type
+                            }
+                        }).then(function(response){
+                            console.log(JSON.stringify(response));
+                            return response;
+                        }, function(response){
+                            console.log(JSON.stringify(response));
+                            return response;
+                });
+            },
+            eidtTask: function(taskId, name, description, category) { // category
+                return $http({
+                            method:'POST',
+                            url: ApiEndpoint.url + 'user/tasks/'+taskId+"/",
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                            data: {
+                                name: name,
+                                description: description,
+                                category: category
+// no edit of category?
+// may need further change it for deadline permission                                
+                                //category: category,
                             }
                         }).then(function(response){
                             return response;
@@ -73,8 +94,10 @@ angular.module('decrast.server', [])
                             url: ApiEndpoint.url + 'user/tasks/',
                             headers: {'Authorization': 'JWT ' + accessToken}
                         }).then(function(response){
+                            console.log("getUserTasks", JSON.stringify(response));
                             return response;
                         }, function(response){
+                            console.log("getUserTasks", JSON.stringify(response));
                             return response;
                 });
             },
@@ -94,7 +117,7 @@ angular.module('decrast.server', [])
             },
             addCategory: function(categoryName){
                 return $http({
-                            method:'PUT',
+                            method:'POST',
                             url: ApiEndpoint.url + 'user/categories/',
                             headers: {'Authorization': 'JWT ' + accessToken},
                             data: {
@@ -113,8 +136,10 @@ angular.module('decrast.server', [])
                             url: ApiEndpoint.url + 'user/categories/',
                             headers: {'Authorization': 'JWT ' + accessToken},
                         }).then(function(response){
+                            console.log("category",JSON.stringify(response));
                             return response;
                         }, function(response){
+                            console.log("category",JSON.stringify(response));
                             return response;
                 });
             }

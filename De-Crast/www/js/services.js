@@ -201,12 +201,12 @@ angular.module('decrast.services', [])
     return function() {
 
         //task constructor?
-        self.addTask = function (name, descrip, category, time, partner, facebook, evidence) {
+        self.addTask = function (taskId, name, descrip, category, time, partner, facebook, evidence) {
 
             var task = { task_name: name, task_descrip: descrip, task_category: category, task_time: time, task_partner: partner,
                 task_facebook: facebook, task_evidence: evidence};
 
-            task.task_id = name+descrip+category+time;
+            task.task_id = taskId;
 
             /*
           // CODE TO UPDATE MASTER LIST, LOCAL STORAGE, AND SERVER. NOT SURE IF IT SHOULD GO HERE OR IN CONTROLLER

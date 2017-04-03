@@ -123,8 +123,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 Server.getTask(response[i].taskId).then(function(data){
                     var myDate = new Date( data.data[0].deadline *1000);
                     //console.log(JSON.stringify(data));
-                    var taskCategoryName = $scope.categoryIdConverName(data.data[0].category);
-                    var newTask = (new TaskFact()).addTask(data.data[0].name, data.data[0].description, taskCategoryName, myDate, null, null, null);
+                    var newTask = (new TaskFact()).addTask(data.data[0].taskId, data.data[0].name, data.data[0].description, data.data[0].category, myDate, null, null, null);
                     $rootScope.task_list[data.data[0].taskId] = newTask;
                 });
             }
@@ -193,7 +192,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     myCategory = null;
                 }
                 //console.log(mySelector, myCategory);
-                Server.addNewTask($scope.taskName, myEpoch, $scope.descrip, myCategory, null).then(function(data) {
+                Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, 1).then(function(data) {
                     //console.log(JSON.stringify(data));
                 });
                 $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
@@ -206,16 +205,20 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading) {
+    .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
         $scope.task = $stateParams.task;
         $scope.title = "Edit";
+        var taskId = $scope.task.task_id;
         $scope.taskName = $scope.task.task_name;
         $scope.category = $scope.task.task_category;
         $scope.descrip = $scope.task.task_descrip;
+        // below are used for deadline change
         $scope.myFactory = new TaskFact();
+        var myDate = new Date($scope.task.task_time); 
+        var myEpoch = myDate.getTime()/1000.0;
 
         $scope.editTask = function () {
 
@@ -223,27 +226,55 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 $ionicLoading.show({template: 'Please Enter A Task Name', noBackdrop: true, duration: 1000});
             }
             else {
-              var tempTask = $scope.myFactory.editTask($scope.task, $scope.taskName, $scope.descrip, $scope.category);
-              // $rootScope.task_list[tempTask.id] = tempTask;
-
-                localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+                // change within localStorage
+                // var tempTask = $scope.myFactory.editTask($scope.task, $scope.taskName, $scope.descrip, $scope.category);
+                // $rootScope.task_list[tempTask.id] = tempTask;
+                if($scope.time != null){
+                    myDate = new Date($scope.time); 
+                    myEpoch = myDate.getTime()/1000.0;
+                }
+                //console.log($scope.taskName, $scope.descrip, $scope.task.task_time, myDate, myEpoch, taskId);
+                Server.eidtTask(taskId, $scope.taskName, $scope.descrip, $scope.category).then(function(data){
+                    // TODO
+                    console.log(JSON.stringify(data));
+                });
+                //localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
 
                 //update server here
 
                 $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
                 $ionicViewSwitcher.nextDirection('back');
 
-                /*
-                $timeout(function () {
+                
+                /*$timeout(function () {
                     $state.go('tab.home', {});
                 }, 1000);*/
                 $state.go('tab.home');
             }
 
         }
+        $scope.editDeadline = function(){
+            console.log('click');
+            var editDeadlinePopup = $ionicPopup.confirm({
+                title: 'Edit Deadline',
+                template: 'You need viewer\'s permission to edit the deadline and a notification of deadline edit will be sent automatically. Do you want to continue?'
+            });
+
+            editDeadlinePopup.then(function(res) {
+                if (res) {
+                    document.getElementById('time-textarea').style.display = "none";
+                    document.getElementById('time-input').style.display = "block";
+// TODO: send notification
+// how to indicate the deadline is under pending: set the mark?
+                    console.log("need send notification function");
+                } else {
+                    console.log('canecel');
+                }
+            });
+        }
     })
 
-    .controller('ViewTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher) {
+    .controller('ViewTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
@@ -255,8 +286,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicViewSwitcher.nextDirection('forward');
             $state.go('editTask', {task: task});
         }
-
-
+        
+        $scope.onComplete = function(){
+            var evidenceType = $ionicPopup.show({
+                template: '<img >'
+            });
+        }
+        $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
     })
 
     .controller('FtasksCtrl', function ($scope, Ftasks, $ionicLoading) {
@@ -405,27 +441,20 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 var accessToken;
                                 // user facebookId to login user
                                 Server.loginUser(user.id).then(function(data) {
+                                    console.log(JSON.stringify(data));
                                     userId = data.data.userId;
                                     accessToken = data.data.accessToken;
+                                    console.log("test response username\n", JSON.stringify(data.data.username));
                                     localStorage.setItem('userId', userId);
                                     localStorage.setItem('accessToken', accessToken);
-                                    Server.fetchUsers().then(function(data) {
-                                        
-                                        console.log(JSON.stringify(data.data));
-                                        var userList = data.data;
-                                        for(i=0; i<userList.length;i++){
-                                            if(userList[i].userId == userId){
-                                                if(userList[i].username == null){
-
-                                                    // Popup for new user
-                                                    $scope.myPopup(user.name, userId);
-                                                }else{
-                                                    localStorage.setItem('user', userList[i].username); 
-                                                    $state.go('tab.home', {});
-                                                }
-                                            }
-                                        }
-                                    });
+                                    if(data.data.username != null){
+                                        console.log(data.data.username);
+                                        localStorage.setItem('user', data.data.username);
+                                        $state.go('tab.home');
+                                    }else{
+                                        $state.go('tab.home');
+                                        //$state.go('setUsername');
+                                    }
                                 });
                             },
                             function (error) {
@@ -443,43 +472,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             
         };
 
-
-        $scope.myPopup = function (userFBName, userId) {
-            var myPopup = $ionicPopup.show({
-                template: '<label class="item item-input"><input type="text" id="DCname" placeholder="De-Crast Name" value=\"'+userFBName+'\"></label>',
-                title: 'Create De-Crast Name',
-                buttons: [{
-                    text: 'Later',
-                    type: 'button-negative',
-                }, {
-                    text: 'Confirm',
-                    type: 'button-positive',
-                    onTap: function(e) {
-                        var userDCName = document.getElementById('DCname').value;
-                        if (userDCName == null || userDCName == "") {
-                            $ionicLoading.show({template: 'Cannot leave De-Crast name blank!', noBackdrop: true, duration: 1000});
-                            e.preventDefault();
-                        }else{
-                            return userDCName;
-                        }
-                    }
-                }, ]
-            });
-
-            myPopup.then(function(res) {
-                if (res) {
-                    localStorage.setItem('user', res);
-                    Server.changeUsername(userId, res).then(function(data) {
-                        //console.log(JSON.stringify(data));
-                    });
-                    $state.go('tab.home', {});
-                } else {
-                    //console.log('Later');
-                    $state.go('tab.home', {});
-                }
-            });
-        }
-
     })
 
     .controller('BackCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory) {
@@ -487,6 +479,26 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
 
+        }
+    })
+    .controller('setUsernameCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory, Server) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();
+            console.log()
+        }
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            $scope.username = localStorage.getItem('user');
+            
+        });
+        $scope.setUsername = function(){
+            $scope.username = document.getElementById('DCname').value;
+            console.log($scope.username);
+            Server.changeUsername($scope.username).then(function(data) {
+                console.log(JSON.stringify(data));
+                localStorage.setItem('user', $scope.username);
+                $state.go('tab.home');
+            });
         }
     })
 
