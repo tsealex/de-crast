@@ -32,16 +32,33 @@ link up to anything in particular in the controllers. We'll want to hook these u
                 </select>
                 </label>
             </div>
+        </div>
 
             <!--Due Time: I don't like how this is displaying so we should fix this-->
-            <div class="bottom" ng-click="editDeadline()">
-                <div style="float: left; width: 50%;">
-                    <label class="item item-input">
-                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none; height: 36px;" >{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
-                        <input type="datetime-local" name="time" id="time-input" ng-model="$parent.time" style="display: none;" placeholder="Due Date">
-                    </label>
-                </div>
+        <div class="bottom" ng-click="editDeadline()">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none; height: 36px;" >{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
+                    <input type="datetime-local" name="time" id="time-input" ng-model="$parent.time" style="display: none;" placeholder="Due Date">
+                </label>
             </div>
+        </div>
+
+        <div class="bottom">
+            <div style="float: left; width: 50%;">
+            <label class="item item-input">
+                <input disabled type="text" name="evidenceType" id="evidenceType-textarea" ng-model="evidenceType" style="background: transparent;">
+            </label>
+            </div>
+        </div>
+
+        <div class="bottom">
+            <div style="float: left; width: 50%;" >
+            <label class="item item-input">
+                <input disabled type="text" name="viewer" id="viewer-textarea" ng-model="$parent.viewer" placeholder="Viewer" style="background: transparent;">
+            </label>
+            </div>
+        </div>
             
             <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
             TODO file can be used by add, view, and edit -->

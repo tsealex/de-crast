@@ -119,11 +119,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         */
         $scope.populateTasks = function(response){
             for(i=0;i<response.length;i++){
-                
+                var evidenceType;
+                Server.getEvidenceType(response[i].taskId).then(function(data){
+                    evidenceType = data.data.type;
+                });
                 Server.getTask(response[i].taskId).then(function(data){
                     var myDate = new Date( data.data[0].deadline *1000);
                     //console.log(JSON.stringify(data));
-                    var newTask = (new TaskFact()).addTask(data.data[0].taskId, data.data[0].name, data.data[0].description, data.data[0].category, myDate, null, null, null);
+                    var newTask = (new TaskFact()).addTask(data.data[0].taskId, data.data[0].name, data.data[0].description, data.data[0].category, myDate, null, null, evidenceType);
                     $rootScope.task_list[data.data[0].taskId] = newTask;
                 });
             }
@@ -157,12 +160,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
 
-    .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server) {
+    .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
         $scope.title = "Add";
-
+        $scope.evidenceTypes = EvidenceTypes.all();
         $scope.myFactory = new TaskFact();
 
         $scope.onSubmit = function() {
@@ -182,25 +185,34 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 /*
                 Add Task to localStorage and Server
                 */
-                // convert from readable time to UNIX
-                var myDate = new Date($scope.time); 
-                var myEpoch = myDate.getTime()/1000.0;
-                var mySelector = document.getElementById('category-select');
-                var myCategory = mySelector.options[mySelector.selectedIndex].value;
-                Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, 1).then(function(data) {
-                    //console.log(JSON.stringify(data));
-                });
-                $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
-                $ionicViewSwitcher.nextDirection('back');
-                $timeout(function () {
-                    $state.go('tab.home', {});
-                }, 1000);
+                // check evidenceType
+                var evidenceType = document.getElementById('evidenceType-select').value;
+                if(evidenceType == null || evidenceType == ""){
+                    $ionicLoading.show({template: 'Please Select An Evidence Type', noBackdrop: true, duration: 1000});
+                }else{
+                    // convert from readable time to UNIX
+                    var myDate = new Date($scope.time); 
+                    var myEpoch = myDate.getTime()/1000.0;
+                    var mySelector = document.getElementById('category-select');
+                    var myCategory = mySelector.options[mySelector.selectedIndex].value;
+                    Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
+                        //console.log(JSON.stringify(data));
+                    });
+                    $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
+                    $ionicViewSwitcher.nextDirection('back');
+                    $timeout(function () {
+                        $state.go('tab.home', {});
+                    }, 1000);
+                }
             }
         };
-
+        
+        $scope.populateViewers = function(){
+            console.log("addTask, populateViewers" );
+        };
     })
 
-    .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup) {
+    .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup, EvidenceTypes) {
         var taskId;
         var myDate;
         var myEpoch;
@@ -211,7 +223,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             taskId = $scope.task.task_id;
             $scope.taskName = $scope.task.task_name;
             $scope.category = $scope.task.task_category;
-            
+            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType).name;
             $scope.descrip = $scope.task.task_descrip;
             
             // below are used for deadline change
@@ -282,7 +294,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
 
-    .controller('ViewTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope) {
+    .controller('ViewTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope, EvidenceTypes) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
             $scope.task = $stateParams.task;
@@ -290,18 +302,21 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             if($scope.task.task_category == null){
                 document.getElementById('category-textarea').value = 'None';
             }
+            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType).name;
         });
 
-
+        
         $scope.onSubmit = function(task) {
             $ionicViewSwitcher.nextDirection('forward');
             $state.go('editTask', {task: task});
         }
         
         $scope.onComplete = function(){
-            var evidenceType = $ionicPopup.show({
-                template: '<img >'
-            });
+            if($scope.evidenceType == 0){ // photo
+                console.log("plz upload photo");
+            }else{
+                console.log("plz gps");
+            }
         }
         $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
     })
@@ -463,8 +478,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                         localStorage.setItem('user', data.data.username);
                                         $state.go('tab.home');
                                     }else{
-                                        $state.go('tab.home');
-                                        //$state.go('setUsername');
+                                        //$state.go('tab.home');
+                                        $state.go('setUsername');
                                     }
                                 });
                             },
@@ -507,6 +522,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             console.log($scope.username);
             Server.changeUsername($scope.username).then(function(data) {
                 console.log(JSON.stringify(data));
+// may need to be put in the server                
                 localStorage.setItem('user', $scope.username);
                 $state.go('tab.home');
             });

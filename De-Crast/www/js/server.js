@@ -26,7 +26,7 @@ angular.module('decrast.server', [])
                                 return data;
                             });
             },
-            fetchUsers: function() {
+            /*fetchUsers: function() {
                 return $http({
                             method:'GET',
                             url: ApiEndpoint.url + 'users/',
@@ -36,7 +36,7 @@ angular.module('decrast.server', [])
                         }, function(response){
                             return response;
                         });
-            },
+            },*/
             changeUsername: function(username) {
                 return $http({
                             method:'POST',
@@ -62,10 +62,10 @@ angular.module('decrast.server', [])
                                 type: type
                             }
                         }).then(function(response){
-                            console.log(JSON.stringify(response));
+                            console.log("addNewTask",JSON.stringify(response));
                             return response;
                         }, function(response){
-                            console.log(JSON.stringify(response));
+                            console.log("addNewTask",JSON.stringify(response));
                             return response;
                 });
             },
@@ -142,6 +142,19 @@ angular.module('decrast.server', [])
                             return response;
                         }, function(response){
                             console.log("getCategory",JSON.stringify(response));
+                            return response;
+                });
+            },
+            getEvidenceType: function(taskId){
+                return $http({
+                            method:'GET',
+                            url: ApiEndpoint.url + 'user/tasks/' + taskId + '/evidence/',
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                        }).then(function(response){
+                            console.log("getEvidenceType",JSON.stringify(response));
+                            return response;
+                        }, function(response){
+                            console.log("getEvidenceType",JSON.stringify(response));
                             return response;
                 });
             }

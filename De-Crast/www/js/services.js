@@ -201,10 +201,10 @@ angular.module('decrast.services', [])
     return function() {
 
         //task constructor?
-        self.addTask = function (taskId, name, descrip, category, time, partner, facebook, evidence) {
+        self.addTask = function (taskId, name, descrip, category, time, partner, facebook, evidenceType) {
 
             var task = { task_name: name, task_descrip: descrip, task_category: category, task_time: time, task_partner: partner,
-                task_facebook: facebook, task_evidence: evidence};
+                task_facebook: facebook, task_evidenceType: evidenceType};
 
             task.task_id = taskId;
 
@@ -259,4 +259,28 @@ angular.module('decrast.services', [])
       return self;
   };
 
+})
+
+.factory('EvidenceTypes', function() {
+  var evidenceTypes = [{
+      evidenceTypeId: 0,
+      name: 'Photo'
+  }, {
+      evidenceTypeId: 1,
+      name: 'GPS'
+  }]
+
+  return {
+      all: function() {
+          return evidenceTypes;
+      },
+      get: function(evidenceTypeId) {
+          for (var i = 0; i < evidenceTypes.length; i++) {
+              if (evidenceTypes[i].evidenceTypeId === parseInt(evidenceTypeId)) {
+                  return evidenceTypes[i];
+              }
+          }
+          return null;
+      }
+  }
 });

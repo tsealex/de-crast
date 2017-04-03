@@ -28,17 +28,34 @@ link up to anything in particular in the controllers. We'll want to hook these u
             </div>
         </div>
 
-            <!--Due Time: I don't like how this is displaying so we should fix this-->
-            <div class="bottom">
-                <div style="float: left; width: 50%;">
-                    <label class="item item-input">
-                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
-                    </label>
-                </div>
+        <!--Due Time: I don't like how this is displaying so we should fix this-->
+        <div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
+                </label>
             </div>
-            <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
-            TODO file can be used by add, view, and edit -->
-            <button style="float: left; width: 49%;" class="button button-positive button-top-margin" ng-click="onSubmit(task)">Edit Task</button>
-            <button style="float: right; width: 49%;" class="button button-positive button-top-margin" ng-click="onComplete(task)">Task Complete</button>
+        </div>
+
+         <div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <input disabled type="text" name="evidenceType" id="evidenceType-textarea" style="background: transparent; resize: none;" ng-model="evidenceType"></input>
+                </label>
+            </div>
+        </div>
+        
+        <div class="bottom">
+            <div style="float: left; width: 50%;" >
+            <label class="item item-input">
+                <input type="text" name="viewer" id="viewer-textarea" ng-model="$parent.viewer" placeholder="Viewer" ng-click="populateViewers()">
+            </label>
+            </div>
+        </div>
+
+        <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
+        TODO file can be used by add, view, and edit -->
+        <button style="float: left; width: 49%;" class="button button-positive button-top-margin" ng-click="onSubmit(task)">Edit Task</button>
+        <button style="float: right; width: 49%;" class="button button-positive button-top-margin" ng-click="onComplete(task)">Task Complete</button>
     </ion-content>
 </ion-view>

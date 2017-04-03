@@ -32,11 +32,34 @@ Create a task below
         </label>
         
       </div>
+    </div>
 <!--Due Time. For some reason it does not show up well on iOS. Needs to be checked on Android-->
       <div class="bottom">
         <div style="float: left; width: 50%;">
           <label class="item item-input">
             <input type="text" name="time" id="time-textarea" ng-model="$parent.time" placeholder="Due Date" onclick="this.type='datetime-local'">
+          </label>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div style="float: left; width: 50%;">
+          <label class="item item-input">
+<!--set height absolutely as 36px to match with other input textbox, may cause problem-->
+<!--and the text color may need further change-->
+            <select id="evidenceType-select" class="item item-input" style="height:36px; border: 0px;">
+              <option disabled selected value="">Evidence Type</option>
+              <option ng-repeat="evidenceType in evidenceTypes" value="{{evidenceType.evidenceTypeId}}">{{evidenceType.name}}</option>
+<!--do we need none for evidenceType?          
+              <option value="">None</option>-->
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="bottom">
+        <div style="float: left; width: 50%;" >
+          <label class="item item-input">
+            <input type="text" name="viewer" id="viewer-textarea" ng-model="$parent.viewer" placeholder="Viewer" ng-click="populateViewers()">
           </label>
         </div>
       </div>
