@@ -264,10 +264,10 @@ angular.module('decrast.services', [])
 .factory('EvidenceTypes', function() {
   var evidenceTypes = [{
       evidenceTypeId: 0,
-      name: 'Photo'
+      name: 'GPS'
   }, {
       evidenceTypeId: 1,
-      name: 'GPS'
+      name: 'Photo'
   }]
 
   return {

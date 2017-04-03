@@ -144,6 +144,14 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           url: '/setUsername',
           templateUrl: 'templates/setUsername.html',
           controller: 'setUsernameCtrl'
+      })
+      .state('map', {
+          url: '/map',
+          params: {
+            task: 'Tasks'
+          },
+          templateUrl: 'templates/map.html',
+          controller: 'mapCtrl'
       });
 
   // if none of the above states are matched, use this as the fallback

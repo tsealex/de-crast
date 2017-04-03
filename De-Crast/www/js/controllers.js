@@ -223,7 +223,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             taskId = $scope.task.task_id;
             $scope.taskName = $scope.task.task_name;
             $scope.category = $scope.task.task_category;
-            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType).name;
+            $scope.evidenceTypeName = EvidenceTypes.get($scope.task.task_evidenceType).name;
             $scope.descrip = $scope.task.task_descrip;
             
             // below are used for deadline change
@@ -232,7 +232,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             myEpoch = myDate.getTime()/1000.0;
         });
         $scope.$on('$ionicView.afterEnter', function (event, viewData) {
-            console.log($scope.category);
             if($scope.category != null){
                 document.getElementById('category-select-edit').value = $scope.category;
             }
@@ -302,7 +301,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             if($scope.task.task_category == null){
                 document.getElementById('category-textarea').value = 'None';
             }
-            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType).name;
+            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
+            $scope.evidenceTypeName = $scope.evidenceType.name;
         });
 
         
@@ -312,10 +312,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         
         $scope.onComplete = function(){
-            if($scope.evidenceType == 0){ // photo
+            if($scope.evidenceType.evidenceTypeId == 0){ // photo
+                $state.go('map', {task: $scope.task});
+            }
+            if($scope.evidenceType.evidenceTypeId == 1){ // photo
                 console.log("plz upload photo");
-            }else{
-                console.log("plz gps");
             }
         }
         $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
@@ -478,8 +479,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                         localStorage.setItem('user', data.data.username);
                                         $state.go('tab.home');
                                     }else{
-                                        //$state.go('tab.home');
-                                        $state.go('setUsername');
+                                        $state.go('tab.home');
+                                        //$state.go('setUsername');
                                     }
                                 });
                             },
@@ -527,6 +528,73 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 $state.go('tab.home');
             });
         }
+    })
+    .controller('mapCtrl', function ($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaGeolocation, $ionicLoading, Server) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();
+        }
+        $scope.task = $stateParams.task;
+        $scope.taskId = $scope.task.task_id;
+
+        var options = {timeout: 10000, enableHighAccuracy: true};
+        var latLng;
+ 
+        $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+        
+            latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+
+            var mapOptions = {
+                center: latLng,
+                zoom: 15,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            
+            $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
+            
+            google.maps.event.addListenerOnce($scope.map, 'idle', function(){
+                var marker = new google.maps.Marker({
+                    map: $scope.map,
+                    animation: google.maps.Animation.DROP,
+                    position: latLng
+                });
+                $scope.getAddressFromLatLang(latLng, $scope.map, marker);
+            });
+
+        }, function(error){
+            $ionicLoading.show({template: "Could not get location, please check your GPS setting and try again", noBackdrop: true, duration: 1000});
+        });
+
+        $scope.getAddressFromLatLang = function(latLng, map, marker){
+            var geocoder = new google.maps.Geocoder();
+
+            geocoder.geocode({'latLng': latLng}, function(results, status){
+                //console.log(JSON.stringify(results));
+                if(status == google.maps.GeocoderStatus.OK){
+                    if(results[1]){
+                        var infowindow = new google.maps.InfoWindow();
+                        infowindow.setOptions({
+                            content: '<div>' + results[1].formatted_address + '</div>',
+                        });
+                        infowindow.open(map, marker);
+                    }
+                }else{
+                    alert("error", JSON.stringify(status));
+                }
+            })
+        };
+
+        $scope.confirmGPS = function(){
+            var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
+            console.log("Map post coordinates", coordinates);
+// This server is not function correctly            
+            // Server.submitGPS($scope.taskId, coordinates).then(function(data){});
+        }
+
     })
 
 /* localStorage List:
