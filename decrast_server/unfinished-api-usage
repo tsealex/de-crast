@@ -560,21 +560,21 @@ OTHER NOTES:
 - every time a task is created, the client must make a POST call to the endpoint 
   /user/tasks/<id>/consequence/ to initialize the consequence. To use default
   consequence, just don't pass any parameters. Otherwise, client must pass 'file'
-  and 'message' two parameters. For example, make a call like
+  and/or 'message' two parameters. For example, make a call like
 
 curl --request POST \
   --url http://alext.se:8000/user/tasks/<id>/consequence/ \
   --header 'content-type: multipart/form-data' \
   --form file=@<filepath>
-  --form message='you message'
+  --form message="you message"
 
 
 To retrieve the consequence message and/or file, make calls to:
 
-/user/tasks/<id>/consequence/ POST
+/user/tasks/<id>/consequence/ GET
 > return three fields: ('message', 'taskId', 'file')
 
-/user/tasks/<id>/consequence/file/ POST
+/user/tasks/<id>/consequence/file/ GET
 > can start downloading the file
 > before trying to retrieve the file, call the first endpoint to make that
   there is a file (i.e. 'file' is non-null).
