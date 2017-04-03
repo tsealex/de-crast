@@ -23,10 +23,10 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
-<!--set height absolutely as 36px to match with other input textbox, may cause problem-->
+<!--set height absolutely as 38px to match with other input textbox, may cause problem-->
 <!--and the text color may need further change-->
-                <select id="category-select" class="item item-input" style="height:36px; border: 0px;">
-                <option disabled selected value="">Category</option>
+                <select id="category-select-edit" class="item item-input" style="height:38px; border: 0px;">
+                
                 <option ng-repeat="category in category_list" value="{{category.categoryId}}">{{category.name}}</option>
                 <option value="">None</option>
                 </select>
@@ -37,7 +37,7 @@ link up to anything in particular in the controllers. We'll want to hook these u
             <div class="bottom" ng-click="editDeadline()">
                 <div style="float: left; width: 50%;">
                     <label class="item item-input">
-                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;" >{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
+                        <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none; height: 36px;" >{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
                         <input type="datetime-local" name="time" id="time-input" ng-model="$parent.time" style="display: none;" placeholder="Due Date">
                     </label>
                 </div>

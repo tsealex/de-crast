@@ -108,10 +108,10 @@ angular.module('decrast.server', [])
                             url: ApiEndpoint.url + 'user/tasks/' + taskId + '/',
                             headers: {'Authorization': 'JWT ' + accessToken}
                         }).then(function(response){
-                            //console.log(JSON.stringify(response));
+                            console.log("getTask", JSON.stringify(response));
                             return response;
                         }, function(response){
-                            console.log(response);
+                            console.log("getTask", JSON.stringify(response));
                             return response;
                 });
             },
@@ -124,8 +124,10 @@ angular.module('decrast.server', [])
                                 name: categoryName
                             }
                         }).then(function(response){
+                            console.log("addCategory", JSON.stringify(response));
                             return response;
                         }, function(response){
+                            console.log("addCategory", JSON.stringify(response));
                             return response;
                 });
 
@@ -136,10 +138,10 @@ angular.module('decrast.server', [])
                             url: ApiEndpoint.url + 'user/categories/',
                             headers: {'Authorization': 'JWT ' + accessToken},
                         }).then(function(response){
-                            console.log("category",JSON.stringify(response));
+                            console.log("getCategory",JSON.stringify(response));
                             return response;
                         }, function(response){
-                            console.log("category",JSON.stringify(response));
+                            console.log("getCategory",JSON.stringify(response));
                             return response;
                 });
             }

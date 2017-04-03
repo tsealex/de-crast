@@ -187,11 +187,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 var myEpoch = myDate.getTime()/1000.0;
                 var mySelector = document.getElementById('category-select');
                 var myCategory = mySelector.options[mySelector.selectedIndex].value;
-                console.log(myCategory);
-                if(myCategory == ""){
-                    myCategory = null;
-                }
-                //console.log(mySelector, myCategory);
                 Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, 1).then(function(data) {
                     //console.log(JSON.stringify(data));
                 });
@@ -206,19 +201,32 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     })
 
     .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup) {
+        var taskId;
+        var myDate;
+        var myEpoch;
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
+            $scope.task = $stateParams.task;
+            $scope.title = "Edit";
+            taskId = $scope.task.task_id;
+            $scope.taskName = $scope.task.task_name;
+            $scope.category = $scope.task.task_category;
+            
+            $scope.descrip = $scope.task.task_descrip;
+            
+            // below are used for deadline change
+            $scope.myFactory = new TaskFact();
+            myDate = new Date($scope.task.task_time); 
+            myEpoch = myDate.getTime()/1000.0;
         });
-        $scope.task = $stateParams.task;
-        $scope.title = "Edit";
-        var taskId = $scope.task.task_id;
-        $scope.taskName = $scope.task.task_name;
-        $scope.category = $scope.task.task_category;
-        $scope.descrip = $scope.task.task_descrip;
-        // below are used for deadline change
-        $scope.myFactory = new TaskFact();
-        var myDate = new Date($scope.task.task_time); 
-        var myEpoch = myDate.getTime()/1000.0;
+        $scope.$on('$ionicView.afterEnter', function (event, viewData) {
+            console.log($scope.category);
+            if($scope.category != null){
+                document.getElementById('category-select-edit').value = $scope.category;
+            }
+
+        });
+        
 
         $scope.editTask = function () {
 
@@ -233,7 +241,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     myDate = new Date($scope.time); 
                     myEpoch = myDate.getTime()/1000.0;
                 }
-                //console.log($scope.taskName, $scope.descrip, $scope.task.task_time, myDate, myEpoch, taskId);
+                $scope.category = document.getElementById('category-select-edit').value;
                 Server.eidtTask(taskId, $scope.taskName, $scope.descrip, $scope.category).then(function(data){
                     // TODO
                     console.log(JSON.stringify(data));
@@ -277,9 +285,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     .controller('ViewTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
+            $scope.task = $stateParams.task;
+            $scope.title = "View";
+            if($scope.task.task_category == null){
+                document.getElementById('category-textarea').value = 'None';
+            }
         });
-        $scope.task = $stateParams.task;
-        $scope.title = "View";
 
 
         $scope.onSubmit = function(task) {
