@@ -58,6 +58,9 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
       .state('addTask', {
           url: '/addTask',
           cache: false,
+          params: {
+            viewer: 'Friends'
+          },
           templateUrl: 'templates/task.html',
           controller: 'AddTaskCtrl'
       })
@@ -152,6 +155,15 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           },
           templateUrl: 'templates/map.html',
           controller: 'mapCtrl'
+      })
+      .state('selectViewer', {
+          url: '/selectViewer',
+          cache: false,
+          params: {
+            task: 'Tasks'
+          },
+          templateUrl: 'templates/selectViewer.html',
+          controller: 'selectViewerCtrl'
       });
 
   // if none of the above states are matched, use this as the fallback

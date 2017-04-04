@@ -1,7 +1,7 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', ['ngOpenFB'])
     
-    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact) {
+    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact, Friends) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             
@@ -13,8 +13,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             Server.getUserTasks().then(function(data){
                 $scope.populateTasks(data.data);
             });
-            $scope.populateCategories();
             
+        });
+        $scope.$on('$ionicView.afterEnter', function (event, viewData) {
+            // prepare categories list
+            $scope.populateCategories();
+            // prepare friends list
+            $scope.fetchFBfriends();
         });
         $scope.name = localStorage.getItem('user');
 
@@ -147,26 +152,68 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
             });
         
-        $scope.categoryIdConverName = function(cid){
-            var taskCategory = $rootScope.category_list[cid];
-            if(taskCategory == null){
-                return "None";
-            }else{
-                return taskCategory.name;
+            $scope.categoryIdConverName = function(cid){
+                var taskCategory = $rootScope.category_list[cid];
+                if(taskCategory == null){
+                    return "None";
+                }else{
+                    return taskCategory.name;
+                }
+                
             }
-            
         }
+
+        $scope.fetchFBfriends = function(){
+            // prepare friends container
+            $rootScope.friend_list = {};
             
+            // FB get friends who is also using the app
+            ngFB.api({
+                path: '/me/friends',
+                params: {}
+            }).then(
+                function (list) {
+                    if(list.data.length == 0){
+                        $ionicLoading.show({template: 'Cannot find FB friends using the app', noBackdrop: true, duration: 2500});
+                    }
+                    
+                    for(i=0;i<list.data.length;i++){
+                        var friendId = list.data[i].id;
+                        var friendName = list.data[i].name;
+                        // TODO: api call to fetch De-Crast userId and username using FBId
+
+                        // currentId and name is facebookId and name, later need to inject De-Crast userId
+                        // default status as normal
+                        var newFriend = (new Friends()).addFriend(friendId, friendName, 'normal');
+                        $rootScope.friend_list[friendId] = newFriend;
+                    }
+                    localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
+                },
+                function (error) {
+                    alert('Facebook error: ' + error.error_description);
+                });
+
+            // populate view
+            var friendList = angular.fromJson(localStorage.getItem('friend_list'));
+            if(friendList != null){
+                $rootScope.friend_list = friendList;
+            }
         }
     })
 
-    .controller('AddTaskCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes) {
+    .controller('AddTaskCtrl', function ($rootScope, $stateParams, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
         $scope.title = "Add";
         $scope.evidenceTypes = EvidenceTypes.all();
         $scope.myFactory = new TaskFact();
+
+        $scope.$on('$ionicView.afterEnter', function (event, viewData) {
+            console.log("Select Viewer: ", JSON.stringify($stateParams.viewer));
+            $scope.viewer = $stateParams.viewer.friend_name;
+            
+        });
 
         $scope.onSubmit = function() {
             if($scope.taskName == null) {
@@ -202,6 +249,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     $ionicViewSwitcher.nextDirection('back');
                     $timeout(function () {
                         $state.go('tab.home', {});
+                        // todo
                     }, 1000);
                 }
             }
@@ -209,6 +257,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         
         $scope.populateViewers = function(){
             console.log("addTask, populateViewers" );
+// we still need viewer to be posted, otherwise cannot link the task and the viewer            
+            $state.go('selectViewer');
         };
     })
 
@@ -312,11 +362,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         
         $scope.onComplete = function(){
-            if($scope.evidenceType.evidenceTypeId == 0){ // photo
-                $state.go('map', {task: $scope.task});
-            }
-            if($scope.evidenceType.evidenceTypeId == 1){ // photo
+            if($scope.evidenceType.evidenceTypeId == 0){
                 console.log("plz upload photo");
+            }
+            if($scope.evidenceType.evidenceTypeId == 1){
+                $state.go('map', {task: $scope.task});
             }
         }
         $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
@@ -333,7 +383,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         
         //$scope.friends = Friends.all();
         $scope.$on("$ionicView.beforeEnter", function () {
-            $scope.fetchFBfriends();
+            
         });
         $scope.turnStar = function (index) {
             //console.log("You turn star");
@@ -345,43 +395,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             if(starStatus == starOutline){
                 document.getElementById("starRate" + index).className = star;
-            }
-        }
-
-        $scope.fetchFBfriends = function(){
-            // prepare friends container
-            $rootScope.friend_list = {};
-            
-            // FB get friends who is also using the app
-            ngFB.api({
-                path: '/me/friends',
-                params: {}
-            }).then(
-                function (list) {
-                    if(list.data.length == 0){
-                        $ionicLoading.show({template: 'Cannot find FB friends using the app', noBackdrop: true, duration: 2500});
-                    }
-                    
-                    for(i=0;i<list.data.length;i++){
-                        var friendId = list.data[i].id;
-                        var friendName = list.data[i].name;
-                        // TODO: api call to fetch De-Crast userId and username using FBId
-
-                        // currentId and name is facebookId and name, later need to inject De-Crast userId
-                        // default status as normal
-                        var newFriend = (new Friends()).addFriend(friendId, friendName, 'normal');
-                        $rootScope.friend_list[friendId] = newFriend;
-                    }
-                    localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
-                },
-                function (error) {
-                    alert('Facebook error: ' + error.error_description);
-                });
-
-            // populate view
-            var friendList = angular.fromJson(localStorage.getItem('friend_list'));
-            if(friendList != null){
-                $rootScope.friend_list = friendList;
             }
         }
     })
@@ -479,8 +492,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                         localStorage.setItem('user', data.data.username);
                                         $state.go('tab.home');
                                     }else{
-                                        $state.go('tab.home');
-                                        //$state.go('setUsername');
+                                        //$state.go('tab.home');
+                                        $state.go('setUsername');
                                     }
                                 });
                             },
@@ -592,9 +605,28 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
             console.log("Map post coordinates", coordinates);
 // This server is not function correctly            
-            // Server.submitGPS($scope.taskId, coordinates).then(function(data){});
+            Server.submitGPS($scope.taskId, coordinates).then(function(data){});
         }
 
+    })
+    .controller('selectViewerCtrl', function ($rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();   
+        }
+        var selectedViewer;
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            $rootScope.friend_list = angular.fromJson(localStorage.getItem('friend_list'));
+        });
+        $scope.changeViewer = function(viewer){
+            selectedViewer = viewer;
+        };
+        $scope.data = {
+            clientSide: 'ng'
+        };
+        $scope.confirmViewer = function(){
+            $state.go('addTask', {viewer: selectedViewer});
+        }
     })
 
 /* localStorage List:

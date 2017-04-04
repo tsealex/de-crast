@@ -44,8 +44,10 @@ angular.module('decrast.server', [])
                             headers: {'Authorization': 'JWT ' + accessToken},
                             data: {username: username}
                         }).then(function(response){
+                            console.log("changeUsername", JSON.stringify(response));
                             return response;
                         }, function(response){
+                            console.log("changeUsername", JSON.stringify(response));
                             return response;
                         });
             },
@@ -83,8 +85,10 @@ angular.module('decrast.server', [])
                                 //category: category,
                             }
                         }).then(function(response){
+                            console.log("eidtTask", JSON.stringify(response));
                             return response;
                         }, function(response){
+                            console.log("eidtTask", JSON.stringify(response));
                             return response;
                 });
             },
@@ -162,9 +166,7 @@ angular.module('decrast.server', [])
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/tasks/' + taskId +'/evidence/',
-                            headers: {'Authorization': 'JWT ' + accessToken,
-                                      'Content-Disposition': 'attachment',
-                                      'filename': 'evidence.gps'},
+                            headers: {'Authorization': 'JWT ' + accessToken},
                             data: {
                                 coordinates: coordinates
                             }
