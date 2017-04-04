@@ -201,17 +201,46 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
 
-    .controller('AddTaskCtrl', function ($rootScope, $stateParams, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes) {
+    .controller('AddTaskCtrl', function ($rootScope, $stateParams, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform ) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
+        var myCategory;
+        var mySelector;
+        var evidenceType;
         $scope.title = "Add";
         $scope.evidenceTypes = EvidenceTypes.all();
         $scope.myFactory = new TaskFact();
 
         $scope.$on('$ionicView.afterEnter', function (event, viewData) {
-            console.log("Select Viewer: ", JSON.stringify($stateParams.viewer));
-            $scope.viewer = $stateParams.viewer.friend_name;
+            // set select viewer if exist
+            $scope.viewerObject = angular.fromJson(localStorage.getItem('selectedViewer'));
+            if($scope.viewerObject){
+                $scope.viewer = $scope.viewerObject.friend_name;
+                localStorage.removeItem('selectedViewer');
+            }
+            
+            // fetch exist task draft
+            $rootScope.task = angular.fromJson(localStorage.getItem('currentTask'));
+            // holder for exist task draft
+            if($rootScope.task){
+                $scope.taskName = $rootScope.task.task_name;
+                $scope.descrip = $rootScope.task.task_descrip;
+                $scope.time = $rootScope.task.task_time;
+                $scope.category = $rootScope.task.task_category;
+                $scope.evidenceType = $rootScope.task.task_evidenceType;
+                //document.getElementById('time-textarea').value = new Date($scope.time);
+                if($scope.category == ""){
+                    document.getElementById('category-select').value = "";    
+                }else{
+                    document.getElementById('category-select').value = $scope.category;    
+                }
+                
+                if($scope.evidenceType != null){
+                    document.getElementById('evidenceType-select').value = $scope.evidenceType;
+                }
+                localStorage.removeItem('currentTask');
+            }
             
         });
 
@@ -233,15 +262,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 Add Task to localStorage and Server
                 */
                 // check evidenceType
-                var evidenceType = document.getElementById('evidenceType-select').value;
+                evidenceType = document.getElementById('evidenceType-select').value;
                 if(evidenceType == null || evidenceType == ""){
                     $ionicLoading.show({template: 'Please Select An Evidence Type', noBackdrop: true, duration: 1000});
                 }else{
                     // convert from readable time to UNIX
                     var myDate = new Date($scope.time); 
                     var myEpoch = myDate.getTime()/1000.0;
-                    var mySelector = document.getElementById('category-select');
-                    var myCategory = mySelector.options[mySelector.selectedIndex].value;
+                    mySelector = document.getElementById('category-select');
+                    myCategory = mySelector.options[mySelector.selectedIndex].value;
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
                         //console.log(JSON.stringify(data));
                     });
@@ -256,10 +285,18 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
         
         $scope.populateViewers = function(){
-            console.log("addTask, populateViewers" );
+            // get all the setting
+            evidenceType = document.getElementById('evidenceType-select').value;
+            mySelector = document.getElementById('category-select');
+            myCategory = mySelector.options[mySelector.selectedIndex].value;
+            // create temporarily task object
+            var newTask = $scope.myFactory.addTask(null, $scope.taskName, $scope.descrip, myCategory, $scope.time, null, null, parseInt(evidenceType));
+            
+            localStorage.setItem('currentTask', angular.toJson(newTask));
 // we still need viewer to be posted, otherwise cannot link the task and the viewer            
-            $state.go('selectViewer');
+            $state.go('selectViewer', {task: newTask});
         };
+
     })
 
     .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup, EvidenceTypes) {
@@ -492,7 +529,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                         localStorage.setItem('user', data.data.username);
                                         $state.go('tab.home');
                                     }else{
-                                        //$state.go('tab.home');
                                         $state.go('setUsername');
                                     }
                                 });
@@ -521,7 +557,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         }
     })
-    .controller('setUsernameCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory, Server) {
+    .controller('setUsernameCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory, Server, $ionicLoading) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
@@ -534,12 +570,27 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.setUsername = function(){
             $scope.username = document.getElementById('DCname').value;
             console.log($scope.username);
-            Server.changeUsername($scope.username).then(function(data) {
-                console.log(JSON.stringify(data));
+            if($scope.checkCharacter($scope.username)){
+                Server.changeUsername($scope.username).then(function(data) {
+                    console.log(JSON.stringify(data));
 // may need to be put in the server                
-                localStorage.setItem('user', $scope.username);
-                $state.go('tab.home');
-            });
+                    localStorage.setItem('user', $scope.username);
+                    $state.go('tab.home');
+                });
+            }else{
+                $ionicLoading.show({template: "Only digits, characters and underscores are allowed", noBackdrop: true, duration: 2500});
+            }
+            
+        }
+
+        $scope.checkCharacter = function(username){
+            for(i = 0; i < username.length; i++){
+                console.log(username[i]);
+                if(!username[i].match(/[A-Za-z0-9_]/)){
+                    return false;
+                }
+            }
+            return true;
         }
     })
     .controller('mapCtrl', function ($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaGeolocation, $ionicLoading, Server) {
@@ -609,14 +660,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
 
     })
-    .controller('selectViewerCtrl', function ($rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
+    .controller('selectViewerCtrl', function ($stateParams, $rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();   
         }
+        
         var selectedViewer;
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             $rootScope.friend_list = angular.fromJson(localStorage.getItem('friend_list'));
+            $scope.task = $stateParams.task;
+            console.log(JSON.stringify($scope.task));
         });
         $scope.changeViewer = function(viewer){
             selectedViewer = viewer;
@@ -625,7 +679,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             clientSide: 'ng'
         };
         $scope.confirmViewer = function(){
-            $state.go('addTask', {viewer: selectedViewer});
+            localStorage.setItem('selectedViewer', angular.toJson(selectedViewer));
+            $ionicHistory.goBack();
         }
     })
 

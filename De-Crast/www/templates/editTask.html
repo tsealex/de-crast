@@ -39,7 +39,7 @@ link up to anything in particular in the controllers. We'll want to hook these u
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
                     <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none; height: 36px;" >{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
-                    <input type="datetime-local" name="time" id="time-input" ng-model="$parent.time" style="display: none;" placeholder="Due Date">
+                    <input type="datetime-local" name="time" id="time-input" ng-model="$parent.time" style="display: none; height: 36px;" placeholder="Due Date">
                 </label>
             </div>
         </div>
