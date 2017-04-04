@@ -270,16 +270,24 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     var myDate = new Date($scope.time); 
                     var myEpoch = myDate.getTime()/1000.0;
                     mySelector = document.getElementById('category-select');
-                    myCategory = mySelector.options[mySelector.selectedIndex].value;
+
+                    myCategory = mySelector.options[mySelector.selectedIndex].value; 
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
                         //console.log(JSON.stringify(data));
+                        if (data.data.datail == "deadline")
+                        	$ionicLoading.show({template: 'Invalid deadline', noBackdrop: true, duration: 1000});
+                        else if (data.status != 200) {
+                        	var errMsg =  data.data.errorMsg + ": "  + data.data.detail;
+                        	$ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
+                        } else {
+	                        $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
+		                    $ionicViewSwitcher.nextDirection('back');
+		                    $timeout(function () {
+		                        $state.go('tab.home', {});
+		                        // todo
+		                    }, 1000);
+		                }
                     });
-                    $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
-                    $ionicViewSwitcher.nextDirection('back');
-                    $timeout(function () {
-                        $state.go('tab.home', {});
-                        // todo
-                    }, 1000);
                 }
             }
         };
@@ -466,8 +474,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         
         $scope.addCategory = function(name){
             Server.addCategory(name).then(function(data){
-                var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
-                $rootScope.category_list[data.data.categoryId] = newCategory;
+            	if (data.status == 400) {
+            		var errMsg =  data.data.errorMsg + ": "  + "category";
+            		$ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
+            	} else {
+	                var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
+	                $rootScope.category_list[data.data.categoryId] = newCategory;
+            	}
             });
         }
         
@@ -574,9 +587,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             if($scope.checkCharacter($scope.username)){
                 Server.changeUsername($scope.username).then(function(data) {
                     console.log(JSON.stringify(data));
-// may need to be put in the server                
-                    localStorage.setItem('user', $scope.username);
-                    $state.go('tab.home');
+                    if (data.data.errorCode == 190)
+                    	$ionicLoading.show({template: "username already exists", noBackdrop: true, duration: 2500});
+                    else {
+	                    // may need to be put in the server                
+	                    localStorage.setItem('user', $scope.username);
+	                    $state.go('tab.home');
+                    }
                 });
             }else{
                 $ionicLoading.show({template: "Only digits, characters and underscores are allowed", noBackdrop: true, duration: 2500});

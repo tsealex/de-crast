@@ -25,7 +25,7 @@ Create a task below
 <!--set height absolutely as 36px to match with other input textbox, may cause problem-->
 <!--and the text color may need further change-->
         <select id="category-select" class="item item-input" style="height:36px; border: 0px;">
-          <option disabled selected>Category</option>
+          <option selected disabled value="">Category</option>
           <option ng-repeat="category in category_list" value="{{category.categoryId}}">{{category.name}}</option>
           <option value="">None</option>
         </select>

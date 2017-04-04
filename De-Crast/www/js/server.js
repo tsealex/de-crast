@@ -20,6 +20,9 @@ angular.module('decrast.server', [])
                                             facebookId: fid,
                                             facebookToken:"RANDOM-STRING"})
                             .success(function(response){
+                                console.log(JSON.stringify(response));
+                                if (response.accessToken)
+                                    accessToken = response.accessToken;
                                 return response;
                             })
                             .error(function(data){
