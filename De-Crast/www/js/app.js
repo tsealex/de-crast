@@ -156,6 +156,14 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           templateUrl: 'templates/map.html',
           controller: 'mapCtrl'
       })
+      .state('camera', {
+          url: '/camera',
+          params: {
+              task: 'Tasks'
+          },
+          templateUrl: 'templates/camera.html',
+          controller: 'cameraCtrl'
+      })
       .state('selectViewer', {
           url: '/selectViewer',
           cache: false,

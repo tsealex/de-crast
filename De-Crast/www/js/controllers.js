@@ -363,7 +363,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         
         $scope.onComplete = function(){
             if($scope.evidenceType.evidenceTypeId == 0){
-                console.log("plz upload photo");
+                $state.go('camera', {task: $scope.task});
             }
             if($scope.evidenceType.evidenceTypeId == 1){
                 $state.go('map', {task: $scope.task});
@@ -608,6 +608,28 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             Server.submitGPS($scope.taskId, coordinates).then(function(data){});
         }
 
+    })
+    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaCamera, $stateParams, Server) {
+
+        $scope.takePicture = function() {
+            var options = {
+                quality : 75,
+                destinationType : Camera.DestinationType.DATA_URL,
+                sourceType : Camera.PictureSourceType.CAMERA,
+                allowEdit : false,
+                encodingType: Camera.EncodingType.JPEG,
+                targetWidth: 300,
+                targetHeight: 300,
+                popoverOptions: CameraPopoverOptions,
+                saveToPhotoAlbum: true
+            };
+
+            $cordovaCamera.getPicture(options).then(function(imageData) {
+                $scope.imgURI = "data:image/jpeg;base64," + imageData;
+            }, function(err) {
+                // An error occured. Show a message to the user
+            });
+        }
     })
     .controller('selectViewerCtrl', function ($rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
         $scope.onClick = function() {
