@@ -40,9 +40,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             var elem_type = document.getElementById('sorting-select');
             var sort_type = elem_type.options[elem_type.selectedIndex].value;
 
-
-            console.log(sort_type);
-
             if (sort_type == "Due Date") {
                 $scope.sorting = "task_time";
             }
@@ -635,6 +632,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
     .controller('mapCtrl', function ($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaGeolocation, $ionicLoading, Server) {
+
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
@@ -703,6 +701,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     })
     .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaCamera, $stateParams, Server) {
 
+        $scope.task = $stateParams.task;
+        $scope.taskId = $scope.task.task_id;
+
         $scope.takePicture = function() {
             var options = {
                 quality : 75,
@@ -721,6 +722,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }, function(err) {
                 // An error occured. Show a message to the user
             });
+        };
+
+        //not functioning yet
+        $scope.submitPhoto = function() {
+
+            Server.submitPhoto($scope.taskId, $scope.imgURI);
+
         }
     })
     .controller('selectViewerCtrl', function ($stateParams, $rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {

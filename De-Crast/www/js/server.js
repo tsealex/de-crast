@@ -180,6 +180,23 @@ angular.module('decrast.server', [])
                             console.log("submitGPS", JSON.stringify(response));
                             return response;
                 });
+            },
+            //I'm sure this isn't right but it's filler for now
+            submitPhoto: function(taskId, photoData) {
+                return $http({
+                    method:'POST',
+                    url: ApiEndpoint.url + 'user/tasks/' + taskId +'/evidence/',
+                    headers: {'Authorization': 'JWT ' + accessToken},
+                    data: {
+                        photoData: photoData
+                    }
+                }).then(function(response){
+                    console.log("submitPhoto", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("submitPhoto", JSON.stringify(response));
+                    return response;
+                });
             }
         }
     });
