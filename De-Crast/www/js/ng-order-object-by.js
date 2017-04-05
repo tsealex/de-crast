@@ -32,6 +32,10 @@
               reducedB = Number(reducedB);
             }
 
+            /*
+            reducedA = reducedA.toUpperCase();
+            reducedB = reducedB.toUpperCase();
+*/
             if (reducedA === reducedB) {
               comparator = 0;
             } else {
