@@ -10,6 +10,10 @@
           function isNumeric(n) {
             return !isNaN(parseFloat(n)) && isFinite(n);
           }
+
+          function isAlpha(n) {
+            return typeof n === 'string';
+          }
           
           var filtered = [];
 
@@ -32,10 +36,12 @@
               reducedB = Number(reducedB);
             }
 
-            /*
+
+            if(isAlpha(reducedA) && isAlpha(reducedB)) {
             reducedA = reducedA.toUpperCase();
             reducedB = reducedB.toUpperCase();
-*/
+            }
+
             if (reducedA === reducedB) {
               comparator = 0;
             } else {
