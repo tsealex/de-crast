@@ -16,6 +16,8 @@ import sys
 import os
 import time
 
+import json
+
 FCM_SENDER_ID = '1086425216709'
 SECRET_KEY_ENV_VAR = 'FCM_SECRET_KEY'
 
@@ -35,9 +37,10 @@ class DecrastXMPPServer(sleekxmpp.ClientXMPP):
 
 	def __init__(self):
 		print("Constructing a Decrast XMPP (kinda) Server!");
-		sleekxmpp.ClientXMPP.__init__(self, FCM_SERVER_EMAIL, FCM_SERVER_PASSWORD)
+		sleekxmpp.ClientXMPP.__init__(self, FCM_SERVER_EMAIL, FCM_SERVER_PASSWORD,
+sasl_mech="PLAIN")
 
-		self.add_event_handler("session_start", self.start, threaded=True)
+		self.add_event_handler("session_start", self.start)
 		self.add_event_handler("message", self.message)
 
 	def connectToFcm(self):
@@ -45,30 +48,13 @@ class DecrastXMPPServer(sleekxmpp.ClientXMPP):
 			This function initiates communication with FCM's
 			XMPP server.
 		'''
-#		print("JID: " + FCM_SERVER_EMAIL + ", Password: " + FCM_SERVER_PASSWORD)
 		print("XMPP authenticating -> " + FCM_SERVER_ADDRESS.decode('utf-8') \
 			+ ":" + str(FCM_USE_PORT));
 
-		retryCount = 0
-		# Attempt to connect to the FCM server. Return true if
-		# connection happens before attempt limit.
-
-		# NOTE: OS-defined socket timeout may make this function
-		# appear to never return, but if you stick with it for
-    # a really, really long time it'll finish if it's stuck.
-		# This is why I'm using a local version of the XMPP
-		# library.
-		while(retryCount < FCM_CONNECT_ATTEMPT_LIMIT):
-			print("Connection attempt " + str(retryCount) + " of " \
-			+ str(FCM_CONNECT_ATTEMPT_LIMIT))
-
-			if self.connect((FCM_SERVER_ADDRESS.decode('utf-8'), FCM_USE_PORT), reattempt=False,
-			use_tls=True):
-				print("Returning true!")
-				return True
-			else:
-				time.sleep(retryCount * 2)
-				retryCount += 1
+		if self.connect((FCM_SERVER_ADDRESS.decode('utf-8'), FCM_USE_PORT),
+		reattempt=True, use_tls=True, use_ssl=True):
+			print("Returning true!")
+			return True
 
 		print("Returning false :(")
 		return False
@@ -80,10 +66,8 @@ class DecrastXMPPServer(sleekxmpp.ClientXMPP):
 		'''
 		print("XMPP message received!")
 
-	def authenticate(self):
-		print("Decrast XMPP: Authenticating")
-		self.send_message(mto='gcm.googleapis.com', mbody='Hey Google!')
-		self.disconnect(wait=True)
+	def sendMessage(self, to_jid, json_body):
+		pass
 
 	def establishConnection(self):
 		print("XMPP Establishing connection");
