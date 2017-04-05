@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
+from django import forms
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, FileUploadParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 
 import datetime
@@ -12,31 +14,30 @@ import http.client
 import json
 import os
 import re
+import calendar
 
 from .auth.serializers import JWTSerializer, RefreshSerializer
 from .auth.auth import JWTAuthentication
-from .errors import APIError, APIErrors, missing
+from .errors import APIErrors
 from .models import *
 from .serializers import *
+from .factories import *
+from .facebook import facebook_mgr
+from .utils import *
+from .settings import rest_settings
+from .notifications import *
 
-APP_ID = "859339004207573"
-
-# ref: https://docs.djangoproject.com/en/1.10/topics/db/queries/
-
-# Create your views here.
 
 '''
-
+Authentication-related viewset
 '''
 class AuthViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 	authentication_classes = ()
 	permission_classes = ()
 
-	app_access_token = ''
-
 	'''
-	For testing purpose only
+	[DEBUG] list all users: /list/ GET
 	'''
 	def list(self, request):
 		queryset = User.objects.all()
@@ -44,107 +45,58 @@ class AuthViewSet(viewsets.ViewSet):
 		return Response(serializer.data)
 
 	'''
-	For creating a user object
+	Create a user: /auth/ POST
 	'''
 	def create(self, request):
-		# for new user who wants to register
-		if request.data.get('facebookToken') is not None:
-			validator = JWTSerializer(data={
-				'fb_id': request.data.get('facebookId'),
-				'fb_tk': request.data.get('facebookToken'),
-			})
-
-			if validator.is_valid():
-				# TODO: Uncomment this line to perform FB token validation
-				# self.validate_fb_token(request.data['facebookToken'])
-				return Response({
-					'userId': validator.object.get('user').id,
-					'accessToken': validator.object.get('ac_tk'),
-					'refreshToken': validator.object.get('rf_tk'),
-					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
-				})
-		else:
-			# for old user who wants to refresh the access token
-			uid = request.data.get('userId')
-			rf_token = request.data.get('refreshToken')
-
-			validator = RefreshSerializer(data={
-				'uid': uid,
-				'rf_tk': rf_token,
-			})
-			if validator.is_valid():
-				return Response({
-					'userId': validator.object.get('user').id,
-					'accessToken': validator.object.get('ac_tk'),
-					'refreshToken': validator.object.get('rf_tk'),
-					'tokenExpiration': time.mktime(validator.object.get('ac_exp').timetuple()),
-				})
-		raise APIErrors.MalformedRequestBody()
+		# parse input
+		data = extract_data(request.data, ['facebookId', 'facebookToken'])
+		data = {
+			'fb_id': data['facebookId'],
+			'fb_tk': data['facebookToken'],
+		}
+		# process input
+		factory = JWTSerializer(data=data)
+		validate(factory)
+		return Response({
+			'userId': factory.object.get('user').id,
+			'username': factory.object.get('user').username,
+			'accessToken': factory.object.get('ac_tk'),
+			'refreshToken': factory.object.get('rf_tk'),
+			'tokenExpiration': calendar.timegm(factory.object
+				.get('ac_exp').timetuple()),
+		})
 
 	'''
-	Validate the provided Facebook token.
+	Refresh a token: /auth/refresh/ POST
+	TODO: untested
 	'''
-	def validate_fb_token(self, fb_token):
-		self.app_access_token = self.get_app_access_token()
-		legal_token = self.verify_fb_token(fb_token)
-		if(legal_token == False):
-			raise APIError(110)
-
-	'''
-	This function gets our application's access token.
- 	The application access token is used to verify a user's
- 	Facebook access token for authorization.
-
-	Per: https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
-	'''
-	def get_app_access_token(self):
-
-		try:
-			# App's secret key is stored in a local env var.
-			secret_key = os.environ['FB_SECRET_KEY']
-
-			conn = http.client.HTTPSConnection("graph.facebook.com")
-			conn.request("GET", "/oauth/access_token?client_id={}&client_secret={}&" \
-				"grant_type=client_credentials".format(APP_ID, secret_key))
-			resp = conn.getresponse()
-			resp_str = resp.read().decode("utf-8")
-			equals_index = resp_str.index('=')
-
-			return resp_str[(equals_index+1):]
-
-		except ValueError as ve:
-			print("Illegal access token response: " + str(ve))
-			raise APIError(170)
-		except Exception as e:
-			print("Access token response error: " + str(e))
-			raise APIError(170)
-
-	'''
-	This function checks to see if the provided FB user access
-	token is valid.
-
-	Per: https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow#checktoken
-	'''
-	def verify_fb_token(self, fb_token):
-		conn = http.client.HTTPSConnection("graph.facebook.com")
-		conn.request("GET", "/debug_token?input_token={}&access_token={}"
-			.format(fb_token, self.app_access_token))
-		resp = conn.getresponse()
-		bytes = resp.read()
-
-		as_json = json.loads(bytes.decode("utf-8"))
-		return as_json['data']['is_valid']
+	def update(self, request):
+		data = extract_data(request.data, ['userId', 'refreshToken'])
+		data = {
+			'uid': data['userId'],
+			'rf_tk': data['refreshToken'],
+		}
+		# process input
+		factory = RefreshSerializer(data=data)
+		validate(factory)
+		return Response({
+			'userId': factory.object.get('user').id,
+			'username': factory.object.get('user').username,
+			'accessToken': factory.object.get('ac_tk'),
+			'refreshToken': factory.object.get('rf_tk'),
+			'tokenExpiration': calendar.timegm(factory.object
+				.get('ac_exp').timetuple()),
+		})
 
 '''
-
+User-related viewset
 '''
 class UserViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 	permission_classes = (IsAuthenticated,)
 
 	'''
-	For testing purpose only
-	TODO: remove this method
+	[DEBUG] list all users: /user/list/ GET
 	'''
 	def list(self, request):
 		queryset = User.objects.all()
@@ -152,88 +104,65 @@ class UserViewSet(viewsets.ViewSet):
 		return Response(serializer.data)
 
 	'''
-	For initializing the username
+	Initializer username: /user/ GET
 	'''
-	def update(self, request, pk=None):
-		try:
-			user = request.user
+	def retrieve(self, request):
+		serializer = UserSerializer(request.user)
+		return Response(serializer.data)
 
-			if user.username is not None: # unpermitted action
-				raise APIErrors.InvalidInput('username has been specified')
-
-			uid = request.data['userId']
-			username = request.data['username']
-
-			# input check (throw invalid input error)
-			if uid is None: raise APIError(165, 'userId')
-			if username is None: raise APIError(165, 'username')
-
-			# check if userId matches the one stored in access token
-			if uid != user.id:
-				raise APIError(160, 'userId & access token')
-
-			# check if username is valid
-			if len(username) > 18 or re.match(r'([0-9a-zA-Z-]+)', \
-				username).group(0) != username:
-				raise APIError(165, 'username') # invalid username
-
-			# update username
-			user.username = username
-			user.save()
-			return Response(UserSerializer(user).data)
-
-		except KeyError as e: # malformed body
-			raise APIError(100, missing(e.args[0]))
-		except IntegrityError: # username already exists
-			raise APIError(190, 'username')
+	'''
+	Initializer username: /user/ POST
+	'''
+	def update(self, request):
+		# parse input
+		data = extract_data(request.data, ['username'])
+		# process input
+		factory = UserFactory(request.user, data=data, partial=True)
+		validate(factory)
+		user = factory.save()
+		serializer = UserSerializer(user)
+		return Response(serializer.data)
 
 '''
-
+Category-related viewset
 '''
 class CategoryViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 
 	'''
-	Create a category: /user/categories/ PUT
+	Create a category: /user/categories/ POST
 	'''
 	def create(self, request):
-		try:
-			cat_name = request.data['name']
-			# input check
-			if cat_name is None: raise APIErrors.InvalidInput('name')
-			# create a new category
-			cat, created = request.user.category_set.get_or_create(name=cat_name)
-			if not created: raise APIErrors.AlreadyExists('category name')
-
-			cat.save()
-			serializer = CategorySerializer(cat)
-			return Response(serializer.data)
-
-		except KeyError as e: # malformed body
-			raise APIErrors.MalformedRequestBody(missing(e.args[0]))
+		# parse input
+		data = extract_data(request.data, ['name'])
+		data['name'] = data['name'].rstrip()
+		data['user'] = request.user.id
+		# process input
+		factory = CategoryFactory(data=data)
+		validate(factory)
+		cat = factory.save()
+		serializer = CategorySerializer(cat)
+		return Response(serializer.data)
 
 	'''
-	Update a category: /user/categories/id/ PUT
+	Update a category: /user/categories/<id>/ POST
 	'''
 	def update(self, request, query):
+		# parse input
 		ids = extract_ids(query)
 		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
-		try:
-			cat_name = request.data['name']
-			# input check
-			if cat_name is None: raise APIErrors.InvalidInput('name')
-			# retrieve the category
-			cat = request.user.category_set.get(id=ids[0])
-
-			cat.name = cat_name
-			cat.save()
-			serializer = CategorySerializer(cat)
-			return Response(serializer.data)
-
-		except KeyError as e: # malformed body
-			raise APIErrors.MalformedRequestBody(missing(e.args[0]))
-		except Category.DoesNotExist:
-			raise APIErrors.DoesNotExist('category id')
+		data = extract_data(request.data, ['name'])
+		data['name'] = data['name'].rstrip()
+		# retrieve resource
+		cat = request.user.category_set.filter(id=ids[0])
+		if not cat.exists(): raise APIErrors.DoesNotExist('category id')
+		else: cat = cat.get()
+		# process input
+		factory = CategoryFactory(cat, data=data, partial=True)
+		validate(factory)
+		cat = factory.save()
+		serializer = CategorySerializer(cat)
+		return Response(serializer.data)
 				
 	'''
 	List all user's categories: /user/categories/ GET
@@ -242,6 +171,21 @@ class CategoryViewSet(viewsets.ViewSet):
 		queryset = request.user.category_set.all()
 		serializer = CategorySerializer(queryset, many=True)
 		return Response(serializer.data)
+
+	'''
+	Delete a category: /user/categories/<id>/ DELETE
+	'''
+	def destroy(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		cat = request.user.category_set.filter(id=ids[0])
+		if not cat.exists(): raise APIErrors.DoesNotExist('category id')
+		else: cat = cat.get()
+		# process input
+		cat.delete()
+		return Response({'success':True})
 
 '''
 
@@ -261,92 +205,78 @@ class OwnedTaskViewSet(viewsets.ViewSet):
 	Create a task: /user/tasks/ POST
 	'''
 	def create(self, request):
-		user = request.user
-
-		try:
-			name = request.data['name']
-			desc = request.data['description']
-			deadline = request.data['deadline']
-			category = request.data['category']
-
-			# input check
-			if name is None: raise APIErrors.InvalidInput('name')
-			if deadline is None: raise APIErrors.InvalidInput('deadline')
-			deadline = datetime.datetime.fromtimestamp(deadline)
-			# retrieve the user category from database
-			if category is not None: category = user.category_set.get(id=category)
-			# create a new task
-			task = Task(name=name, description=desc, deadline=deadline, 
-				owner=user, last_notify_ts=datetime.datetime.now())
-
-			if category is not None:
-				task.category = category
-
-			task.save()
-			serializer = TaskIdSerializer(task)
-			return Response(serializer.data)
-
-		except KeyError as e: # malformed body
-			raise APIErrors.MalformedRequestBody(missing(e.args[0]))
-		except Category.DoesNotExist:
-			raise APIErrors.DoesNotExist('category id')
-		except TypeError:
-			raise APIErrors.InvalidInput('deadline')
+		# parse input
+		data = extract_data(request.data, ['name', 'deadline', 'type'], 
+			['category', 'description'])
+		data['owner'] = request.user.id
+		# process input
+		tfactory = TaskFactory(data=data)
+		validate(tfactory)
+		validate_evidence_type(data['type'])
+		task = tfactory.save()
+		Evidence(task=task, type=data['type']).save()
+		Consequence(task=task).save()
+		serializer = TaskIdSerializer(task)
+		return Response(serializer.data)
 
 '''
-The Task view set class implementation.
+
 '''
 class TaskViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
 
 	'''
-	Get tasks by id(s): /user/tasks/?id&.../ GET
+	Get tasks by ids: /user/tasks/<id>&<id>.../ GET
 	'''
 	def retrieve(self, request, query):
-		ids = extract_ids(query)
+		ids = extract_ids(query) # parse input & process input
 		user = request.user
-		
-		queryset = Task.objects.filter(viewer=user) | Task.objects.filter(owner=user)
+		queryset = Task.objects.filter(viewers=user) | Task.objects.filter(owner=user)
 		queryset = queryset.filter(pk__in=ids)
 		serializer = TaskSerializer(queryset, many=True)
+		if rest_settings.SINGLE_VIEWER:
+			for task in serializer.data:
+				viewer = task.pop('viewers')
+				task['viewer'] = viewer[0] if len(viewer) > 0 else None
 		return Response(serializer.data)
 
 	'''
-	Update the task info: /user/tasks/?id/ POST
+	Update a task: /user/tasks/<id>/ POST
 	'''
 	def update(self, request, query):
+		# parse input
 		ids = extract_ids(query)
 		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
-		
-		try:
-			name = request.data['name']
-			desc = request.data['description']
-			category = request.data['category']
+		data = extract_data(request.data, None, ['name', 'description', 'category'])
+		data['owner'] = request.user.id
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0], ended=False)
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		else: task = task.get()
+		# process input
+		factory = TaskFactory(task, data=data, partial=True)
+		validate(factory)
+		task = factory.save()
+		serializer = TaskIdSerializer(task)
+		return Response(serializer.data)
 
-			# input check
-			if name is None: raise APIErrors.InvalidInput('name')
-
-			if category is not None:
-				category = user.category_set.get(id=category)
-
-			if not request.user.owned_tasks.filter(id=ids[0]).exists():
-				raise APIError(180, 'task id')
-
-			task = request.user.owned_tasks.get(id=ids[0])
-			task.name = name
-			task.description = desc
-
-			if category is not None:
-				task.category = category
-
-			task.save()
-			serializer = TaskIdSerializer(task)
-			return Response(serializer.data)
-
-		except KeyError:
-			raise APIError(100)
-		except ObjectDoesNotExist:
-			raise APIError(180, 'category id')
+	'''
+	Spend karma point to delete a task: /user/tasks/<id>/ DELETE
+	TODO: unimplemented
+	'''
+	def destroy(self, request, query):
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		data['owner'] = request.user.id
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0], ended=False)
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		task = task.get() 
+		# process input
+		# TODO: unimplemented
+		# 1. check whether user has enough karma points
+		# 2. delete the task and deduct the karma point
+		# 3. return {'success':True}
 
 '''
 
@@ -358,64 +288,329 @@ class ViewedTaskViewSet(viewsets.ViewSet):
 	List all viewing tasks: /user/tasks/viewing/ GET
 	'''
 	def list(self, request):
-		quesyset = request.user.viewing_tasks.all()
-		return Response(TaskIdSerializer(quesyset, many=True).data)
+		queryset = request.user.viewing_tasks.filter(ended=False).all()
+		serializer = TaskIdSerializer(queryset, many=True)
+		return Response(serializer.data)
 
 '''
 
 '''
-class SpecialViewSet(viewsets.ViewSet):
+class NotificationViewSet(viewsets.ViewSet):
 	parser_classes = (JSONParser,)
-	'''
 
 	'''
-	def perform_action(self, request, action, query):
-		if action == 0: # add user to be the viewer of a task
-			ids = extract_ids(query)
-			if len(ids) != 1: raise APIError(195, 'multiple ids')
-			# TODO: check if user has been invited for viewing a task
-			queryset = Task.objects.filter(id=ids[0])
-			if queryset.exists():
-				task = queryset.get()
-				task.viewer = request.user
-				task.save()
-				return Response({'success': True})
-		elif action == 4: # change deadline
-			ids = extract_ids(query)
-			if len(ids) != 1: raise APIError(195, 'multiple ids')
-			queryset = request.user.viewing_tasks.filter(id=ids[0])
-			if not queryset.exists():
-				return Response({'success': False})
-			# TODO: change the deadline to the one specified in the notification
-			return Response({'success': True})
+	Send viewer invite: /user/notifications/ POST
+	TODO: partially tested
+	'''
+	def create(self, request):
+		# switch on type
+		msg_type = extract_data(request.data, ['type'])['type']
+		if msg_type == Notification.INVITE:
+			# parse input
+			data = extract_data(request.data, ['recipient', 'task'])
+			# retrieve resource
+			receiver = User.objects.filter(id=data['recipient'])
+			task = request.user.owned_tasks.filter(id=data['task'], ended=False)
+			if not task.exists(): raise APIErrors.DoesNotExist('task')
+			if not receiver.exists(): raise APIErrors.DoesNotExist('recipient')
+			task = task.get()
+			receiver = receiver.get()
+			# process input
+			send_viewer_invite(request.user, receiver, task)
+			return Response({'success':True})
 
-		return Response({'success': False})
+		elif msg_type == Notification.REMINDER:
+			# parse input
+			data = extract_data(request.data, ['task', 'text'])
+			# retrieve resource
+			task = request.user.viewing_tasks.filter(id=data['task'], ended=False)
+			if not task.exists(): raise APIErrors.DoesNotExist('task')
+			# process input
+			send_reminder(request.user, task.get(), data['text'])
+			return Response({'success':True})
+
+		elif msg_type == Notification.DEADLINE:
+			# parse input
+			data = extract_data(request.data, ['task', 'deadline'])
+			# retrieve resource
+			task = request.user.owned_tasks.filter(id=data['task'], ended=False)
+			if not task.exists(): raise APIErrors.DoesNotExist('task')
+			# process input
+			send_deadline_ext(request.user, task.get(), data['deadline'])
+			return Response({'success':True})
+
+		else: raise APIErrors.ValidationError('type')
 
 	'''
-
+	List all user's unviewed notification ids: /user/notifications/ GET
+	TODO: untested
 	'''
-	def get_user_friends(self, request, query):
-		# TODO: may need to change in the future
-		fb_ids = extract_ids(query)
-		queryset = User.objects.filter(fb_id__in=fb_ids)
-		serializer = UserSerializer(queryset, many=True)
+	def list(self, request):
+		queryset = request.user.recv_no.filter(viewed=False).all()
+		serializer = NotificationIdSerializer(queryset, many=True)
 		return Response(serializer.data)
 
 	'''
-
+	Mark notifications as read: /user/notifications/respond/ POST
+	TODO: untested
 	'''
-	def search_user(self, request, username):
-		# TODO: input check
-		queryset = User.objects.filter(username__contains=username)
-		serializer = UserSerializer(queryset, many=True)
+	def update(self, request):
+		data = extract_data(request.data, ['notification'])
+		data = [extract_data(n, ['id'], ['decision']) for n in data['notification']]
+		for ndata in data:
+			notification = request.user.recv_no.filter(id=ndata['id'])
+			if notification.exists():
+				read_notification(request.user, notification.get(), ndata.get('decision'))
+
+		queryset = request.user.recv_no.filter(viewed=False).all()
+		serializer = NotificationIdSerializer(queryset, many=True)
 		return Response(serializer.data)
 
-'''
-Returns a list of ids extracted from the url query string
-'''
-def extract_ids(query):
-	m = re.split('&', query)
-	if any(not i.isdigit() for i in m):
-		raise APIError(195, 'invalid id value')
-	return [int(i) for i in m]
+	'''
+	Mark notifications as read: /user/notifications/<id>&<id>.../ GET
+	TODO: untested
+	'''
+	def retrieve(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		queryset = request.user.recv_no.filter(viewed=False, id__in=ids).all()
+		serializer = NotificationSerializer(queryset, many=True)
+		return Response(serializer.data)
 
+	'''
+	Get the associated file: /user/notifications/<id>/file/ GET
+	TODO: untested
+	'''
+	def file(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		recv_no = request.user.recv_no.filter(id=ids[0], viewed=False)
+		if not recv_no.exists(): raise APIErrors.DoesNotExist('task id')
+		recv_no = recv_no.get()
+		# load file
+		act_file = get_actual_file(recv_no.file)
+		if act_file is None: raise APIErrors.DoesNotExist('notification file')
+		response = HttpResponse(act_file[0], content_type=act_file[1])
+		response['Content-Disposition'] = 'attachment; filename={}'.format(act_file[2])
+		return response
+
+'''
+
+'''
+class EvidenceViewSet(viewsets.ViewSet):
+	parser_classes = (MultiPartParser, FileUploadParser, JSONParser)
+
+	'''
+	Initialize the evidence: /user/tasks/<id>/evidence/ POST
+	TODO: untested
+	'''
+	def update(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0], ended=False)
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		task = task.get()
+		# process input
+		if task.evidence.type == Evidence.GPS:
+			data = extract_data(JSONParser().parse(request), 
+				['coordinates'])['coordinates']
+			file = create_GPS_doc(data)
+		else:
+			file = request.data.get('file')
+			if file is None: raise APIErrors.MalformedRequestBody('file')
+		factory = EvidenceFactory(task.evidence, data={'file':file}, partial=True)
+
+		validate(factory)
+		factory.save()
+		task.complete()
+		send_evidence(request.user, task)
+		return Response({'success':True})
+
+	'''
+	Get the evidence: /user/tasks/<id>/evidence/ GET
+	TODO: untested
+	'''
+	def retrieve(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0]) | \
+			request.user.viewing_tasks.filter(id=ids[0])
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		evidence = task.get().evidence
+		# process input
+		serializer = EvidenceSerializer(evidence)
+		return Response(serializer.data)
+
+	'''
+	Get the associated file: /user/tasks/<id>/evidence/file/ GET
+	TODO: untested
+	'''
+	def file(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		# TODO: viewer may only view the evidence throught notification ?
+		task = request.user.owned_tasks.filter(id=ids[0]) | \
+			request.user.viewing_tasks.filter(id=ids[0])
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		task = task.get()
+		# load file
+		act_file = get_actual_file(task.evidence.file)
+		if act_file is None: raise APIErrors.DoesNotExist('evidence file')
+		response = HttpResponse(act_file[0], content_type=act_file[1])
+		response['Content-Disposition'] = 'attachment; filename={}'.format(act_file[2])
+		return response
+
+
+'''
+
+'''
+class ConsequenceViewSet(viewsets.ViewSet):
+	parser_classes = (MultiPartParser, FileUploadParser, JSONParser)
+
+	'''
+	Initialize the consequence: /user/tasks/<id>/consequence/ POST
+	'''
+	def update(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0], ended=False)
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		consequence = task.get().consequence
+		# process input
+		file = request.data.get('file')
+		message = request.data.get('message')
+		dup_file = False
+		if not file and not message and not consequence.message and  \
+			not bool(consequence.file):
+			file, message = get_random_msg()
+			if not file or not message: raise APIErrors.ValidationError(
+				'no file / message supplied') 
+			dup_file = True
+		factory = ConsequenceFactory(consequence, data={
+			'file':file, 'message':message, 'dup_file':dup_file}, partial=True)
+
+		validate(factory)
+		factory.save()
+		return Response({'success':True})
+
+	'''
+	Get the consequence: /user/tasks/<id>/consequence/ GET
+	TODO: untested
+	'''
+	def retrieve(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0])
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		consequence = task.get().consequence
+		# process input
+		serializer = ConsequenceSerializer(consequence)
+		return Response(serializer.data)
+
+	'''
+	Get the associated file: /user/tasks/<id>/consequence/file/ GET
+	TODO: untested
+	'''
+	def file(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		task = request.user.owned_tasks.filter(id=ids[0])
+		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+		task = task.get()
+		# load file
+		act_file = get_actual_file(task.consequence.file)
+		if act_file is None: raise APIErrors.DoesNotExist('consequence file')
+		response = HttpResponse(act_file[0], content_type=act_file[1])
+		response['Content-Disposition'] = 'attachment; filename={}'.format(act_file[2])
+		return response
+
+
+'''
+Temporary Classes
+'''
+class MemePopulator(viewsets.ViewSet):
+	authentication_classes = ()
+	permission_classes = ()
+	parser_classes = (MultiPartParser, FileUploadParser, JSONParser)
+
+	'''
+	Add a new template image: /meme/image/ POST
+	TODO: untested
+	'''
+	def image(self, request):
+		# process input
+		file = request.data.get('file')
+		if not file:
+			raise APIErrors.MalformedRequestBody('file')
+		factory = ImageTemplateFactory(data={'file':file})
+		validate(factory)
+		factory.save()
+		return Response(factory.data)
+
+	'''
+	Add a new template message: /meme/text/ POST
+	TODO: untested
+	'''
+	def message(self, request):
+		# parse input
+		msg = JSONParser().parse(request).get('message')
+		if not msg:
+			raise APIErrors.MalformedRequestBody('message')
+		factory = TextTemplateFactory(data={'text':msg})
+		validate(factory)
+		factory.save()
+		return Response(factory.data)
+
+	'''
+	Delete a template image: /meme/image/<id>/ DELETE
+	TODO: untested
+	'''
+	def del_image(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		temp = ImageTemplate.objects.filter(pk=ids[0])
+		if temp.exists():
+			temp = temp.get()
+			temp.delete()
+			return Response({'success':True})
+		else:
+			raise APIErrors.DoesNotExist('id')
+
+	'''
+	Delete a template message: /meme/text/<id>/ DELETE
+	TODO: untested
+	'''
+	def del_message(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		temp = TextTemplate.objects.filter(pk=ids[0])
+		if temp.exists():
+			temp = temp.get()
+			temp.delete()
+			return Response({'success':True})
+		else:
+			raise APIErrors.DoesNotExist('id')
+
+
+'''
+Helper methods
+'''
+def validate_evidence_type(type):
+	if type not in [e[0] for e in Evidence.EVIDENCE_TYPES]:
+		raise APIErrors.ValidationError('type')

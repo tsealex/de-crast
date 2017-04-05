@@ -1,11 +1,13 @@
 import jwt
+
 from calendar import timegm
 from datetime import datetime
 
 from .settings import settings
 
 def create_payload(user, tk_type=settings.JWT_ACTK_ID):
-	exp_delta = settings.JWT_AC_EXP if tk_type == settings.JWT_ACTK_ID else settings.JWT_RF_EXP
+	exp_delta = settings.JWT_AC_EXP if tk_type == settings.JWT_ACTK_ID \
+		else settings.JWT_RF_EXP
 	exp_time = datetime.utcnow() + exp_delta
 	payload = {
 		'type': tk_type,

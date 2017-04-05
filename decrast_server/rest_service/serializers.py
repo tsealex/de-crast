@@ -1,52 +1,80 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-from django.core.validators import RegexValidator
-from .models import User
-from .models import Category
-from .models import Task
 
-import time
-import datetime
+from .models import *
+from .user import User
+from .settings import rest_settings
+from .factories import TimestampField
 
 '''
-Helper classes / methods
-'''
-class TimestampField(serializers.Field):
-	def to_representation(self, value):
-		return time.mktime(value.timetuple())
-
-'''
-Resource Serializer
+Resource Serializers
 '''
 class UserSerializer(serializers.ModelSerializer):
 	userId = serializers.IntegerField(source='id', read_only=True)
 
 	class Meta:
 		model = User
-		fields = ('userId', 'username')
-		read_only_fields = ('userId', 'username')
-
-class TaskSerializer(serializers.ModelSerializer):
-	taskId = serializers.IntegerField(source='id', read_only=True)
-	deadline = TimestampField(read_only=True)
-
-	class Meta:
-		model = Task
-		fields = ('taskId', 'name', 'owner', 'viewer', 'deadline', 'description', 'category')
-		read_only_fields = ('taskId', 'owner', 'viewer', 'deadline')
+		fields = ('userId', 'username', 'karma')
 
 class CategorySerializer(serializers.ModelSerializer):
 	categoryId = serializers.IntegerField(source='id', read_only=True)
 
 	class Meta:
 		model = Category
-		fields = ('categoryId', 'name')
+		fields = ('name', 'categoryId')
+
+class TaskSerializer(serializers.ModelSerializer):
+	taskId = serializers.IntegerField(source='id', read_only=True)
+	deadline = TimestampField()
+
+	class Meta:
+		model = Task
+		fields = ('owner', 'viewers', 'category', 'taskId', 'description', 
+			'last_notify_ts', 'deadline', 'name', 'ended')
+
+class NotificationSerializer(serializers.ModelSerializer):
+	notificationId = serializers.IntegerField(source='id', read_only=True)
+	# TODO: do something with the file (path)
+
+	class Meta:
+		model = Notification
+		fields = ('sender', 'recipient', 'type', 'sent_date',
+			'notificationId', 'task', 'metadata', 'file', 'text')
+
+class ConsequenceSerializer(serializers.ModelSerializer):
+	taskId = serializers.IntegerField(source='task_id', read_only=True)
+
+	class Meta:
+		model = Consequence
+		fields = ('message', 'taskId', 'file')
+
+class EvidenceSerializer(serializers.ModelSerializer):
+	taskId = serializers.IntegerField(source='task_id', read_only=True)
+	upload_date = TimestampField()
+
+	class Meta:
+		model = Evidence
+		fields = ('type', 'taskId', 'upload_date', 'file')
 
 '''
-ID Serializers
+Id Serializers
 '''
-class TaskIdSerializer(serializers.Serializer):
-	taskId = serializers.IntegerField(source='id')
+class TaskIdSerializer(serializers.ModelSerializer):
+	taskId = serializers.IntegerField(source='id', read_only=True)
 
-class NotificationIdSerializer(serializers.Serializer):
-	notificationId = serializers.IntegerField(source='id')
+	class Meta:
+		model = Task
+		fields = ('taskId',)
+
+class NotificationIdSerializer(serializers.ModelSerializer):
+	notificationId = serializers.IntegerField(source='id', read_only=True)
+
+	class Meta:
+		model = Notification
+		fields = ('notificationId',)
+
+class UserIdSerializer(serializers.ModelSerializer):
+	userId = serializers.IntegerField(source='id', read_only=True)
+
+	class Meta:
+		model = User
+		fields = ('userId',)

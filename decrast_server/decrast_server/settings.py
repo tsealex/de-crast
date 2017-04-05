@@ -39,20 +39,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'rest',
+    'rest_service',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
-    # will change these once the authentication scheme is implemented
-    'DEFAULT_AUTHENTICATION_CLASSES': ['rest.auth.auth.JWTAuthentication'], # TODO: for now
-    'DEFAULT_PERMISSION_CLASSES': [], # TODO: for now
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_service.auth.auth.JWTAuthentication'],
+    'DEFAULT_PERMISSION_CLASSES': [],
     'PAGE_SIZE': 10
 }
 
-AUTH_USER_MODEL = 'rest.User'
+AUTH_USER_MODEL = 'rest_service.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -62,7 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'rest.errors.ExceptionMiddleware',
+    'rest_service.errors.ExceptionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]

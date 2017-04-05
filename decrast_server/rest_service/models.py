@@ -1,88 +1,196 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.utils import timezone
+from django.dispatch import receiver
+
+import os
+from datetime import datetime, timezone, timedelta
+
+from .user import User
+from .settings import rest_settings
+from .utils import *
 
 '''
-Required by Django for creating users
+
 '''
-class UserManager(BaseUserManager):
-	def create_user(self, fb_id, username=None):
-		if not fb_id:
-			raise ValueError()
+class Category(models.Model):
+	# required
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	name = models.CharField(max_length=64)
 
-		user = self.model(fb_id=fb_id, username=None)
-		user.save(using=self._db)
-		return user
+	class Meta:
+		unique_together = ('user', 'name')
 
-def evidence_dir_path(object, filename):
-	return 'uploads/task_{}/evidence-{}'.format(instance.id, filename)
-
-def consequence_dir_path(object, filename):
-	return 'uploads/task_{}/consequence-{}'.format(instance.id, filename)
 '''
-Represents a user of the appication.
-This class will extend the AbstractBaseUser (rather than AbstractUser) class 
-when we start implementing the authentication mechanism.
+
 '''
-class User(AbstractBaseUser):
-	id = models.AutoField(primary_key=True)
-	username = models.CharField(max_length=18, unique=True, null=True)
-	fb_id = models.BigIntegerField(unique=True, null=False)
-	access_ts = models.DateField(auto_now_add=True) # TODO: null=False
+class Task(models.Model):
+	# required
+	owner = models.ForeignKey(User, related_name='owned_tasks',
+		on_delete=models.CASCADE)
+	name = models.CharField(max_length=64)
+	deadline = models.DateTimeField()
 
-	USERNAME_FIELD = 'id'
-	REQUIRED_FIELDS = ['fb_id'] # only needed for createsuperuser command
+	# optional
+	viewers = models.ManyToManyField(User, related_name='viewing_tasks')
+	category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+	description = models.CharField(max_length=128, default='')
 
-	objects = UserManager()
-	
-	@property
-	def is_superuser(self):
+	# auto-fill
+	last_notify_ts = models.DateTimeField(auto_now_add=True)
+	ended = models.BooleanField(default=False)
+	# the date this task being marked by deletion (completed or expired)
+	del_date = models.DateTimeField(null=True, default=None) 
+
+	def complete(self):
+		# check if deadline expired or evidence has been submitted
+		try:
+			if datetime.now(timezone.utc) >= self.deadline or \
+				bool(self.evidence.file):
+				# the task will be deleted after del_date
+				self.ended = True
+				self.del_date = datetime.now(timezone.utc) + timedelta(
+					days=rest_settings.TASK_DELETION_WAITTIME)
+				self.save()
+				notifications = Notification.objects.filter(task=self, viewed=False) \
+					.exclude(type=Notification.EVIDENCE)
+				for notification in notifications:
+					notification.viewed = True
+					notification.save()
+				return True
+		except: pass
 		return False
 
-	def __str__(self):
-		return '{}'.format(self.id)
+'''
 
-class Category(models.Model):
-	name = models.CharField(max_length=64, null=False)
-	user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-class Task(models.Model):
-	owner = models.ForeignKey(User, related_name='owned_tasks', on_delete=models.CASCADE)
-	viewer = models.ForeignKey(User, related_name='viewing_tasks', on_delete=models.SET_NULL, null=True)
-	category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-
-	deadline = models.DateTimeField(null=False)
-	last_notify_ts = models.DateTimeField(null=False)
-
-	name = models.CharField(max_length=64, null=False)
-	description = models.CharField(max_length=128)
-
+'''
 class Evidence(models.Model):
+	# type constants
+	PHOTO = 0
+	GPS = 1
+	AUDIO = 2
+	DOCUMENT = 3
+	VIDEO = 4
 	EVIDENCE_TYPES = (
-		('G', 'GPS'),
-		('P', 'PHOTO'),
+		(PHOTO, 'PHOTO'),
+		(GPS, 'GPS'),
+		(AUDIO, 'AUDIO'),
+		(DOCUMENT, 'DOCUMENT'),
+		(VIDEO, 'VIDEO'),
 	)
-	id = models.OneToOneField(Task, on_delete=models.CASCADE, null=False, primary_key=True)
-	type = models.CharField(choices=EVIDENCE_TYPES, null=False, max_length=1)
-	data = models.CharField(max_length=100) # stores the GPS coordinate
-	image = models.FileField(upload_to=evidence_dir_path) # max size = 2MB
 
-class Notification(models.Model):
-	NOTIFICATION_TYPES = (
-		# TODO: define the type
-	)
-	type = models.CharField(choices=NOTIFICATION_TYPES, null=False, max_length=1) # or 2
-	text = models.TextField(null=False)
-	data = models.FilePathField() # server file path of an image attached to this notification
-	viewed = models.BooleanField(default=False, null=False)
-	sender = models.ForeignKey(User, related_name='sent_no', 
-		on_delete=models.CASCADE, null=False)
-	recipient = models.ForeignKey(User, related_name='received_no', 
-		on_delete=models.CASCADE, null=False)
-	task = models.ForeignKey(Task, null=False, on_delete=models.CASCADE) # null = True ?
+	# required
+	task = models.OneToOneField(Task, related_name='evidence', 
+		on_delete=models.CASCADE, primary_key=True)
+	type = models.IntegerField(choices=EVIDENCE_TYPES)
 
+	# optional
+	file = models.FileField(upload_to=evidence_dir, default=None, null=True)
+
+	# auto-fill
+	upload_date = models.DateTimeField(auto_now=True)
+
+'''
+
+'''
+@receiver(models.signals.post_delete, sender=Evidence)
+def delete_evidence_file(sender, instance, **kwarg):
+	if instance.file and os.path.isfile(instance.file.path):
+		instance.file.close()
+		try: os.remove(instance.file.path)
+		except: pass
+
+'''
+
+'''
 class Consequence(models.Model):
-	id = models.OneToOneField(Task, on_delete=models.CASCADE, null=False, primary_key=True)
-	message = models.TextField()
-	image = models.FileField(upload_to=consequence_dir_path)
+	# required
+	task = models.OneToOneField(Task, related_name='consequence', 
+		on_delete=models.CASCADE, primary_key=True)
 
+	# optional
+	message = models.TextField(default=None, null=True)
+	file = models.FileField(upload_to=consequence_dir, null=True)
+	dup_file = models.BooleanField(default=False)
 
+'''
+
+'''
+@receiver(models.signals.post_delete, sender=Consequence)
+def delete_consequence_file(sender, instance, **kwarg):
+	if instance.image and os.path.isfile(instance.image.path):
+		if not instance.dup_Image:
+			instance.image.close()
+			try: os.remove(instance.image.path)
+			except: pass
+
+	
+'''
+
+'''
+class Deletion(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	date = models.DateTimeField(auto_now_add=True)
+
+'''
+
+'''
+class Notification(models.Model):
+	# notification type
+	REMINDER = 0 # from viewer to task owner
+	REGULAR = 1 # from system to task owner
+	EVIDENCE = 2 # from system to viewer
+	DEADLINE = 3 # from user to viewer
+	INVITE = 5 # from user to user
+	NOTIFICATION_TYPE = (
+		(REMINDER, 'REMINDER'),
+		(REGULAR, 'REGULAR'),
+		(EVIDENCE, 'EVIDENCE POSTED'),
+		(DEADLINE, 'DEADLINE ExTENSION'),
+		(INVITE, 'VIEWER INVITE'),
+	)
+	# required
+	task = models.ForeignKey(Task, on_delete=models.CASCADE)
+	sender = models.ForeignKey(User, related_name='sent_no', 
+		on_delete=models.CASCADE)
+	recipient = models.ForeignKey(User, related_name='recv_no', 
+		on_delete=models.CASCADE)
+	type = models.IntegerField(choices=NOTIFICATION_TYPE)
+	text = models.TextField(default='')
+
+	# optional
+	file = models.FileField(default=None, null=True)
+	metadata = models.CharField(max_length=128, default=None, null=True)
+
+	# auto-fill
+	viewed = models.BooleanField(default=False)
+	sent_date = models.DateTimeField(auto_now_add=True)
+
+'''
+
+'''
+@receiver(models.signals.post_delete, sender=Notification)
+def close_notification_file(sender, instance, **kwarg):
+	if instance.file and os.path.isfile(instance.file.path):
+		instance.file.close()
+
+'''
+
+'''
+class TextTemplate(models.Model):
+	text = models.TextField()
+
+'''
+
+'''
+class ImageTemplate(models.Model):
+	file = models.FileField(upload_to=rest_settings.IMAGE_STORAGE_DIR)
+
+'''
+
+'''
+@receiver(models.signals.post_delete, sender=ImageTemplate)
+def delete_temp_img(sender, instance, **kwarg):
+	if instance.file and os.path.isfile(instance.file.path):
+		instance.file.close()
+		try: os.remove(instance.file.path)
+		except: pass

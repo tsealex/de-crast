@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from rest.models import User
-from rest.errors import APIError
+
+from rest_service.models import User
+from rest_service.errors import APIError
+from rest_service.facebook import facebook_mgr
 
 from .utils import *
 from .settings import settings
@@ -27,13 +29,15 @@ class JWTSerializer(serializers.Serializer):
 		}
 
 		if all(credentials.values()):
-			# TODO: validate the user-provided facebook token with FB server
-
+			facebook_mgr.validate_fb_token(credentials['fb_tk'], credentials['fb_id'])
 			user = None
 			try:
 				user = User.objects.get(fb_id=credentials['fb_id'])
 			except:
 				user = User.objects.create_user(fb_id=credentials['fb_id'])
+
+			if not user.is_active:
+				raise APIError(125, 'banned user')
 
 			ac_payload, ac_exp = create_payload(user, settings.JWT_ACTK_ID)
 			rf_payload, rf_exp = create_payload(user, settings.JWT_RFTK_ID)
@@ -64,14 +68,18 @@ class RefreshSerializer(serializers.Serializer):
 				payload = decode_header(token)
 				tk_type = payload.get('type')
 				if not tk_type or tk_type != settings.JWT_RFTK_ID:
-					raise APIError(155)
+					raise APIError(115, 'refresh token')
 
 				username = get_username_from_payload(payload)
 				if not username:
-					raise APIError(115)
+					raise APIError(115, 'refresh token')
 				if username != uid:
-					raise APIError(150)
+					raise APIError(160, 'userId & refreshToken')
 				user = User.objects.get_by_natural_key(username)
+
+				if not user.is_active:
+					raise APIError(125, 'banned user')
+
 				ac_payload, ac_exp = create_payload(user, settings.JWT_ACTK_ID)
 
 				return {
@@ -81,10 +89,10 @@ class RefreshSerializer(serializers.Serializer):
 					'ac_exp': ac_exp,
 				}
 			except jwt.ExpiredSignature:
-				raise APIError(120)
+				raise APIError(120, 'refresh token')
 			except jwt.InvalidTokenError:
-				raise APIError(155)
+				raise APIError(115, 'refresh token')
 			except User.DoesNotExist:
-				raise APIError(105)
+				raise APIError(180, 'user')
 			except jwt.DecodeError:
-				raise APIError(155, details='DecodeError')
+				raise APIError(115, 'refresh token')
