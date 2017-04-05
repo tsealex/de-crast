@@ -32,6 +32,29 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $rootScope.task_list = listHold;
         }
 
+
+        $scope.sorting = "";
+
+
+        $scope.doSorting = function() {
+            var elem_type = document.getElementById('sorting-select');
+            var sort_type = elem_type.options[elem_type.selectedIndex].value;
+
+
+            console.log(sort_type);
+
+            if (sort_type == "Due Date") {
+                $scope.sorting = "task_time";
+            }
+            else if (sort_type == 'Category') {
+                $scope.sorting = "task_category";
+            }
+            else {
+                $scope.sorting = "task_name";
+            }
+        };
+
+
         /*
         Function to display Task Detail Page
         */
