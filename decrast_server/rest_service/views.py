@@ -115,7 +115,7 @@ class UserViewSet(viewsets.ViewSet):
 	'''
 	def update(self, request):
 		# parse input
-		data = extract_data(request.data, ['username'])
+		data = extract_data(request.data, ['username'], ['fcm_token'])
 		# process input
 		factory = UserFactory(request.user, data=data, partial=True)
 		validate(factory)

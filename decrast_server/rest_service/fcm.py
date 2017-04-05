@@ -6,10 +6,6 @@
 
 '''
 
-# Using this path for local testing.
-#import sys
-#sys.path.append('/home/jerryand100/CS_Coursework/cs506/dinking_dir/SleekXMPP')
-#import sleekxmpp #as sleekxmpp
 
 import sleekxmpp
 import sys
@@ -21,10 +17,10 @@ import json
 FCM_SENDER_ID = '1086425216709'
 SECRET_KEY_ENV_VAR = 'FCM_SECRET_KEY'
 
-FCM_SERVER_EMAIL = FCM_SENDER_ID + '@gcm.googleapis.com'
+FCM_SERVER_JID = FCM_SENDER_ID + '@gcm.googleapis.com'
 FCM_SERVER_PASSWORD = os.environ[SECRET_KEY_ENV_VAR]
 
-FCM_SERVER_ADDRESS = bytes('fcm-xmpp.googleapis.com', 'utf_8')
+FCM_SERVER_ADDRESS = 'fcm-xmpp.googleapis.com'
 FCM_PROD_PORT = 5235
 FCM_TEST_PORT = 5236
 
@@ -33,12 +29,15 @@ FCM_USE_PORT = FCM_TEST_PORT
 FCM_CONNECT_ATTEMPT_LIMIT = 5
 
 
+'''
+	Implementation of an XMPP client which will run on our app server in order
+	to relay push notification to Google's FCM XMPP server.
+'''
 class DecrastXMPPServer(sleekxmpp.ClientXMPP):
 
 	def __init__(self):
-		print("Constructing a Decrast XMPP (kinda) Server!");
-		sleekxmpp.ClientXMPP.__init__(self, FCM_SERVER_EMAIL, FCM_SERVER_PASSWORD,
-sasl_mech="PLAIN")
+		sleekxmpp.ClientXMPP.__init__(self, FCM_SERVER_JID, FCM_SERVER_PASSWORD,
+		sasl_mech="PLAIN")
 
 		self.add_event_handler("session_start", self.start)
 		self.add_event_handler("message", self.message)
@@ -48,36 +47,36 @@ sasl_mech="PLAIN")
 			This function initiates communication with FCM's
 			XMPP server.
 		'''
-		print("XMPP authenticating -> " + FCM_SERVER_ADDRESS.decode('utf-8') \
-			+ ":" + str(FCM_USE_PORT));
 
-		if self.connect((FCM_SERVER_ADDRESS.decode('utf-8'), FCM_USE_PORT),
+		if self.connect((FCM_SERVER_ADDRESS, FCM_USE_PORT),
 		reattempt=True, use_tls=True, use_ssl=True):
-			print("Returning true!")
 			return True
 
-		print("Returning false :(")
 		return False
 
-
+	# TODO: Handle case when FCM server sends back a 'registration_id' field,
+	#       meaning we need to update the Decrast User table.
 	def message(self, msg):
 		''' def message:
 			This function receives a particular message sent via XMPP.
 		'''
 		print("XMPP message received!")
 
-	def sendMessage(self, to_jid, json_body):
-		pass
 
-	def establishConnection(self):
-		print("XMPP Establishing connection");
-#		self.send_message(mto='gcm.googleapis.com',
-		self.process(block=True)
+	def sendMessage(self, to_jid, sender_jid, json_body):
+		''' def sendMessage
+			This function sends a message to the FCM server, which in turns
+			relays it to the given user's mobile device.
+		'''
+
+		# Message ID needs to be unique, so I entrust uuid4 with doing the trick.
+		msg_contents = """ <message id="{0}"><gcm xmlns="google:mobile:data"> """ \
+		"""{ {1}, "to" : "{2}" }</gcm></message>""".format(uuid.uuid4(),
+		json.dumps(json_body), to_jid)
+
+		self.send_raw(msg_contents)
+
 
 	def start(self, event):
 		print("XMPP connection established!")
-
-	def getAuthString(self):
-		return """ <stream:stream to="gcm.googleapis.com" """ \
-        """version="1.0" xmlns="jabber:client" """ \
-        """xmlns:stream="http://etherx.jabber.org/streams">"""
+		self.process(block=True)

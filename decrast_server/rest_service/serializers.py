@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = User
-		fields = ('userId', 'username', 'karma')
+		fields = ('userId', 'username', 'karma', 'fcm_token')
 
 class CategorySerializer(serializers.ModelSerializer):
 	categoryId = serializers.IntegerField(source='id', read_only=True)
