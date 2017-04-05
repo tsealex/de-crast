@@ -26,7 +26,7 @@
         <h4>&nbsp;&nbsp;&nbsp;Welcome, {{name}} </h4>
 
            <ion-list>
-            <ion-item ng-repeat="task in task_list" class="item-icon-right" ng-click="goDetail(task)">
+            <ion-item ng-repeat="task in task_list| orderObjectBy: 'task_time'" class="item-icon-right" ng-click="goDetail(task)">
                 {{task.task_name}}      <object align="right">Due: {{ task.task_time | date : 'short' : 'UTC'}}</object>
                 <!--  icon-accessory make it small -->
                 <i class="icon ion-chevron-right icon-accessory"></i>

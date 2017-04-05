@@ -6,7 +6,7 @@
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
 
-angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', 'decrast.server', 'ngOpenFB', 'ngCordova'])
+angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', 'decrast.server', 'ngOpenFB', 'ngCordova', 'ngOrderObjectBy'])
 
 .run(function($ionicPlatform, ngFB) {
   
