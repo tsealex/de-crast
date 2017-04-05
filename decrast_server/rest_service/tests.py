@@ -19,9 +19,11 @@ from datetime import datetime, timezone, timedelta
 import os.path
 import calendar
 import json
+import shutil
 
 # change this
 base_dir = rest_settings.TEST_BASE_DIR or '/home/ec2-user/decrast_server/'
+rest_settings.UPLOAD_DIR = 'test_uploads/'
 
 class UserTestCase(TestCase):
 
@@ -167,7 +169,7 @@ class EvidenceTestCase(TestCase):
 
 	def _test_evidence_upload(self):
 		filename = 'valid.jpg'
-		filepath = base_dir + 'test_props/' + filename
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + filename
 		f = File(open(filepath, 'rb'))
 		f.name = filename
 
@@ -176,25 +178,25 @@ class EvidenceTestCase(TestCase):
 		self.assertEqual(task1.evidence, e, msg='same evidence')
 
 		
-		filepath = base_dir + 'test_props/too-big.jpg'
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'too-big.jpg'
 		invalid_f = File(open(filepath, 'rb'), name='too-big.jpg')
 		ef = EvidenceFactory(e, data={'file':invalid_f}, partial=True)
 		with self.assertRaises(APIErrors.ValidationError, msg='file too big'):
 			ef.is_valid()
 
-		filepath = base_dir + 'test_props/wrong-ext.cpp'
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'wrong-ext.cpp'
 		invalid_f = File(open(filepath, 'rb'), name='wrong-ext.cpp')
 		ef = EvidenceFactory(e, data={'file':invalid_f}, partial=True)
 		with self.assertRaises(APIErrors.ValidationError, msg='valid file with wrong ext'):
 			ef.is_valid()
 
-		filepath = base_dir + 'test_props/fake.jpg'
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'fake.jpg'
 		invalid_f = File(open(filepath, 'rb'), name='fake.jpg')
 		ef = EvidenceFactory(e, data={'file':invalid_f}, partial=True)
 		with self.assertRaises(APIErrors.ValidationError, msg='file with fake valid ext'):
 			ef.is_valid()
 
-		filepath = base_dir + 'test_props/manage.py'
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'manage.py'
 		invalid_f = File(open(filepath, 'rb'), name='manage.py')
 		ef = EvidenceFactory(e, data={'file':invalid_f}, partial=True)
 		with self.assertRaises(APIErrors.ValidationError, msg='obviously invalid file'):
@@ -207,7 +209,7 @@ class EvidenceTestCase(TestCase):
 		e = Evidence.objects.get(pk=self.tid[0])
 		self.assertIsNot(e.file, None, msg='file saved')
 		# check that the file is in its right place
-		self.assertTrue(os.path.isfile(base_dir + 'uploads/task_{}/{}'.format(e.pk, filename)), 
+		self.assertTrue(os.path.isfile(base_dir + 'test_uploads/task_{}/{}'.format(e.pk, filename)), 
 			msg='file saved to uploads') 
 
 		ef = EvidenceFactory(e, data={'file':f}, partial=True)
@@ -220,8 +222,11 @@ class EvidenceTestCase(TestCase):
 
 		e = Evidence.objects.get(pk=self.tid[0])
 		e.delete()
-		self.assertFalse(os.path.isfile(base_dir + 'uploads/task_{}/{}'.format(e.pk, filename)), 
-			msg='file removed after object deleted') 
+		self.assertFalse(os.path.isfile(base_dir + 'test_uploads/task_{}/{}'.format(e.pk, filename)), 
+			msg='file removed after object deleted')
+
+	def tearDown(self):
+		shutil.rmtree(base_dir + rest_settings.UPLOAD_DIR)
 
 class UtilsTestCase(TestCase):
 
@@ -387,6 +392,9 @@ class TaskTestCase(TestCase):
 
 		e.delete()
 
+	def tearDown(self):
+		shutil.rmtree(base_dir + rest_settings.UPLOAD_DIR)
+
 class NotificationTestCase(TestCase):
 
 	fb_id = [
@@ -529,7 +537,7 @@ class NotificationTestCase(TestCase):
 		e = Evidence(task=task, type=Evidence.PHOTO)
 		filename = 'valid.jpg'
 
-		f = File(open(base_dir + 'test_props/' + filename, 'rb'), name=filename)
+		f = File(open(base_dir + rest_settings.TEST_RESOURCE_DIR + filename, 'rb'), name=filename)
 		ef = EvidenceFactory(e, data={'file':f}, partial=True)
 		validate(ef)
 		ef.save()
@@ -539,6 +547,9 @@ class NotificationTestCase(TestCase):
 		self.assertTrue(n.exists(), msg='notified viewer (evidence)')
 		self.assertEqual(n.get().file, task.evidence.file, msg='same evidence')
 		e.delete()
+
+	def tearDown(self):
+		shutil.rmtree(base_dir + rest_settings.UPLOAD_DIR)
 
 
 class ViewTest(TestCase):
