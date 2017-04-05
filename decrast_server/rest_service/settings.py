@@ -31,9 +31,9 @@ DEFAULTS = {
 	'NOTIFICATION_PEROID': 360,
 
 	# magic.gc location, don't need to be set on a Linux machine
-	'MAGIC_FILE':None,
+	'MAGIC_FILE':'C:/Windows/System32/magic.mgc',
 	# directory that contains this server (where manage.py is located)
-	'TEST_BASE_DIR':None,
+	'TEST_BASE_DIR':'C:/Users/Alex/Workspaces/de-crast/decrast_server/',
 	'TEST_RESOURCE_DIR': 'test_props/',
 
 	'IMAGE_TYPES': ['image/jpeg'],

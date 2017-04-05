@@ -228,6 +228,94 @@ class EvidenceTestCase(TestCase):
 	def tearDown(self):
 		shutil.rmtree(base_dir + rest_settings.UPLOAD_DIR)
 
+class ConsequenceTestCase(TestCase):
+
+	fb_id = [
+		264462346,
+	]
+	tid = []
+
+	def setUp(self):
+		uf = UserFactory(data={'fb_id':self.fb_id[0]})
+		if uf.is_valid():
+			u = uf.save()
+		deadline = datetime.now(timezone.utc) + timedelta(minutes=8000)
+		task1 = Task(name='task1', deadline=deadline, owner=u)
+		task1.save()
+		self.tid.append(task1.id)
+		c = Consequence(task=task1)
+		c.save()
+
+	
+	def test(self):
+		self._test_consequence_upload()
+
+
+	def _test_consequence_upload(self):
+		filename = 'valid.jpg'
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + filename
+		f = File(open(filepath, 'rb'))
+		f.name = filename
+
+		task1 = Task.objects.get(pk=self.tid[0])
+		e = Consequence.objects.get(pk=self.tid[0])
+		self.assertEqual(task1.consequence, e, msg='same consequence')
+
+		
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'too-big.jpg'
+		invalid_f = File(open(filepath, 'rb'), name='too-big.jpg')
+		ef = ConsequenceFactory(e, data={'file':invalid_f}, partial=True)
+		with self.assertRaises(APIErrors.ValidationError, msg='file too big'):
+			ef.is_valid()
+
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'wrong-ext.cpp'
+		invalid_f = File(open(filepath, 'rb'), name='wrong-ext.cpp')
+		ef = ConsequenceFactory(e, data={'file':invalid_f}, partial=True)
+		with self.assertRaises(APIErrors.ValidationError, msg='valid file with wrong ext'):
+			ef.is_valid()
+
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'fake.jpg'
+		invalid_f = File(open(filepath, 'rb'), name='fake.jpg')
+		ef = ConsequenceFactory(e, data={'file':invalid_f}, partial=True)
+		with self.assertRaises(APIErrors.ValidationError, msg='file with fake valid ext'):
+			ef.is_valid()
+
+		filepath = base_dir + rest_settings.TEST_RESOURCE_DIR + 'manage.py'
+		invalid_f = File(open(filepath, 'rb'), name='manage.py')
+		ef = ConsequenceFactory(e, data={'file':invalid_f}, partial=True)
+		with self.assertRaises(APIErrors.ValidationError, msg='obviously invalid file'):
+			ef.is_valid()
+		
+		ef = ConsequenceFactory(e, data={'file':f}, partial=True)
+		self.assertTrue(ef.is_valid(), msg='valid jpg image {}'.format(ef.errors))
+		ef.save()
+
+		e = Consequence.objects.get(pk=self.tid[0])
+		self.assertIsNot(e.file, None, msg='file saved')
+		# check that the file is in its right place
+		self.assertTrue(os.path.isfile(base_dir + 'test_uploads/task_{}/{}'.format(e.pk, filename)), 
+			msg='file saved to uploads') 
+
+		ef = ConsequenceFactory(e, data={'file':f}, partial=True)
+		with self.assertRaises(APIErrors.AlreadyExists, msg='evidence already exists') as cm:
+			ef.is_valid()
+
+		ef = ConsequenceFactory(e, data={'message':'my msg'}, partial=True)
+		self.assertTrue(ef.is_valid(), msg='new message')
+		ef.save()
+
+		ef = ConsequenceFactory(e, data={'message':'my msg'}, partial=True)
+		with self.assertRaises(APIErrors.AlreadyExists, msg='cannot change message') as cm:
+			ef.is_valid()
+
+		e = Consequence.objects.get(pk=self.tid[0])
+		e.delete()
+		self.assertFalse(os.path.isfile(base_dir + 'test_uploads/task_{}/{}'.format(e.pk, filename)), 
+			msg='file removed after object deleted')
+
+	def tearDown(self):
+		shutil.rmtree(base_dir + rest_settings.UPLOAD_DIR)
+
 class UtilsTestCase(TestCase):
 
 	fb_id = [
@@ -326,6 +414,14 @@ class UtilsTestCase(TestCase):
 		file = create_GPS_doc(content)
 		file_content = file.read()
 		self.assertEqual(content, file_content , msg='content {}'.format(file_content))
+
+
+	def _test_get_random_msg(self):
+		img, msg = get_random_msg()
+		self.assertIsNone(img)
+		self.assertIsNone(msg)
+
+		# TODO: more test cases to come
 
 
 class TaskTestCase(TestCase):
@@ -567,6 +663,8 @@ class ViewTest(TestCase):
 	def test(self):
 		self._test_user_creation()
 		self._test_refresh()
+		self._test_invalid_token()
+		self._test_special_actions()
 		self._test_category()
 		self._test_task()
 		self._test_notification()
@@ -610,7 +708,46 @@ class ViewTest(TestCase):
 		self.assertEqual(User.objects.all().count(), 2, msg='total # user is 2')
 
 	def _test_refresh(self):
-		pass
+		res = self.clients[0].post('/auth/', {'facebookId':523598, 'facebookToken':'24aFeaYsf'}, format='json')
+		rf_tk = res.data['refreshToken']
+
+		res = self.clients[0].post('/refresh/', {'refreshToken':self.tokens[0], 'userId':self.users[0]}, format='json')
+		self.assertEqual(res.status_code, 400, 'cannot use access token to refresh')
+
+		res = self.clients[0].post('/refresh/', {'refreshToken':rf_tk, 'userId':self.users[0]}, format='json')
+		new_access = res.data['accessToken']
+		self.clients[0].credentials(HTTP_AUTHORIZATION='JWT ' + new_access)
+		res = self.clients[0].get('/user/list/', format='json')
+		self.assertEqual(res.status_code, 200, 'token refreshed')
+		self.tokens[0] = new_access
+
+	def _test_invalid_token(self):
+		self.clients[0].credentials(HTTP_AUTHORIZATION=self.tokens[0])
+		res = self.clients[0].get('/user/list/', format='json')
+		self.assertEqual(res.status_code, 400, 'missing JWT')
+
+		self.clients[0].credentials(HTTP_AUTHORIZATION='JWT self.tokens[0]')
+		res = self.clients[0].get('/user/list/', format='json')
+		self.assertEqual(res.status_code, 400, 'invalid token')
+
+		self.clients[0].credentials(HTTP_AUTHORIZATION='JWT ' + self.tokens[0])
+
+	def _test_special_actions(self):
+		res = self.clients[0].post('/user/', {'username':'first-user'}, format='json')
+		self.assertEqual(res.status_code, 200, '1st username')
+
+		res = self.clients[0].post('/user/', {'username':'first-user'}, format='json')
+		self.assertEqual(res.status_code, 400, 'changing username')
+
+		res = self.clients[1].post('/user/', {'username':'second-user'}, format='json')
+		self.assertEqual(res.status_code, 200, '2nd username')
+
+		res = self.clients[0].get('/user/search/user/', format='json')
+		self.assertEqual(len(res.data), 2, '2 users with name user')
+
+		res = self.clients[0].get('/user/facebook/{}/'.format(5642699), format='json')
+		self.assertEqual(res.data[0]['username'], 'second-user', 'second-user is your fb friend')
+		
 
 	def _test_category(self):
 		res = self.clients[0].get('/user/categories/', format='json')
@@ -720,6 +857,9 @@ class ViewTest(TestCase):
 		Task.objects.get(pk=self.task_id).viewers.remove(self.users[1])
 		res = self.clients[0].post('/user/notifications/', {'type':Notification.INVITE,'recipient':self.users[1],'task':self.task_id}, format='json')
 		self.assertEqual(Notification.objects.filter(sender_id=self.users[0], type=Notification.INVITE).exists(), True, 'invite sent')
+
+	def _test_mixed_usage(self):
+		pass
 
 
 

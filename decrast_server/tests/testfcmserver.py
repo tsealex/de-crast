@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/home/jerryand100/CS_Coursework/cs506/de-crast/decrast_server')
-from rest import fcm
-from rest import authfcm
+from rest_service import fcm
+from rest_service import authfcm
 
 import logging
 
