@@ -46,7 +46,6 @@ Name the user. This action can only be performed once. Client should make thi
 call as soon as user first logged in. You can tell whether a user has already
 registered by looking at the 'username' field in the above JSON reponses. If it
 is null, that means the user is new. 
-
 > **REQUEST**
 ```
 http://alext.se:8000/user/ POST
@@ -65,7 +64,6 @@ http://alext.se:8000/user/ POST
 ---
 Create a new category. Keep in mind that the category name cannot be the same
 as any categories' the user created. 
-
 > **REQUEST**
 ```
 http://alext.se:8000/user/categories/ POST
@@ -79,10 +77,10 @@ http://alext.se:8000/user/categories/ POST
    "name":"category1",
    "categoryId":1
 }
+```
 ---
 Get all of the user's categories. Note that the response contains an array, not
 just a single object. You may need to handle the data differently. 
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/categories/ GET
@@ -201,11 +199,11 @@ http://alext.se:8000/user/tasks/1/ POST
 {
    "taskId":1
 }
-
+```
+---
 There are three types of notifications you can send for now. If you want to
 invite someone for viewing the task, set 'type' to 5 and include two fields,
 the 'task' you want to add viewer to and the id of the user you want to invite.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/ POST
@@ -220,10 +218,10 @@ http://alext.se:8000/user/notifications/ POST
 {
    "success":true
 }
-
+```
+---
 Get a list of ids of the notification you received and have not yet "viewed".
 The concept of marking messages as "viewed" will be explain later.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/ GET
@@ -235,7 +233,8 @@ http://alext.se:8000/user/notifications/ GET
       "notificationId":1
    }
 ]
-
+```
+---
 Here, by calling this endpoint, client can mark user's notifications as viewed.
 Being viewed means that the notification can no longer be retrieved from the
 server while the client can still keep the local copy of it. 'decision' field
@@ -252,7 +251,6 @@ indicate that notification has been viewed. You can include a list of id(s) in
 a single request. Note that you will need to make the list the value of the
 'notification' field. The response is a list of unviewed notifications' ids you 
 still have, the format is the same the format for above call's response. 
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/respond/ POST
@@ -270,11 +268,11 @@ http://alext.se:8000/user/notifications/respond/ POST
 [
 
 ]
-
+```
+---
 This is another type of notification you can send. Type 3 is for deadline 
 extension. For this you need to include the 'deadline' field. Make sure the 
 deadline is at least an hour later than the current time.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/ POST
@@ -289,7 +287,8 @@ http://alext.se:8000/user/notifications/ POST
 {
    "success":true
 }
-
+```
+---
 Retrieve a notification. You can see the detail of this notification. Again,
 you can only retrieve a notification that has not been "viewed". You can 
 replace '/2/' with something like '/2&3/' to retrieve a list of notifications.
@@ -297,7 +296,6 @@ If the 'file' field is not null, that means there is an attachment to this
 notification, you can retrieve it from the endpoint 'user/notifications/2/file/'
 for example. Of course, you can't get the file for this notification since
 there is none. Only receiver can view the notification, the sender can't.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/2/ GET
@@ -317,10 +315,10 @@ http://alext.se:8000/user/notifications/2/ GET
       "text":"myusername sent you a request for changing the deadline of the task \"changed-task1\"."
    }
 ]
-
+```
+---
 Sending a reminder. Type 0 is a reminder, you must include the field 'text',
 which includes the content of this notification. 
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/ POST
@@ -335,10 +333,10 @@ http://alext.se:8000/user/notifications/ POST
 {
    "success":true
 }
-
+```
+---
 Get a list of task ids the user is viewing. Note that ended/completed tasks are 
 automatically removed from this list.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/tasks/viewing/ GET
@@ -350,9 +348,9 @@ http://alext.se:8000/user/tasks/viewing/ GET
       "taskId":1
    }
 ]
-
-Search users by username. Return a list of user ids and their usernames. 
 ```
+---
+Search users by username. Return a list of user ids and their usernames. 
 > **REQUEST**
 ```
 http://alext.se:8000/user/search/myuser/ GET
@@ -366,9 +364,9 @@ http://alext.se:8000/user/search/myuser/ GET
       "karma":0
    }
 ]
-
-Get users by their facebook id. Return a list of user ids and their usernames. 
 ```
+---
+Get users by their facebook id. Return a list of user ids and their usernames. 
 > **REQUEST**
 ```
 http://alext.se:8000/user/facebook/8456324/ GET
@@ -382,20 +380,22 @@ http://alext.se:8000/user/facebook/8456324/ GET
       "karma":0
    }
 ]
-
+```
+---
 Submit the evidence. Note that this body format is only for coordinate-type
 evidence. For file/image-type, you must send a file, i.e. make a call like:
-
+```
 curl
   -H "Content-Type:multipart/form-data"  \
   -H "Authorization: JWT <access_token>" \ 
   -X POST \
   -F file=@<full_file_path> \
      <server_endpoint_url>
-
-Note all uploaded files must be under 2MB and is actually an image type or the
-type corresponding to the evidence type (currently only image is supported).
 ```
+Note that all uploaded files must be under 2MB and is actually an image type or the
+type corresponding to the evidence type (currently only image is supported).
+
+---
 > **REQUEST**
 ```
 http://alext.se:8000/user/tasks/1/evidence/ POST
@@ -411,12 +411,11 @@ http://alext.se:8000/user/tasks/1/evidence/ POST
 ```
 NOTE
 - the input format is subject to change
-
+---
 Retrieve the notification. Nothing different from the previous retrieval call.
 However, note that this time 'file' is not null meaning the user can access the
 file. Also, note that the gps coordinate will be stored in a text file called
 'evidence.gps'.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/3/ GET
@@ -436,10 +435,10 @@ http://alext.se:8000/user/notifications/3/ GET
       "text":"myusername has submitted evidence for the task \"changed-task1\"."
    }
 ]
-
+```
+---
 Get the file. Note that this will download the file. The response here contains
 the content in the downloaded file.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/notifications/3/file/ GET
@@ -447,12 +446,12 @@ http://alext.se:8000/user/notifications/3/file/ GET
 > **RESPONSE** (RAW DATA)
 ```
 (43.0765920,-89.4124875)
-
+```
+---
 Get the evidence of a task. If 'file' is not null, you can retrieve it using
 call 'evidence/file/' (discussed below). By looking at whether 'file' is null,
 you can tell if the task is completed (uploaded evidence => task completed, for
 the current version of our app). 
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/tasks/1/evidence/ GET
@@ -465,11 +464,11 @@ http://alext.se:8000/user/tasks/1/evidence/ GET
    "upload_date":1491107426,
    "file":"uploads/task_1/evidence.gps"
 }
-
+```
+---
 Retrieve the evidence. In fact, client likely doesn't need to make this call
 because when a task is completed, a notification attached with the uploaded
 evidence will be sent to (all) the viewer(s).  
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/tasks/1/evidence/file/ GET
@@ -477,10 +476,10 @@ http://alext.se:8000/user/tasks/1/evidence/file/ GET
 > **RESPONSE**
 ```
 (43.0765920,-89.4124875)
-
+```
+---
 Delete a category. This will reset the 'category' of all the tasks under this 
 category to null.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/user/categories/1/ DELETE
@@ -490,9 +489,9 @@ http://alext.se:8000/user/categories/1/ DELETE
 {
    "success": true
 }
-
-List all users. For development stage only.
 ```
+---
+List all users. For development stage only.
 > **REQUEST**
 ```
 http://alext.se:8000/user/list/ GET
@@ -511,11 +510,11 @@ http://alext.se:8000/user/list/ GET
       "karma":0
    }
 ]
-
+```
+---
 Populate our database with a new template message, which may be posted to a 
 user's Facebook timeline if they missed the deadline and they didn't specify
 the consequence.
-```
 > **REQUEST**
 ```
 http://alext.se:8000/meme/message/ POST
@@ -529,7 +528,8 @@ http://alext.se:8000/meme/message/ POST
    "id":1,
    "text":"Posted By De-Crast."
 }
-
+```
+---
 > **REQUEST**
 ```
 http://alext.se:8000/meme/message/1/ DELETE
@@ -539,79 +539,45 @@ http://alext.se:8000/meme/message/1/ DELETE
 {
    "success":true
 }
-
+```
+---
 Populate our database with a new template image, which may be posted to a 
 user's Facebook timeline if they missed the deadline, along with a message.
-```
-> **REQUEST**
+
+
 ```
 http://alext.se:8000/meme/image/ POST
 
-COMMAND:
 curl --request POST \
   --url http://alext.se:8000/meme/image/ \
   --header 'content-type: multipart/form-data' \
-  --form file=@<filepath>
 ```
-
-
+---
 OTHER NOTES:
-- every time a task is created, the client must make a POST call to the endpoint 
+
+every time a task is created, the client must make a POST call to the endpoint 
   /user/tasks/<id>/consequence/ to initialize the consequence. To use default
   consequence, just don't pass any parameters. Otherwise, client must pass 'file'
   and 'message' two parameters. For example, make a call like
-
+```
 curl --request POST \
   --url http://alext.se:8000/user/tasks/<id>/consequence/ \
   --header 'content-type: multipart/form-data' \
   --form file=@<filepath>
   --form message='you message'
-
-
+```
+---
 To retrieve the consequence message and/or file, make calls to:
-
+```
 /user/tasks/<id>/consequence/ POST
-> return three fields: ('message', 'taskId', 'file')
-
+```
+return three fields: ('message', 'taskId', 'file')
+```
 /user/tasks/<id>/consequence/file/ POST
-> can start downloading the file
-> before trying to retrieve the file, call the first endpoint to make that
+```
+- can start downloading the file
+- before trying to retrieve the file, call the first endpoint to make that
   there is a file (i.e. 'file' is non-null).
 
 Note: only the task owner can perform this action; viewer cannot view the consequence
-
-
-
-
-
-
-
-```
-> **RESPONSE**
-```
-
-
-> **REQUEST**
-```
-
-```
-> **RESPONSE**
-```
-
-
-> **REQUEST**
-```
-
-```
-> **RESPONSE**
-```
-
-
-> **REQUEST**
-```
-
-```
-> **RESPONSE**
-```
-
 
