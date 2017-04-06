@@ -197,6 +197,109 @@ angular.module('decrast.server', [])
                     console.log("submitPhoto", JSON.stringify(response));
                     return response;
                 });
+            },
+            getUserByFbId: function(fbId){
+                return $http({
+                            method:'GET',
+                            url: ApiEndpoint.url + 'user/facebook/' + fbId + '/',
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                        }).then(function(response){
+                            console.log("getUserByFbId",JSON.stringify(response));
+                            return response;
+                        }, function(response){
+                            console.log("getUserByFbId",JSON.stringify(response));
+                            return response;
+                });
+            },
+            fakesendNotification: function(type, recipient, task) {
+                return $http({
+                    method:'POST',
+                    url: ApiEndpoint.url + 'user/notifications/',
+                    headers: {'Authorization': 'JWT ' + accessToken},
+                    data: {
+                        type: type,
+                        recipient: recipient,
+                        task: task
+                    }
+                }).then(function(response){
+                    console.log("fakesendNotification", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("fakesendNotification", JSON.stringify(response));
+                    return response;
+                });
+            },
+            fakegetNotification: function() {
+                return $http({
+                    method:'GET',
+                    url: ApiEndpoint.url + 'user/notifications/',
+                    headers: {'Authorization': 'JWT ' + accessToken}
+                }).then(function(response){
+                    console.log("fakegetNotification", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("fakegetNotification", JSON.stringify(response));
+                    return response;
+                });
+            },
+            fakegetNotificationDetail: function(notifId){
+                return $http({
+                    method:'GET',
+                    url: ApiEndpoint.url + 'user/notifications/' + notifId + '/',
+                    headers: {'Authorization': 'JWT ' + accessToken}
+                }).then(function(response){
+                    console.log("fakegetNotificationDetail", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("fakegetNotificationDetail", JSON.stringify(response));
+                    return response;
+                });
+            },
+            decideOnInvite: function(notificationId, decision){
+                return $http({
+                    method:'POST',
+                    url: ApiEndpoint.url + 'user/notifications/respond/',
+                    headers: {'Authorization': 'JWT ' + accessToken},
+                    data: { "notification":[
+                                {
+                                    id: notificationId,
+                                    decision: decision
+                                }
+                            ]
+                          }
+                }).then(function(response){
+                    console.log("decideOnInvite", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("decideOnInvite", JSON.stringify(response));
+                    return response;
+                });
+            },
+            getViewTask: function(notifId){
+                return $http({
+                    method:'GET',
+                    url: ApiEndpoint.url + 'user/tasks/viewing/',
+                    headers: {'Authorization': 'JWT ' + accessToken}
+                }).then(function(response){
+                    console.log("getViewTask", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("getViewTask", JSON.stringify(response));
+                    return response;
+                });
+            },
+            getEvidence: function(taskId){
+                return $http({
+                    method:'GET',
+                    url: ApiEndpoint.url + 'user/tasks/' + taskId + '/evidence/',
+                    headers: {'Authorization': 'JWT ' + accessToken}
+                }).then(function(response){
+                    console.log("getEvidence", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("getEvidence", JSON.stringify(response));
+                    return response;
+                });
             }
         }
     });

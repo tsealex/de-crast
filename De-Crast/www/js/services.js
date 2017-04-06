@@ -148,48 +148,20 @@ angular.module('decrast.services', [])
 
 })
 // notifications dummy data
-.factory('Notifications', function() {
+.factory('Notif', function() {
 // Might use a resource here that returns a JSON array
 
-// Some fake testing data
-  var notifications = [{
-      id: 0,
-      title: 'Ben Sparrow',
-      relatedTask: 'on'
-  }, {
-      id: 1,
-      title: 'Max Lynx',
-      relatedTask: 'off'
-  }, {
-      id: 2,
-      title: 'Adam Bradleyson',
-      relatedTask: 'block'
-  }, {
-      id: 3,
-      title: 'Perry Governor',
-      relatedTask: 'off'
-  }, {
-      id: 4,
-      title: 'Mike Harrington',
-      relatedTask: 'on'
-  }];
-
-  return {
-      all: function() {
-          return notifications;
-      },
-      remove: function(notifications) {
-          notifications.splice(notifications.indexOf(notification), 1);
-      },
-      get: function(notificationId) {
-          for (var i = 0; i < notifications.length; i++) {
-              if (notifications[i].id === parseInt(notifications)) {
-                  return notifications[i];
-              }
-          }
-          return null;
-      }
-  }
+  return function() {
+      // currently the uid input is fbId, later will be De-Crast userId
+      self.addNotif = function (sender, recipient, type, sent_date, notificationId, task, metadata, file, text) {
+          var notif = { notif_sender: sender, notif_recipient: recipient, notif_type: type, notif_sent_date: sent_date, notif_notificationId: notificationId, notif_task: task, notif_metadata: metadata, notif_file: file, notif_text: text };
+          return notif;
+      };
+      // other potential handler
+      // dropdown menu/popup selection page when creating a new task
+      // Be blocked detector
+      return self;
+  };
 })
 /*
  This factory will be used for creating task objects and processing changes to the tasks. We will also likely add functions

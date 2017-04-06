@@ -1,0 +1,62 @@
+<!---Formatting for any of our Add, View, Edit task views. For now, I've put in general text boxes that don't necessarily
+link up to anything in particular in the controllers. We'll want to hook these up to the controllers and the task factory.
+-->
+<ion-view view-title="{{task.task_name}} Task">
+    <ion-content class="padding">
+        <!--Task name-->
+        <div class="bottom">
+            <div style="float: left; width: 100%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="taskName" id="taskName-textarea" style="background: transparent; resize: none;">{{task.task_name}}</textarea>
+                </label>
+            </div>
+            <!--Task description-->
+            <div style="float: left; width: 100%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="descrip" id="descrip-textarea" style="background: transparent; resize: none;">{{task.task_descrip}}</textarea>
+                </label>
+            </div>
+        </div>
+
+        <!--Task Category. A text box for now but this should change.-->
+        <div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="category" id="category-textarea" style="background: transparent; resize: none;">{{category_list[task.task_category].name}}</textarea>
+                </label>
+            </div>
+        </div>
+
+        <!--Due Time: I don't like how this is displaying so we should fix this-->
+        <div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
+                </label>
+            </div>
+        </div>
+
+         <div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <input disabled type="text" name="evidenceType" id="evidenceType-textarea" style="background: transparent; resize: none;" ng-model="evidenceTypeName"></input>
+                </label>
+            </div>
+        </div>
+        
+        <div class="bottom">
+            <div style="float: left; width: 50%;" >
+            <label class="item item-input">
+                <input disabled type="text" name="viewer" id="viewer-textarea" ng-model="$parent.viewer" placeholder="Viewer" ng-click="populateViewers()" style="background: transparent;">
+            </label>
+            </div>
+        </div>
+
+        <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
+        TODO file can be used by add, view, and edit -->
+        <div id="footer">
+            <button style="float: left; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(0)">Decline</button>
+            <button style="float: right; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(1)">Accept</button>
+        </div>
+    </ion-content>
+</ion-view>
