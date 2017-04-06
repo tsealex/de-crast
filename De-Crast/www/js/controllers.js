@@ -708,10 +708,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
 
     })
-    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaCamera, $stateParams, Server) {
+    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicLoading, $ionicHistory, $cordovaCamera, $stateParams, Server) {
 
         $scope.task = $stateParams.task;
         $scope.taskId = $scope.task.task_id;
+        $scope.image = null;
 
         $scope.takePicture = function() {
             var options = {
@@ -728,6 +729,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
             $cordovaCamera.getPicture(options).then(function(imageData) {
                 $scope.imgURI = "data:image/jpeg;base64," + imageData;
+                $scope.image = imageData;
             }, function(err) {
                 // An error occured. Show a message to the user
             });
@@ -736,9 +738,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         //not functioning yet
         $scope.submitPhoto = function() {
 
-            Server.submitPhoto($scope.taskId, $scope.imgURI);
+            Server.submitPhoto($scope.taskId, $scope.image);
+            $ionicLoading.show({template: 'Function called!', noBackdrop: true, duration: 1000});
 
-        }
+            $state.go('home');
+
+        };
     })
     .controller('selectViewerCtrl', function ($stateParams, $rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
         $scope.onClick = function() {

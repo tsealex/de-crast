@@ -187,9 +187,9 @@ angular.module('decrast.server', [])
                     method:'POST',
                     url: ApiEndpoint.url + 'user/tasks/' + taskId +'/evidence/',
                     headers: {'Authorization': 'JWT ' + accessToken, 'Content-Type': 'multipart/form-data'},
-                    data: {
-                        photoData: photoData
-                    }
+                    file:
+                        photoData.substr(photoData.lastIndexOf('/')+1)
+
                 }).then(function(response){
                     console.log("submitPhoto", JSON.stringify(response));
                     return response;
