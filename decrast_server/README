@@ -140,7 +140,7 @@ RESPONSE
 }
 ---------------------------------------------------
 NOTE
-- type values: 0: GPS coordinate, 1: photo
+- type values: 1: GPS coordinate, 0: photo
 ====================================================
 Get a list of ids of the tasks created by user. Note that this returns an array.
 ---------------------------------------------------
