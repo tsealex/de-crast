@@ -74,7 +74,7 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           controller: 'ViewTaskCtrl'
     })
     .state('editTask', {
-      url: '/editTask',
+        url: '/editTask',
         params: {
             task: 'Tasks'
         },
@@ -172,6 +172,23 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
           },
           templateUrl: 'templates/selectViewer.html',
           controller: 'selectViewerCtrl'
+      })
+      .state('notifDetail', {
+          url: '/notifDetail',
+          cache: false,
+          params: {
+            notif: 'Notif'
+          },
+          templateUrl: 'templates/notifDetail.html',
+          controller: 'notifDetailCtrl'
+      })
+      .state('viewFTask', {
+          url: '/viewFTask',
+          params: {
+            task: 'Tasks'
+          },
+          templateUrl: 'templates/viewFTask.html',
+          controller: 'viewFTaskCtrl'
       });
 
   // if none of the above states are matched, use this as the fallback

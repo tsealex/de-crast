@@ -1,7 +1,7 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', ['ngOpenFB'])
     
-    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact, Friends) {
+    .controller('HomeCtrl', function ($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, TaskFact, Friends, Notif) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             
@@ -20,6 +20,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.populateCategories();
             // prepare friends list
             $scope.fetchFBfriends();
+//////////////// below may be delete if Junwei's notification system setup
+            $scope.fakepopulateNotification();
+//////////////////////////////////////////////////////////////////////////
+            $scope.getViewTask();
         });
         $scope.name = localStorage.getItem('user');
 
@@ -206,26 +210,80 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     }
                     
                     for(i=0;i<list.data.length;i++){
-                        var friendId = list.data[i].id;
-                        var friendName = list.data[i].name;
-                        // TODO: api call to fetch De-Crast userId and username using FBId
-
-                        // currentId and name is facebookId and name, later need to inject De-Crast userId
-                        // default status as normal
-                        var newFriend = (new Friends()).addFriend(friendId, friendName, 'normal');
-                        $rootScope.friend_list[friendId] = newFriend;
+                        var friendFbId = list.data[i].id;
+                        var friendFbName = list.data[i].name;
+                        $scope.getUserByFbId(friendFbId, friendFbName);
                     }
-                    localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
+                    //localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
                 },
                 function (error) {
                     alert('Facebook error: ' + error.error_description);
                 });
 
             // populate view
-            var friendList = angular.fromJson(localStorage.getItem('friend_list'));
-            if(friendList != null){
-                $rootScope.friend_list = friendList;
-            }
+            
+        }
+
+        $scope.getUserByFbId = function(fbId, fbName){
+            Server.getUserByFbId(fbId).then(function(data){
+                var userId = data.data[0].userId;
+                var username = data.data[0].username;
+                var name = null;
+                if(username != null){
+                    name = username;
+                }else{
+                    name = fbName;
+                }
+                var newFriend = (new Friends()).addFriend(userId, name, 'normal');
+                $rootScope.friend_list[userId] = newFriend;
+                localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
+            });
+            // default status as normal   
+            
+        }
+
+//////////////// below may be delete if Junwei's notification system setup
+        $scope.fakepopulateNotification = function(){
+            $rootScope.notif_list = {};
+            Server.fakegetNotification().then(function(data){
+                for(i=0; i<data.data.length; i++){
+                    $scope.fakegetNotificationDetail(data.data[i].notificationId);
+                }
+            });
+        }
+
+        $scope.fakegetNotificationDetail = function(notifId){
+            Server.fakegetNotificationDetail(notifId).then(function(data){
+                var notif = data.data[0];
+                var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
+                $rootScope.notif_list[notif.notificationId] = newNotif;
+                localStorage.setItem('notif_list', angular.toJson($rootScope.notif_list));
+            });
+        }
+        $scope.populateNotif = function(){
+            $rootScope.notif_list = angular.fromJson(localStorage.getItem('notif_list'));
+        };
+//////////////////////////////////////////////////////////////////////////
+        
+        $scope.getViewTask = function(){
+            $rootScope.viewTask_list = {};
+            Server.getViewTask().then(function(data){
+                for(i=0; i<data.data.length; i++){
+                    Server.getEvidenceType(data.data[i].taskId).then(function(data){
+                        $scope.getViewTaskDetail(data.data.taskId, data.data.type);
+                    });
+                }
+            });
+        }
+        $scope.getViewTaskDetail = function(taskId, evidenceType){
+            Server.getTask(taskId).then(function(data){
+                var task = data.data[0];
+                var newViewTask = (new TaskFact()).addTask(task.taskId, task.name, task.description, null, task.deadline, task.owner, null, evidenceType);
+                $rootScope.viewTask_list[taskId] = newViewTask;
+                localStorage.setItem('viewTask_list', angular.toJson($rootScope.viewTask_list));
+                $rootScope.viewTask_list = angular.fromJson(localStorage.getItem('viewTask_list'));
+            });
+            
         }
     })
 
@@ -239,6 +297,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.title = "Add";
         $scope.evidenceTypes = EvidenceTypes.all();
         $scope.myFactory = new TaskFact();
+        $scope.viewerObject = {}; // used to hold viewer
 
         $scope.$on('$ionicView.afterEnter', function (event, viewData) {
             // set select viewer if exist
@@ -300,14 +359,20 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     mySelector = document.getElementById('category-select');
 
                     myCategory = mySelector.options[mySelector.selectedIndex].value; 
+                    console.log("Test timeout");
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
                         //console.log(JSON.stringify(data));
-                        if (data.data.datail == "deadline")
+                        if (data.data.detail == "deadline")
                         	$ionicLoading.show({template: 'Invalid deadline', noBackdrop: true, duration: 1000});
                         else if (data.status != 200) {
                         	var errMsg =  data.data.errorMsg + ": "  + data.data.detail;
                         	$ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
                         } else {
+//////////////// below may be delete if Junwei's notification system setup
+                            if($scope.viewerObject){
+                                $scope.fakesendNotification($scope.viewerObject.friend_uid, data.data.taskId);
+                            }
+//////////////////////////////////////////////////////////////////////////
 	                        $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
 		                    $ionicViewSwitcher.nextDirection('back');
 		                    $timeout(function () {
@@ -333,6 +398,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $state.go('selectViewer', {task: newTask});
         };
 
+//////////////// below may be delete if Junwei's notification system setup
+        $scope.fakesendNotification = function(recipientId, taskId){
+            var type = 5; // Viewer invite
+            console.log(type, recipientId, taskId);
+            Server.fakesendNotification(type, recipientId, taskId).then(function(data){});
+        };
+//////////////////////////////////////////////////////////////////////////
+        
     })
 
     .controller('EditTaskCtrl', function ($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup, EvidenceTypes) {
@@ -446,12 +519,44 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
     })
 
-    .controller('FtasksCtrl', function ($scope, Ftasks, $ionicLoading) {
-        $scope.ftasks = Ftasks.all();
+    .controller('FtasksCtrl', function ($scope, Ftasks, $ionicLoading, $state, $rootScope) {
         //$ionicLoading.show({template: 'No friends\' Tasks found', noBackdrop: true, duration: 2500});
+        console.log("FtasksCtrl", $rootScope.viewTask_list);
+        $scope.goDetail = function(task){
+            $state.go('viewFTask', {task: task});
+        }
+
+        if($rootScope.sorting != null)
+        $scope.sorting = $rootScope.sorting;
+        else
+            $scope.sorting = "";
+
+
+
+        $scope.doSorting = function() {
+            var elem_type = document.getElementById('sorting-select');
+            var sort_type = elem_type.options[elem_type.selectedIndex].value;
+
+            console.log(sort_type);
+
+            if (sort_type == "Due Date") {
+                $scope.sorting = "task_time";
+            }
+            else if (sort_type == "Category") {
+                $scope.sorting = "task_category";
+                console.log("here");
+            }
+            else {
+                $scope.sorting = "task_name";
+            }
+            $rootScope.sorting = $scope.sorting;
+        };
     })
-    .controller('NotifCtrl', function ($scope, $stateParams, Notifications) {
-        $scope.notifications = Notifications.all();
+    .controller('NotifCtrl', function ($scope, $stateParams, $state) {
+        $scope.fakegoNotifDetail = function(currentNotif){
+            var notif = currentNotif;
+            $state.go('notifDetail', {notif: notif});
+        }
     })
     .controller('FriendsCtrl', function ($scope, Friends, $stateParams, $rootScope, ngFB, Server, $ionicLoading) {
         
@@ -508,6 +613,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             	} else {
 	                var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
 	                $rootScope.category_list[data.data.categoryId] = newCategory;
+                    document.getElementById('categoryName-textarea').value = '';
             	}
             });
         }
@@ -755,7 +861,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             $rootScope.friend_list = angular.fromJson(localStorage.getItem('friend_list'));
             $scope.task = $stateParams.task;
-            console.log(JSON.stringify($scope.task));
         });
         $scope.changeViewer = function(viewer){
             selectedViewer = viewer;
@@ -767,6 +872,72 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             localStorage.setItem('selectedViewer', angular.toJson(selectedViewer));
             $ionicHistory.goBack();
         }
+    })
+    .controller('notifDetailCtrl', function ($state, $ionicViewSwitcher, $scope, $ionicHistory, $stateParams, Server, $rootScope) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();
+        }
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+            $scope.notif = $stateParams.notif;
+            console.log($scope.notif);
+            Server.getTask($scope.notif.notif_task).then(function(data){
+                if(data.status == 200){
+                    $scope.task = data.data;
+                    console.log("connected to server");
+                }else{
+                    console.log("fail to connect to the server");
+                }
+            });
+        });
+        
+        $scope.onDecision = function(decisionInt){
+            console.log("You make a decision");
+            var decision;
+            if(decisionInt == 0){
+                decision = false;
+            }else{
+                decision = true;
+            }
+            switch($scope.notif.notif_type){
+                case 5: // viewer invite
+                    console.log("It's a viewer invite");
+                    Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data){
+                        if(data.status == 200){
+                            // succeed
+                            delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+                            $state.go('tab.notif');
+                        }
+                    });
+                    break;
+                default:
+                    console.log("notification type falls into default case");
+            }
+        }
+    })
+    .controller('viewFTaskCtrl', function ($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope, EvidenceTypes, Server) {
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+            viewData.enableBack = true;
+            $scope.task = $stateParams.task;
+            $scope.title = "View Friend's Task";
+            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
+            $scope.evidenceTypeName = $scope.evidenceType.name;
+            $scope.viewer = $rootScope.friend_list[$scope.task.task_partner].friend_name;
+            $scope.checkCompletion($scope.task.task_id);
+        });
+
+        $scope.checkCompletion = function(taskId){
+            Server.getEvidence(taskId).then(function(data){
+                if(data.data.file == null){
+                    $scope.complete = "Not Complete";
+                }else{
+                    $scope.complete = "Complete";
+                }
+            });
+        }
+
+
     })
 
 /* localStorage List:
