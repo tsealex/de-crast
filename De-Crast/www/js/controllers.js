@@ -608,7 +608,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             $scope.username = localStorage.getItem('user');
             $scope.username = $scope.username.toLowerCase();
-            $scope.username = $scope.username.replace(" ", "-");
+            $scope.username = $scope.username.replace(" ", "_");
         });
         $scope.setUsername = function(){
             $scope.username = document.getElementById('DCname').value;
