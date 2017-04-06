@@ -186,7 +186,7 @@ angular.module('decrast.server', [])
                 return $http({
                     method:'POST',
                     url: ApiEndpoint.url + 'user/tasks/' + taskId +'/evidence/',
-                    headers: {'Authorization': 'JWT ' + accessToken},
+                    headers: {'Authorization': 'JWT ' + accessToken, 'Content-Type': 'multipart/form-data'},
                     data: {
                         photoData: photoData
                     }
