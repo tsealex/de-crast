@@ -111,3 +111,18 @@ def get_random_msg(self):
 	msg = TextTemplate.objects.all()[msg_idx]
 	img = ImageTemplate.objects.all()[img_idx]
 	return img, msg
+
+'''
+	This function is called by the FCM module when it receives
+	news that a user's FCM token is updated.
+'''
+def set_fcm_token(old_token, new_token):
+	user = User.objects.filter(fcm_token=old_token)
+	user.update(fcm_token=new_token)
+	user.save()
+
+def get_fcm_by_user_id(p_id):
+	return User.objects.filter(id=p_id).get(fcm_token)
+
+def get_username_by_id(p_id):
+	return User.objects.filter(id=p_id).get(username)

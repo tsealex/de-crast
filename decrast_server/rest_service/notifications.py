@@ -5,6 +5,7 @@ from .factories import *
 from .serializers import *
 from .utils import *
 from .user import User
+from .fcmhttp import FcmPusher
 
 from datetime import datetime, timezone 
 
@@ -42,7 +43,9 @@ def send_viewer_invite(sender, receiver, task):
 	nf = NotificationFactory(data=data)
 	validate(nf)
 	nf.save()
-	# TODO: invoke FCM to notify user
+	# TODO: invoke FCM to notify user. This function call is harshly
+	# untested to the point of still being commented out ...
+#	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg)
 
 '''
 

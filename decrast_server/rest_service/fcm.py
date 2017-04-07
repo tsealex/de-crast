@@ -1,3 +1,15 @@
+'''
+	PLEASE NOTE: THIS FILE IS NOT CURRENTLY TO BE USED.
+	I REPEAT: THIS FILE IS NOT TO BE CURRENTLY USED.
+
+	Initially we wanted to implement FCM communication via XMPP, but
+	this kept dishing out one vague socket error after another.
+	Due to this, we decided to get communication working via HTTPS
+	with pyfcm, and then potentially try to implement XMPP communication
+	if we have time and/or the HTTPS communication isn't giving us what
+	we need. In the mean time, please refer to fcmhttp.py for FCM comms.
+'''
+
 ''' FILE: fcminterface.py
 
 	This file will be used to implement an XMPP protocol

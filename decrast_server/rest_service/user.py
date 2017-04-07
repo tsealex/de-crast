@@ -29,7 +29,7 @@ class User(AbstractBaseUser):
 	
 	# optional
 	karma = models.IntegerField(default=0)
-	fcm_token = models.CharField(max_length=128, null=True)
+	fcm_token = models.CharField(max_length=200, null=True)
 	
 	# ignored, django user model default field
 	password = models.CharField(max_length=8, default=None, null=True)

@@ -13,6 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = User
+		# TODO: Remove 'fcm_token' from the serializer (using for testing)
 		fields = ('userId', 'username', 'karma', 'fcm_token')
 
 class CategorySerializer(serializers.ModelSerializer):
