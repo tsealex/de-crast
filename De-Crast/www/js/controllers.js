@@ -38,7 +38,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
 
         if($rootScope.sorting != null)
-        $scope.sorting = $rootScope.sorting;
+            $scope.sorting = $rootScope.sorting;
         else
             $scope.sorting = "";
 
@@ -155,22 +155,33 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         Function to display the task list
         */
         $scope.populateTasks = function(response){
-            for(i=0;i<response.length;i++){
-                var evidenceType;
-                Server.getEvidenceType(response[i].taskId).then(function(data){
-                    evidenceType = data.data.type;
-                });
-                Server.getTask(response[i].taskId).then(function(data){
-                    var myDate = new Date( data.data[0].deadline *1000);
-                    //console.log(JSON.stringify(data));
-                    var newTask = (new TaskFact()).addTask(data.data[0].taskId, data.data[0].name, data.data[0].description, data.data[0].category, myDate, null, null, evidenceType);
-                    $rootScope.task_list[data.data[0].taskId] = newTask;
-                });
+            $rootScope.task_list = angular.fromJson(localStorage.getItem('task_list'));
+            if ($rootScope.task_list === null) {
+                console.log("reset");
+                $rootScope.task_list = {};
+                localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
             }
-            
-            localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
-            
-        }
+            for(i=0;i<response.length;i++) {
+                if ($rootScope.task_list[response[i].taskId] === undefined) {
+                    Server.getTask(response[i].taskId).then(function(data){
+                        var data = data.data[0];
+
+                        Server.getEvidenceType(data.taskId).then(function(res){
+                            $rootScope.task_list = angular.fromJson(localStorage.getItem('task_list'));
+
+                            var myDate = new Date( data.deadline *1000);
+                            var newTask = (new TaskFact()).addTask(data.taskId, data.name, data.description, 
+                                data.category, myDate, null, null, null);
+                            $rootScope.task_list[data.taskId] = newTask;
+
+                            $rootScope.task_list[res.data.taskId].task_evidenceType = res.data.type; 
+                            localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
+                                
+                        });
+                    });
+                }
+            }
+        };
 
         $scope.populateCategories = function(){
             $rootScope.category_list = {};
@@ -192,8 +203,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     return taskCategory.name;
                 }
                 
-            }
-        }
+            };
+        };
 
         $scope.fetchFBfriends = function(){
             // prepare friends container
@@ -222,7 +233,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
             // populate view
             
-        }
+        };
 
         $scope.getUserByFbId = function(fbId, fbName){
             Server.getUserByFbId(fbId).then(function(data){
@@ -240,7 +251,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
             // default status as normal   
             
-        }
+        };
 
 //////////////// below may be delete if Junwei's notification system setup
         $scope.fakepopulateNotification = function(){
@@ -250,7 +261,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     $scope.fakegetNotificationDetail(data.data[i].notificationId);
                 }
             });
-        }
+        };
 
         $scope.fakegetNotificationDetail = function(notifId){
             Server.fakegetNotificationDetail(notifId).then(function(data){
@@ -259,7 +270,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 $rootScope.notif_list[notif.notificationId] = newNotif;
                 localStorage.setItem('notif_list', angular.toJson($rootScope.notif_list));
             });
-        }
+        };
         $scope.populateNotif = function(){
             $rootScope.notif_list = angular.fromJson(localStorage.getItem('notif_list'));
         };
@@ -274,7 +285,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     });
                 }
             });
-        }
+        };
         $scope.getViewTaskDetail = function(taskId, evidenceType){
             Server.getTask(taskId).then(function(data){
                 var task = data.data[0];
@@ -284,7 +295,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 $rootScope.viewTask_list = angular.fromJson(localStorage.getItem('viewTask_list'));
             });
             
-        }
+        };
     })
 
     .controller('AddTaskCtrl', function ($rootScope, $stateParams, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform ) {
@@ -363,23 +374,23 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
                         //console.log(JSON.stringify(data));
                         if (data.data.detail == "deadline")
-                        	$ionicLoading.show({template: 'Invalid deadline', noBackdrop: true, duration: 1000});
+                            $ionicLoading.show({template: 'Invalid deadline', noBackdrop: true, duration: 1000});
                         else if (data.status != 200) {
-                        	var errMsg =  data.data.errorMsg + ": "  + data.data.detail;
-                        	$ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
+                            var errMsg =  data.data.errorMsg + ": "  + data.data.detail;
+                            $ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
                         } else {
 //////////////// below may be delete if Junwei's notification system setup
                             if($scope.viewerObject){
                                 $scope.fakesendNotification($scope.viewerObject.friend_uid, data.data.taskId);
                             }
 //////////////////////////////////////////////////////////////////////////
-	                        $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
-		                    $ionicViewSwitcher.nextDirection('back');
-		                    $timeout(function () {
-		                        $state.go('tab.home', {});
-		                        // todo
-		                    }, 1000);
-		                }
+                            $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
+                            $ionicViewSwitcher.nextDirection('back');
+                            $timeout(function () {
+                                $state.go('tab.home', {});
+                                // todo
+                            }, 1000);
+                        }
                     });
                 }
             }
@@ -607,14 +618,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         
         $scope.addCategory = function(name){
             Server.addCategory(name).then(function(data){
-            	if (data.status == 400) {
-            		var errMsg =  data.data.errorMsg + ": "  + "category";
-            		$ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
-            	} else {
-	                var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
-	                $rootScope.category_list[data.data.categoryId] = newCategory;
+                if (data.status == 400) {
+                    var errMsg =  data.data.errorMsg + ": "  + "category";
+                    $ionicLoading.show({template: errMsg, noBackdrop: true, duration: 1000});
+                } else {
+                    var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
+                    $rootScope.category_list[data.data.categoryId] = newCategory;
                     document.getElementById('categoryName-textarea').value = '';
-            	}
+                }
             });
         }
         
@@ -723,11 +734,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 Server.changeUsername($scope.username).then(function(data) {
                     console.log(JSON.stringify(data));
                     if (data.data.errorCode == 190)
-                    	$ionicLoading.show({template: "username already exists", noBackdrop: true, duration: 2500});
+                        $ionicLoading.show({template: "username already exists", noBackdrop: true, duration: 2500});
                     else {
-	                    // may need to be put in the server                
-	                    localStorage.setItem('user', $scope.username);
-	                    $state.go('tab.home');
+                        // may need to be put in the server                
+                        localStorage.setItem('user', $scope.username);
+                        $state.go('tab.home');
                     }
                 });
             }else{
