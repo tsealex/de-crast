@@ -155,6 +155,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         Function to display the task list
         */
         $scope.populateTasks = function(response){
+            
             $rootScope.task_list = angular.fromJson(localStorage.getItem('task_list'));
             if ($rootScope.task_list === null) {
                 console.log("reset");
@@ -165,15 +166,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 if ($rootScope.task_list[response[i].taskId] === undefined) {
                     Server.getTask(response[i].taskId).then(function(data){
                         var data = data.data[0];
-
+                        
                         Server.getEvidenceType(data.taskId).then(function(res){
                             $rootScope.task_list = angular.fromJson(localStorage.getItem('task_list'));
 
                             var myDate = new Date( data.deadline *1000);
                             var newTask = (new TaskFact()).addTask(data.taskId, data.name, data.description, 
-                                data.category, myDate, null, null, null);
+                                data.category, myDate, $rootScope.friend_list[data.viewer], null, null); // todo
                             $rootScope.task_list[data.taskId] = newTask;
-
+                            
                             $rootScope.task_list[res.data.taskId].task_evidenceType = res.data.type; 
                             localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
                                 
@@ -432,6 +433,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.category = $scope.task.task_category;
             $scope.evidenceTypeName = EvidenceTypes.get($scope.task.task_evidenceType).name;
             $scope.descrip = $scope.task.task_descrip;
+            $scope.viewer = $scope.task.task_partner.friend_name;
             
             // below are used for deadline change
             $scope.myFactory = new TaskFact();
@@ -511,6 +513,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
             $scope.evidenceTypeName = $scope.evidenceType.name;
+            $scope.viewer = $scope.task.task_partner.friend_name;
         });
 
         
