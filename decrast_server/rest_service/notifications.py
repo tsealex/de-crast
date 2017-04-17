@@ -43,9 +43,9 @@ def send_viewer_invite(sender, receiver, task):
 	nf = NotificationFactory(data=data)
 	validate(nf)
 	nf.save()
-	# TODO: invoke FCM to notify user. This function call is harshly
-	# untested to the point of still being commented out ...
-#	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg)
+
+	# Send out the notification.
+	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.INVITE)
 
 '''
 
@@ -65,7 +65,8 @@ def send_deadline_ext(sender, task, deadline):
 		nf = NotificationFactory(data=data)
 		validate(nf)
 		nf.save()
-		# TODO: invoke FCM to notify user
+
+		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.DEADLINE)
 
 '''
 
@@ -83,7 +84,8 @@ def send_reminder(sender, task, content):
 	nf = NotificationFactory(data=data)
 	validate(nf)
 	nf.save()
-	# TODO: invoke FCM to notify user
+
+	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.REMINDER)
 
 	# refresh task last_notify_time
 	task.last_notify_ts = datetime.now(timezone.utc)
@@ -109,7 +111,8 @@ def send_evidence(sender, task):
 		nf = NotificationFactory(data=data)
 		validate(nf)
 		nf.save()
-		# TODO: invoke FCM to notify user
+
+		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.EVIDENCE)
 
 '''
 
