@@ -33,7 +33,7 @@ class Task(models.Model):
 	# optional
 	viewers = models.ManyToManyField(User, related_name='viewing_tasks')
 	category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-	description = models.CharField(max_length=128, default='')
+	description = models.CharField(max_length=128, default='', blank=True)
 
 	# auto-fill
 	last_notify_ts = models.DateTimeField(auto_now_add=True)
@@ -117,11 +117,12 @@ class Consequence(models.Model):
 '''
 @receiver(models.signals.post_delete, sender=Consequence)
 def delete_consequence_file(sender, instance, **kwarg):
-	if instance.image and os.path.isfile(instance.image.path):
-		if not instance.dup_Image:
-			instance.image.close()
-			try: os.remove(instance.image.path)
+	if instance.file and os.path.isfile(instance.file.path):
+		if not instance.dup_file:
+			instance.file.close()
+			try: os.remove(instance.file.path)
 			except: pass
+
 
 	
 '''
