@@ -662,9 +662,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             ngFB.login({scope: 'email,user_posts, publish_actions, user_friends'}).then(
                 function (response) {
                     if (response.status === 'connected') {
-                        localStorage.setItem('login', 'true'); 
+                        localStorage.setItem('login', 'true');
                         localStorage.setItem('fbAccessToken', response.authResponse.accessToken);
                         
+												FCMPlugin.getToken(
+        									function (token) {
+													localStorage.setItem('fcmId', token);
+        								},
+        								function (err) {
+        									alert('error retrieving FCM token: ' + err);
+      									});
+
                         ngFB.api({
                             path: '/me',
                             params: {fields: 'id,name'}
@@ -731,7 +739,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.username = document.getElementById('DCname').value;
             console.log($scope.username);
             if($scope.checkCharacter($scope.username)){
-                Server.changeUsername($scope.username).then(function(data) {
+                Server.changeUsername($scope.username, 
+localStorage.getItem('fcmId')).then(function(data) {
                     console.log(JSON.stringify(data));
                     if (data.data.errorCode == 190)
                         $ionicLoading.show({template: "username already exists", noBackdrop: true, duration: 2500});
