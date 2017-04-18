@@ -168,8 +168,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
                         Server.getEvidenceType(data.taskId).then(function(res){
                             $rootScope.task_list = angular.fromJson(localStorage.getItem('task_list'));
-
-                            var myDate = new Date( data.deadline *1000);
+                            var ddl = new Date(data.deadline*1000);
+                            var timezone = new Date().getTimezoneOffset();
+                            var date = (ddl.getTime() - timezone*60000)/1000.0;
+                            var myDate = new Date( date*1000);
                             var newTask = (new TaskFact()).addTask(data.taskId, data.name, data.description, 
                                 data.category, myDate, null, null, null);
                             $rootScope.task_list[data.taskId] = newTask;
@@ -298,7 +300,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('AddTaskCtrl', function ($rootScope, $stateParams, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform ) {
+    .controller('AddTaskCtrl', function ($rootScope, $stateParams, $scope, $ionicPlatform, $cordovaLocalNotification, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform ) {
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
         });
@@ -366,11 +368,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 }else{
                     // convert from readable time to UNIX
                     var myDate = new Date($scope.time); 
-                    var myEpoch = myDate.getTime()/1000.0;
+                    var timezone = new Date().getTimezoneOffset();
+                    var myEpoch = (myDate.getTime() + timezone*60000)/1000.0;
+/*
+                    var usertime = new Date($scope.time);
+                    var timezone = new Date().getTimezoneOffset();
+                    var ddl = new Date(user.getTime() + timezone.getTime());
+*/
                     mySelector = document.getElementById('category-select');
 
                     myCategory = mySelector.options[mySelector.selectedIndex].value; 
-                    console.log("Test timeout");
+                    console.log(myDate + "Test timeout" + timezone);
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
                         //console.log(JSON.stringify(data));
                         if (data.data.detail == "deadline")
@@ -385,6 +393,24 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             }
 //////////////////////////////////////////////////////////////////////////
                             $ionicLoading.show({template: 'Task Saved!', noBackdrop: true, duration: 1000});
+
+                            $ionicPlatform.ready(function () {
+                                  // var now = new Date().getTime();
+                                  // var _3SecondsFromNow = new Date(now + 3 * 1000);
+                                  //var ddl = new Date(myEpoch*1000);
+                                  var usertime = new Date($scope.time);
+                                  var timezone = new Date().getTimezoneOffset();
+                                  var ddl = new Date(usertime.getTime() + timezone*60000);
+                                  $cordovaLocalNotification.schedule({
+                                    id: 10,
+                                    title: $scope.taskName,
+                                    text: 'This task is DUE!!!',
+                                    at: ddl
+                                  }).then(function (result) {
+                                    console.log( ddl.getTime + 'a local notification is triggered' + myEpoch*1000);
+                                  });
+                            });
+
                             $ionicViewSwitcher.nextDirection('back');
                             $timeout(function () {
                                 $state.go('tab.home', {});
@@ -643,7 +669,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $cordovaLocalNotification, $ionicPlatform, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -653,7 +679,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();
         });
-        
+
         $scope.fbLogin = function () {
             var runningInCordova = false;
             document.addEventListener("deviceready", function () {
