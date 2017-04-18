@@ -13,15 +13,25 @@ In terminal, `cd` into the De-Crast folder
 
 We have the following cordova plugins installed that must also be installed:
 cordova-plugin-app-event 1.2.0 "Application Events"
+
 cordova-plugin-camera 2.4.0 "Camera"
+
 cordova-plugin-compat 1.1.0 "Compat"
+
 cordova-plugin-console 1.0.6 "Console"
+
 cordova-plugin-device 1.1.5 "Device"
+
 cordova-plugin-inappbrowser 1.7.0 "InAppBrowser"
+
 cordova-plugin-splashscreen 3.1.0 "Splashscreen"
+
 cordova-plugin-statusbar 2.1.3 "StatusBar"
+
 cordova-plugin-whitelist 1.2.2 "Whitelist"
+
 de.appplant.cordova.plugin.local-notification 0.8.4 "LocalNotification"
+
 ionic-plugin-keyboard 2.2.1 "Keyboard"
 
 
