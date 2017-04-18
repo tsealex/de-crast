@@ -101,7 +101,7 @@ def get_actual_file(file):
 '''
 
 '''
-def get_random_msg(self):
+def get_random_msg():
 	msg_count = TextTemplate.objects.count()
 	img_count = ImageTemplate.objects.count()
 	if msg_count == 0 or img_count == 0:
