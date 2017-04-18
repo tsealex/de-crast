@@ -70,9 +70,6 @@
     <splash src="resources/android/splash/drawable-port-xxhdpi-screen.png" density="port-xxhdpi"/>
     <splash src="resources/android/splash/drawable-port-xxxhdpi-screen.png" density="port-xxxhdpi"/>
   </platform>
-<<<<<<< HEAD
   <allow-navigation href="http://10.140.1.65:8100"/>
-=======
   <icon src="resources/android/icon/drawable-xhdpi-icon.png"/>
->>>>>>> 40b48672adec8795ffe8ac56cb7a34e5887df466
 </widget>
