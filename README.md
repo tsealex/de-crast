@@ -1,6 +1,11 @@
 # de-crast
 Take the "pro" out of procrastination.
 
+ISSUE TRACKING ===================
+We are using Github's Issues feature for bug tracking.
+Please feel free to submit any and all bugs through this system, following the link below:
+	https://github.com/timdohm/de-crast/issues
+
 Building and Running Instructions
 How to run and test our current version of De-Crast fronted:
 
@@ -49,9 +54,22 @@ If you wish, you may view the server code by downloading the backend-master bran
 	https://github.com/timdohm/de-crast/
 	in the master branch
 
-NOTE: Our server is running on an AWS instance, so you will not need to run it locally.
-
-
 You can emulate the app using the command: `ionic emulate android`
 Or for the iOS emulator: `ionic emulate ios`
 Finally, if you wish to download a compiled version of our Android code, you may do so from: https://drive.google.com/file/d/0Bw-Msnfg9-lzaXpFWDlOTGRJOEE/view
+
+
+
+NOTE: Our server is running on an AWS instance, so you will not need to run it locally.
+
+To build the server code and run it locally (this is NOT mandatory):
+
+- You will need to install the following python modules:
+	- pyfcm, pymagic, djangorestframework
+	- NOTE: The server is intended to be run on a Linux machine. Attempting to run the
+					server on a Windows machine may lead to unpredictable results with the pymagic module.
+
+- To run the server, navigate to the local folder containing the manage.py script (<install_loc>/de-crast/decrast_server/), and run the following:
+		"python manage.py runserver"
+
+- This should launch a server instance at localhost:8000, and thus all URL's should be relative to this address for running API calls.
