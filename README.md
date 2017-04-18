@@ -2,6 +2,7 @@
 Take the "pro" out of procrastination.
 
 ISSUE TRACKING ===================
+
 We are using Github's Issues feature for bug tracking.
 Please feel free to submit any and all bugs through this system, following the link below:
 	https://github.com/timdohm/de-crast/issues
@@ -11,33 +12,38 @@ How to run and test our current version of De-Crast fronted:
 
 First, install NodeJS and Ionic according to the instructions on slides 3 and 4 here: https://docs.google.com/presentation/d/1qgip6iJKOP06yRoMFPNgLZCfVkOosg63OTWK1_OpCm0/edit#slide=id.g1c3c317cf2_0_0
 
+A helpful overview of ionic installation instructions can be found on its website:
+	https://ionicframework.com/docs/intro/installation/
 
 Secondly, download our frontend-master branch from https://github.com/timdohm/de-crast/tree/frontend-master
 
 In terminal, `cd` into the De-Crast folder 
 
 We have the following cordova plugins installed that must also be installed:
-cordova-plugin-app-event 1.2.0 "Application Events"
 
-cordova-plugin-camera 2.4.0 "Camera"
+cordova plugin add cordova-plugin-app-even
 
-cordova-plugin-compat 1.1.0 "Compat"
+cordova plugin add cordova-plugin-camera
 
-cordova-plugin-console 1.0.6 "Console"
+cordova plugin add cordova-plugin-compat
 
-cordova-plugin-device 1.1.5 "Device"
+cordova plugin add cordova-plugin-console
 
-cordova-plugin-inappbrowser 1.7.0 "InAppBrowser"
+cordova plugin add cordova-plugin-device
 
-cordova-plugin-splashscreen 3.1.0 "Splashscreen"
+cordova plugin add cordova-plugin-inappbrowser
 
-cordova-plugin-statusbar 2.1.3 "StatusBar"
+cordova plugin add cordova-plugin-splashscreen
 
-cordova-plugin-whitelist 1.2.2 "Whitelist"
+cordova plugin add cordova-plugin-statusbar
 
-de.appplant.cordova.plugin.local-notification 0.8.4 "LocalNotification"
+cordova plugin add cordova-plugin-whitelist
 
-ionic-plugin-keyboard 2.2.1 "Keyboard"
+cordova plugin add de.appplant.cordova.plugin.local-notification
+
+cordova plugin add ionic-plugin-keyboard
+
+cordova plugin add cordova-plugin-fcm
 
 
 You can check which ones you have installed using `cordova plugin`
@@ -56,6 +62,12 @@ If you wish, you may view the server code by downloading the backend-master bran
 
 You can emulate the app using the command: `ionic emulate android`
 Or for the iOS emulator: `ionic emulate ios`
+
+The project can be run in the browser via: `ionic serve`
+
+NOTE: Push notifications will only work on mobile devices. Push notifications are not supported in the browser
+version of our application.
+
 Finally, if you wish to download a compiled version of our Android code, you may do so from: https://drive.google.com/file/d/0Bw-Msnfg9-lzaXpFWDlOTGRJOEE/view
 
 
@@ -67,7 +79,7 @@ To build the server code and run it locally (this is NOT mandatory):
 - You will need to install the following python modules:
 	- pyfcm, pymagic, djangorestframework, django
 	- NOTE: The server is intended to be run on a Linux machine. Attempting to run the
-					server on a Windows machine may lead to unpredictable results with the pymagic module.
+		server on a Windows machine may lead to unpredictable results with the pymagic module.
 
 - To run the server, navigate to the local folder containing the manage.py script (<install_loc>/de-crast/decrast_server/), and run the following:
 		"python manage.py runserver"
