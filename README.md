@@ -65,7 +65,7 @@ NOTE: Our server is running on an AWS instance, so you will not need to run it l
 To build the server code and run it locally (this is NOT mandatory):
 
 - You will need to install the following python modules:
-	- pyfcm, pymagic, djangorestframework
+	- pyfcm, pymagic, djangorestframework, django
 	- NOTE: The server is intended to be run on a Linux machine. Attempting to run the
 					server on a Windows machine may lead to unpredictable results with the pymagic module.
 
