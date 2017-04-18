@@ -242,7 +242,9 @@ var openFB = (function () {
             url;
 
         params['access_token'] = tokenStore.fbAccessToken;
-
+        if(params['access_token'] == null && localStorage.getItem('fbAccessToken')!= null){ // token
+            params['access_token'] = localStorage.getItem('fbAccessToken');
+        }
         url = 'https://graph.facebook.com' + obj.path + '?' + toQueryString(params);
 
         xhr.onreadystatechange = function () {

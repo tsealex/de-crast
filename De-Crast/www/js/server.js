@@ -74,7 +74,7 @@ angular.module('decrast.server', [])
                             return response;
                 });
             },
-            eidtTask: function(taskId, name, description, category) { // category
+            editTask: function(taskId, name, description, category) { // category
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/tasks/'+taskId+"/",
@@ -88,10 +88,10 @@ angular.module('decrast.server', [])
                                 //category: category,
                             }
                         }).then(function(response){
-                            console.log("eidtTask", JSON.stringify(response));
+                            console.log("editTask", JSON.stringify(response));
                             return response;
                         }, function(response){
-                            console.log("eidtTask", JSON.stringify(response));
+                            console.log("editTask", JSON.stringify(response));
                             return response;
                 });
             },
@@ -252,6 +252,24 @@ angular.module('decrast.server', [])
                     return response;
                 }, function(response){
                     console.log("fakegetNotificationDetail", JSON.stringify(response));
+                    return response;
+                });
+            },
+            sendNotificationThree: function(type, deadline, task) {
+                return $http({
+                    method:'POST',
+                    url: ApiEndpoint.url + 'user/notifications/',
+                    headers: {'Authorization': 'JWT ' + accessToken},
+                    data: {
+                        type: type,
+                        deadline: deadline,
+                        task: task
+                    }
+                }).then(function(response){
+                    console.log("sendNotificationThree", JSON.stringify(response));
+                    return response;
+                }, function(response){
+                    console.log("sendNotificationThree", JSON.stringify(response));
                     return response;
                 });
             },
