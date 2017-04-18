@@ -170,9 +170,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         Server.getEvidenceType(data.taskId).then(function(res){
                             $rootScope.task_list = angular.fromJson(localStorage.getItem('task_list'));
 
-                            var myDate = new Date( data.deadline *1000);
+                            var myDate = new Date( (data.deadline - 3600.0*10.0) *1000); // correct GMT
+                            var utcDate = new Date(myDate.getUTCFullYear(), myDate.getUTCMonth(), myDate.getUTCDate(), myDate.getUTCHours(), myDate.getUTCMinutes());
+                            // myDate.toISOString();// todoo
+                            console.log("checktime", utcDate);
+                            /*var myEpoch = myDate.getTime() / 1000.0 - 3600.0 * 5.0;
+                            myDate = new Date(myEpoch);*/
                             var newTask = (new TaskFact()).addTask(data.taskId, data.name, data.description, 
-                                data.category, myDate, $rootScope.friend_list[data.viewer], null, null); // todo
+                                data.category, utcDate, $rootScope.friend_list[data.viewer], null, null); // todo
                             $rootScope.task_list[data.taskId] = newTask;
                             
                             $rootScope.task_list[res.data.taskId].task_evidenceType = res.data.type; 
@@ -367,7 +372,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 }else{
                     // convert from readable time to UNIX
                     var myDate = new Date($scope.time); // my Date is GMT, $scope.time is Z, we store GMT
+                    // console.log(myDate, $scope.time);
                     var myEpoch = myDate.getTime()/1000.0;
+                    
+                    myEpoch = myDate.getTime()/1000.0 + 3600.0*5.0; // myEpoch store utc
+                    
                     mySelector = document.getElementById('category-select');
                     myCategory = mySelector.options[mySelector.selectedIndex].value; 
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
@@ -547,7 +556,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             viewData.enableBack = true;
             $scope.task = $stateParams.task;
             $scope.title = "View";
-            if($scope.task.task_category == null){
+            if($scope.task.task_category == null || $scope.task.task_category == ''){
                 document.getElementById('category-textarea').value = 'None';
             }
             $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
@@ -618,9 +627,20 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.decisionPopup = function(notif){
             var text = '';
             var title = '';
+            switch(notif.notif_type){
+                case(3):
+                    text = 'Do you want to permit the deadline extension?';
+                    title = 'Permission';
+                    break;
+                case(5):
+                    text = 'Do you want to permit the deadline extension?';
+                    title = 'Permission';
+                    break;
+                default:
+                    break;
+            }
             if(notif.notif_type == 3){
-                text = 'Do you want to permit the deadline extension?';
-                title = 'Permission';
+                
             }
             if(notif.notif_type == 5){
                 text = 'Do you want to view on the task?';
@@ -913,7 +933,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
             console.log("Map post coordinates", coordinates);
 // This server is not function correctly            
-            Server.submitGPS($scope.taskId, coordinates).then(function(data){});
+            Server.submitGPS($scope.taskId, coordinates).then(function(data){
+                $ionicHistory.goBack(2);
+            });
         }
 
     })
@@ -957,7 +979,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     .controller('selectViewerCtrl', function ($stateParams, $rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
-            $ionicHistory.goBack();   
+            // $ionicHistory.goBack();   
         }
         
         var selectedViewer;
@@ -1036,6 +1058,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     $scope.complete = "Not Complete";
                 }else{
                     $scope.complete = "Complete";
+                    // document.getElementById('getEvidence-button').classList.add("button-positive");
                 }
             });
         }
@@ -1051,4 +1074,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 "user", username, default FB name, specify on De-Crast name
 "task_list"
 "friend_list"
+*/
+
+/* issue on UTC:
+The epoch sent to server should add 5 hours
+The epoch get from the server minus 5 hours
+store the minus five hr UTC to the localstorage of task
 */
