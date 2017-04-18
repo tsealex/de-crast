@@ -165,6 +165,10 @@ class Notification(models.Model):
 	viewed = models.BooleanField(default=False)
 	sent_date = models.DateTimeField(auto_now_add=True)
 
+	def __str__(self):
+		return "<id={}, task_id={}, type={}, text={}>".format(self.id, self.task.id, self.type, 
+self.text)
+
 '''
 
 '''

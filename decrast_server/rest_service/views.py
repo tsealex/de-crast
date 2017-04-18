@@ -207,13 +207,14 @@ class OwnedTaskViewSet(viewsets.ViewSet):
 	def create(self, request):
 		# parse input
 		data = extract_data(request.data, ['name', 'deadline', 'type'], 
-			['category', 'description'])
+			['category', 'description', 'viewers'])
 		data['owner'] = request.user.id
 		# process input
 		tfactory = TaskFactory(data=data)
 		validate(tfactory)
 		validate_evidence_type(data['type'])
 		task = tfactory.save()
+
 		Evidence(task=task, type=data['type']).save()
 		Consequence(task=task).save()
 		serializer = TaskIdSerializer(task)
@@ -442,10 +443,14 @@ class EvidenceViewSet(viewsets.ViewSet):
 		task = request.user.owned_tasks.filter(id=ids[0]) | \
 			request.user.viewing_tasks.filter(id=ids[0])
 		if not task.exists(): raise APIErrors.DoesNotExist('task id')
+
 		evidence = task.get().evidence
+#		evidence = Evidence.objects.get(pk=task.id)
+
 		# process input
-		serializer = EvidenceSerializer(evidence)
-		return Response(serializer.data)
+		if evidence is not None:
+			serializer = EvidenceSerializer(evidence)
+			return Response(serializer.data)
 
 	'''
 	Get the associated file: /user/tasks/<id>/evidence/file/ GET

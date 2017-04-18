@@ -35,9 +35,9 @@ class TimestampField(serializers.Field):
 class UserFactory(serializers.ModelSerializer):
 
 	def validate_username(self, username):
-		if self.instance and self.instance.username:
+		if self.instance is not None and self.instance.username is not None:
 			raise APIErrors.UnpermittedAction('changing username')
-		if re.match(r'([0-9a-zA-Z-]+)', username).group(0) != username:
+		if re.match(r'([0-9a-zA-Z_-]+)', username).group(0) != username:
 			raise APIErrors.ValidationError('username')
 		return username
 
@@ -101,7 +101,7 @@ class NotificationFactory(serializers.ModelSerializer):
 				if task.viewers.count() >= 1:
 					raise APIErrors.AlreadyExists('viewer')
 				# if the user already sent an invite to a viewer
-				if Notification.objects.filter(task=task, 
+				if Notification.objects.filter(task=task,
 					type=Notification.INVITE, viewed=False).exists():
 					raise APIErrors.AlreadyExists('notification')
 			# in the case of viewer collaboration
@@ -110,7 +110,7 @@ class NotificationFactory(serializers.ModelSerializer):
 				if recipient.viewing_tasks.filter(id=task.id).exists():
 					raise APIErrors.AlreadyExists('viewer')
 				# if the user already sent an invite to that viewer
-				if Notification.objects.filter(task=task, recipient=recipient,
+				if Notification.objects.filter(task__id=task.id, recipient=recipient,
 					type=Notification.INVITE, viewed=False).exists():
 					raise APIErrors.AlreadyExists('notification')
 
