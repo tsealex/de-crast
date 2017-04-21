@@ -32,11 +32,12 @@ REGULAR  = 1 # from system to task owner
 EVIDENCE = 2 # from system to viewer
 DEADLINE = 3 # from user to viewer
 INVITE   = 5 # from user to user
+INVITE_ACCEPT = 6
 
 # Array which maps notification types to notification titles.
 # NOTE: Type four is skipped, so I put in a dummy value.
 NOTIFICATION_TITLES = ['Task Reminder', 'Regular Notification', 'Evidence Received',
-'Deadline Reminder', 'Space FIller', 'Task Invite']
+'Deadline Reminder', 'Space FIller', 'Task Invite', 'Task Invite Accepted']
 
 # Class consists of static functions so an instance of one doesn't need
 # to hang around somewhere just to send off a message every now and then.
@@ -45,20 +46,21 @@ class FcmPusher():
 		pass
 
 	@staticmethod
-	def sendNotification(receiver_id, django_sender_name, body, type):
+	def sendNotification(receiver_id, django_sender_name, body, n_id, type):
 		'''
 		This static function spins up a worker thread to send off a notification.
 		'''
+		print("INCOMING TYPE: " + str(type))
 
 		# Set the correct title
 		title = NOTIFICATION_TITLES[type];
 
 		# Send the notification from a worker thread, so we don't fully block our
 		# server application.
-		_thread.start_new_thread(FcmPusher.callNotify, (receiver_id, title, body))
+		_thread.start_new_thread(FcmPusher.callNotify, (receiver_id, title, body, type, n_id))
 
 	@staticmethod
-	def callNotify(user_id, m_title, m_body):
+	def callNotify(user_id, m_title, m_body, type, n_id):
 		'''
 			This function is responsible for sending out a notification to the specified user.
 		'''
@@ -66,10 +68,14 @@ class FcmPusher():
 		# Newline characters cause the notification message to format weirdly.
 		m_body = m_body.strip('\n')
 
+		m_data = {'type':type, 'id':n_id}
+
 		# Create an instance of the FCM notificaiton class, and send out a single notification.
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)
 		resp = push.notify_single_device(registration_id=user_id, message_body=m_body,
-		message_title=m_title)
+		message_title=m_title, data_message=m_data, sound='Default', click_action='FCM_PLUGIN_ACTIVITY')
+
+		json.dumps(resp)
 
 		# If our response contains a 'registration_id' key, this means that we need to update
 		# the user's token.

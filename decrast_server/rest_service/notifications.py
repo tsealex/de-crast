@@ -27,6 +27,10 @@ DEFAULT_EVIDENCE_MSG = """
 {} has submitted evidence for the task "{}".
 """
 
+DEFAULT_INVITE_ACCEPT_MSG = """
+{} is now viewing task "{}".
+"""
+
 '''
 
 '''
@@ -44,8 +48,9 @@ def send_viewer_invite(sender, receiver, task):
 	validate(nf)
 	nf.save()
 
+	notif_obj = Notification.objects.latest('pk')
 	# Send out the notification.
-	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.INVITE)
+	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.INVITE)
 
 '''
 
@@ -66,7 +71,9 @@ def send_deadline_ext(sender, task, deadline):
 		validate(nf)
 		nf.save()
 
-		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.DEADLINE)
+		notif_obj = Notification.objects.latest('pk')
+		# Send out the notification.
+		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.DEADLINE)
 
 '''
 
@@ -85,7 +92,10 @@ def send_reminder(sender, task, content):
 	validate(nf)
 	nf.save()
 
-	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.REMINDER)
+	notif_obj = Notification.objects.latest('pk')
+	# Send out the notification.
+	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.REMINDER)
+
 
 	# refresh task last_notify_time
 	task.last_notify_ts = datetime.now(timezone.utc)
@@ -112,12 +122,17 @@ def send_evidence(sender, task):
 		validate(nf)
 		nf.save()
 
-		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, Notification.EVIDENCE)
+		notif_obj = Notification.objects.latest('pk')
+		# Send out the notification.
+		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.EVIDENCE)
+
 
 '''
 
 '''
 def respond_viewer_invite(user, notification, decision):
+	print("Responding to viewer invite!")
+
 	if notification.recipient != user:
 		raise APIErrors.UnpermittedAction()
 	if notification.type != Notification.INVITE:
@@ -125,11 +140,17 @@ def respond_viewer_invite(user, notification, decision):
 	notification.viewed = True
 	notification.save()
 	# add recipient to be the viewer
+
 	if decision:
 		viewer = notification.recipient
 		task = notification.task
 		task.viewers.add(viewer)
 		task.save()
+
+		msg = DEFAULT_INVITE_ACCEPT_MSG.format(viewer.username, task.name);
+		# Send out the notification.
+		FcmPusher.sendNotification(task.owner.fcm_token, viewer.username, msg,
+		notification.id, Notification.INVITE_ACCEPT)
 	else:
 		# TODO: send a system message to the task owner
 		pass

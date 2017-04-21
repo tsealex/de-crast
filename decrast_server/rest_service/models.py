@@ -142,12 +142,14 @@ class Notification(models.Model):
 	EVIDENCE = 2 # from system to viewer
 	DEADLINE = 3 # from user to viewer
 	INVITE = 5 # from user to user
+	INVITE_ACCEPT = 6 # viewer accepted task invite
 	NOTIFICATION_TYPE = (
 		(REMINDER, 'REMINDER'),
 		(REGULAR, 'REGULAR'),
 		(EVIDENCE, 'EVIDENCE POSTED'),
-		(DEADLINE, 'DEADLINE ExTENSION'),
+		(DEADLINE, 'DEADLINE EXTENSION'),
 		(INVITE, 'VIEWER INVITE'),
+		(INVITE_ACCEPT, 'VIEWER ACCEPT INVITE'),
 	)
 	# required
 	task = models.ForeignKey(Task, on_delete=models.CASCADE)
