@@ -255,4 +255,17 @@ angular.module('decrast.services', [])
           return null;
       }
   }
+})
+
+.factory('NotificationParser', function() {
+      // currently the uid input is fbId, later will be De-Crast userId
+			return{
+      	parse: function(notification) {
+					alert('PARSING: ' + JSON.stringify(notification));
+					if(notification.type == 5) {
+						alert('Received invite');
+						return 'login';
+					}
+      	}
+			}
 });

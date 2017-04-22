@@ -6,10 +6,11 @@
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
 
-angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', 'decrast.server', 'ngOpenFB', 'ngCordova', 'ngOrderObjectBy'])
+angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
+'decrast.server', 'ngOpenFB', 'ngCordova', 'ngOrderObjectBy'])
 
-.run(function($ionicPlatform, ngFB) {
-  
+.run(function($ionicPlatform, $state, ngFB, NotificationParser) {
+
   ngFB.init({appId: '859339004207573'});
 
   $ionicPlatform.ready(function() {
@@ -28,10 +29,10 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
 		FCMPlugin.onNotification(function(data){
       if(data.wasTapped){
         //Notification was received on device tray and tapped by the user.
-        alert( JSON.stringify(data) );
+				$state.go('notifDetail', {notif: data});
       }else{
       //Notification was received in foreground. Maybe the user needs to be notified.
-        alert( JSON.stringify(data) );
+				$state.go('notifDetail', {notif: data});
       }
     });
 
@@ -39,7 +40,7 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
   });
 })
 .constant('ApiEndpoint', {
-  url: 'http://alext.se:8000/'
+		url: 'http://alext.se:8000/'
 })
 .config(function($stateProvider, $urlRouterProvider) {
   // Ionic uses AngularUI Router which uses the concept of states
@@ -117,6 +118,9 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services', '
 
     .state('tab.notif', {
       url: '/notif',
+			params: {
+				notif: 'Notifications'
+			},
       views: {
         'tab-notif': {
           templateUrl: 'templates/tab-notifications.html',

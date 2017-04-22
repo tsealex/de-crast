@@ -647,6 +647,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
     .controller('NotifCtrl', function ($scope, $stateParams, $state, $ionicPopup, $ionicLoading, Server, $rootScope) {
+        $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
+					if($stateParams.notification != null) {
+						console.log('Launching notif list with: ' + JSON.stringify($stateParams.notification));
+					} else {
+						console.log("Launching notification list without a pre-determined notification.");
+					}
+				});
+
         $scope.fakegoNotifDetail = function(currentNotif){
             var notif = currentNotif;
             var type = notif.notif_type;
@@ -804,7 +812,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     if (response.status === 'connected') {
                         localStorage.setItem('login', 'true');
                         localStorage.setItem('fbAccessToken', response.authResponse.accessToken);
-                        
+
 												FCMPlugin.getToken(
         									function (token) {
 													localStorage.setItem('fcmId', token);
@@ -834,6 +842,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                     if(data.data.username != null){
                                         console.log(data.data.username);
                                         localStorage.setItem('user', data.data.username);
+																				Server.updateFcmToken(localStorage.getItem('fcmId')).then(function(data) {
+																					console.log(JSON.stringify(data));
+																					if(data.data.errorCode == 190) {
+																						alert('Oh no ... FCM errored out')
+																					}
+																				});
                                         $state.go('tab.home');
                                     }else{
                                         $state.go('setUsername');
@@ -879,14 +893,19 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.username = document.getElementById('DCname').value;
             console.log($scope.username);
             if($scope.checkCharacter($scope.username)){
-                Server.changeUsername($scope.username, 
-localStorage.getItem('fcmId')).then(function(data) {
+                Server.changeUsername($scope.username).then(function(data) {
                     console.log(JSON.stringify(data));
                     if (data.data.errorCode == 190)
                         $ionicLoading.show({template: "username already exists", noBackdrop: true, duration: 2500});
                     else {
-                        // may need to be put in the server                
+                        // may need to be put in the server
                         localStorage.setItem('user', $scope.username);
+												Server.updateFcmToken(localStorage.getItem('fcmId')).then(function(data) {
+													console.log(JSON.stringify(data))
+													if(data.data.errorCode == 190) {
+		                        $ionicLoading.show({template: "something with FCM token errored out ...", noBackdrop: true, duration: 2500});
+													}
+												});
                         $state.go('tab.home');
                     }
                 });
@@ -899,7 +918,7 @@ localStorage.getItem('fcmId')).then(function(data) {
         $scope.checkCharacter = function(username){
             for(i = 0; i < username.length; i++){
                 console.log(username[i]);
-                if(!username[i].match(/[A-Za-z0-9_]/)){
+                if(!username[i].match(/[A-Za-z0-9_-]/)){
                     return false;
                 }
             }
@@ -1042,16 +1061,29 @@ localStorage.getItem('fcmId')).then(function(data) {
         }
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
-            $scope.notif = $stateParams.notif;
-            console.log($scope.notif);
+
+						if($stateParams.notif != null) {
+            	$scope.notif = $stateParams.notif;
+//            	console.log("NOTIF: " + JSON.stringify($scope.notif.notif_task));
+
+							/* Handle opening an INVITE notification. */
+							if($scope.notif.type == 5) {
+								var remove_escs = $scope.notif.notif_task.replace('\"', '"');
+								$scope.notif.task = angular.fromJson(remove_escs);
+
+								console.log("NOTIF TASK: " + JSON.stringify($scope.notif.task));
+							}
+						}
+/*
             Server.getTask($scope.notif.notif_task).then(function(data){
                 if(data.status == 200){
-                    $scope.task = data.data;
+                    $scope.task = data.task;
+										console.log("TASK: " + JSON.stringify($scope.task));
                     console.log("connected to server");
                 }else{
                     console.log("fail to connect to the server");
                 }
-            });
+            }); */
         });
         
         $scope.onDecision = function(decisionInt){

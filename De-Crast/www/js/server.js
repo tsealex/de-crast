@@ -40,17 +40,31 @@ angular.module('decrast.server', [])
                             return response;
                         });
             },*/
-            changeUsername: function(username, fcm_id) {
+            changeUsername: function(username) {
                 return $http({
                             method:'POST',
                             url: ApiEndpoint.url + 'user/',
                             headers: {'Authorization': 'JWT ' + accessToken},
-                            data: {username: username, fcm_token: fcm_id}
+                            data: {username: username}
                         }).then(function(response){
                             console.log("changeUsername", JSON.stringify(response));
                             return response;
                         }, function(response){
                             console.log("changeUsername", JSON.stringify(response));
+                            return response;
+                        });
+            },
+            updateFcmToken: function(fcm_id) {
+                return $http({
+                            method:'POST',
+                            url: ApiEndpoint.url + 'user/',
+                            headers: {'Authorization': 'JWT ' + accessToken},
+                            data: {fcm_token: fcm_id}
+                        }).then(function(response){
+                            console.log("updateFcmToken", JSON.stringify(response));
+                            return response;
+                        }, function(response){
+                            console.log("updateFcmToken", JSON.stringify(response));
                             return response;
                         });
             },
