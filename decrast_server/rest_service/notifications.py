@@ -50,7 +50,7 @@ def send_viewer_invite(sender, receiver, task):
 
 	notif_obj = Notification.objects.latest('pk')
 	# Send out the notification.
-	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.INVITE)
+	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
 
 '''
 
@@ -94,7 +94,7 @@ def send_reminder(sender, task, content):
 
 	notif_obj = Notification.objects.latest('pk')
 	# Send out the notification.
-	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.REMINDER)
+	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
 
 
 	# refresh task last_notify_time
@@ -124,7 +124,7 @@ def send_evidence(sender, task):
 
 		notif_obj = Notification.objects.latest('pk')
 		# Send out the notification.
-		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.EVIDENCE)
+		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
 
 
 '''
@@ -150,7 +150,7 @@ def respond_viewer_invite(user, notification, decision):
 		msg = DEFAULT_INVITE_ACCEPT_MSG.format(viewer.username, task.name);
 		# Send out the notification.
 		FcmPusher.sendNotification(task.owner.fcm_token, viewer.username, msg,
-		notification.id, Notification.INVITE_ACCEPT)
+		notification)
 	else:
 		# TODO: send a system message to the task owner
 		pass

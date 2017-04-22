@@ -4,8 +4,7 @@
 '''
 
 from pyfcm import FCMNotification
-#from .models import Notification
-#from .models import User
+from .serializers import *
 
 import sys
 import os
@@ -46,21 +45,21 @@ class FcmPusher():
 		pass
 
 	@staticmethod
-	def sendNotification(receiver_id, django_sender_name, body, n_id, type):
+	def sendNotification(receiver_id, django_sender_name, body, notif):
 		'''
 		This static function spins up a worker thread to send off a notification.
 		'''
-		print("INCOMING TYPE: " + str(type))
+		print("INCOMING TYPE: " + str(notif.type))
 
 		# Set the correct title
-		title = NOTIFICATION_TITLES[type];
+		title = NOTIFICATION_TITLES[notif.type];
 
 		# Send the notification from a worker thread, so we don't fully block our
 		# server application.
-		_thread.start_new_thread(FcmPusher.callNotify, (receiver_id, title, body, type, n_id))
+		_thread.start_new_thread(FcmPusher.callNotify, (receiver_id, title, body, notif))
 
 	@staticmethod
-	def callNotify(user_id, m_title, m_body, type, n_id):
+	def callNotify(user_id, m_title, m_body, notif):
 		'''
 			This function is responsible for sending out a notification to the specified user.
 		'''
@@ -68,14 +67,17 @@ class FcmPusher():
 		# Newline characters cause the notification message to format weirdly.
 		m_body = m_body.strip('\n')
 
-		m_data = {'type':type, 'id':n_id}
+		# Pack up the needed data depending on what type of invite it is.
+		if notif.type == INVITE:
+			serialized_task = TaskSerializer(notif.task)
+			m_data = {'type':notif.type, 'id':notif.id, 'notif_task':serialized_task.data}
 
 		# Create an instance of the FCM notificaiton class, and send out a single notification.
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)
 		resp = push.notify_single_device(registration_id=user_id, message_body=m_body,
 		message_title=m_title, data_message=m_data, sound='Default', click_action='FCM_PLUGIN_ACTIVITY')
 
-		json.dumps(resp)
+#		print(json.dumps(resp))
 
 		# If our response contains a 'registration_id' key, this means that we need to update
 		# the user's token.

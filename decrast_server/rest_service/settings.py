@@ -24,7 +24,8 @@ DEFAULTS = {
 
 	'EDITABLE_CONSEQUENCE': False,
 	# the minimum amount of time from now to deadline when a task is created
-	'DEADLINE_MINUTE_FROM_NOW': 60,
+	# TODO: Change back to production value eventually ...
+	'DEADLINE_MINUTE_FROM_NOW': 1,
 	'TASK_DELETION_WAITTIME': 7, # 7 days
 	# the amount of time viewer(s) must wait to notify the owner again for a
 	# specific task
