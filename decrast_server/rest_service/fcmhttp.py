@@ -32,11 +32,12 @@ EVIDENCE = 2 # from system to viewer
 DEADLINE = 3 # from user to viewer
 INVITE   = 5 # from user to user
 INVITE_ACCEPT = 6
+EXPIRED = 7
 
 # Array which maps notification types to notification titles.
 # NOTE: Type four is skipped, so I put in a dummy value.
 NOTIFICATION_TITLES = ['Task Reminder', 'Regular Notification', 'Evidence Received',
-'Deadline Reminder', 'Space FIller', 'Task Invite', 'Task Invite Accepted']
+'Deadline Reminder', 'Space FIller', 'Task Invite', 'Task Invite Accepted', 'Task Expired']
 
 # Class consists of static functions so an instance of one doesn't need
 # to hang around somewhere just to send off a message every now and then.
@@ -71,6 +72,12 @@ class FcmPusher():
 		if notif.type == INVITE:
 			serialized_task = TaskSerializer(notif.task)
 			m_data = {'type':notif.type, 'id':notif.id, 'notif_task':serialized_task.data}
+		elif notif.type == INVITE_ACCEPT:
+			m_data = {'type':notif.type, 'id':notif.id}
+		elif notif.type == EXPIRED:
+			m_data = {'type':notif.type, 'id':notif.id}
+		else:
+			m_data = {}
 
 		# Create an instance of the FCM notificaiton class, and send out a single notification.
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)

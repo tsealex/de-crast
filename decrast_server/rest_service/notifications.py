@@ -7,7 +7,7 @@ from .utils import *
 from .user import User
 from .fcmhttp import FcmPusher
 
-from datetime import datetime, timezone 
+from datetime import datetime, timezone
 
 # param: sender.username, task.name
 # TODO: refine the message (i.e. add more details such as task.description)
@@ -17,7 +17,7 @@ DEFAULT_TASK_INVITE_MSG = """
 
 # param: sender.username, task.name, deadline
 # TODO: refine/change the message (i.e. add more details)
-DEFAULT_DEADLINE_EXT_MSG = """
+DEFAULT_DEADLINE_EXT_MSG = """"
 {} sent you a request for changing the deadline of the task "{}".
 """
 
@@ -31,8 +31,12 @@ DEFAULT_INVITE_ACCEPT_MSG = """
 {} is now viewing task "{}".
 """
 
-'''
+DEFAULT_EXPIRATION_MSG = """
+{} failed to complete task "{}".
+"""
 
+'''
+	This function creates and sends a view-task invite notification.
 '''
 def send_viewer_invite(sender, receiver, task):
 	msg = DEFAULT_TASK_INVITE_MSG.format(sender.username, task.name)
@@ -52,8 +56,9 @@ def send_viewer_invite(sender, receiver, task):
 	# Send out the notification.
 	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
 
-'''
 
+'''
+	This function creates and sends a deadline-extension request.
 '''
 def send_deadline_ext(sender, task, deadline):
 	msg = DEFAULT_DEADLINE_EXT_MSG.format(sender.username, task.name)
@@ -76,7 +81,7 @@ def send_deadline_ext(sender, task, deadline):
 		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.DEADLINE)
 
 '''
-
+	This function sends and creates a reminder-to-complete notification
 '''
 def send_reminder(sender, task, content):
 	# TODO: input check if sender is a viewer
@@ -102,7 +107,7 @@ def send_reminder(sender, task, content):
 	task.save()
 
 '''
-
+	This function creates and sends an evidence notification.
 '''
 def send_evidence(sender, task):
 	evidence = Evidence.objects.filter(task=task)
@@ -128,11 +133,10 @@ def send_evidence(sender, task):
 
 
 '''
-
+	This function updates the viewing status of a task, and sends a notification
+	to the task owner if the requested viewer accepts.
 '''
 def respond_viewer_invite(user, notification, decision):
-	print("Responding to viewer invite!")
-
 	if notification.recipient != user:
 		raise APIErrors.UnpermittedAction()
 	if notification.type != Notification.INVITE:
@@ -155,8 +159,9 @@ def respond_viewer_invite(user, notification, decision):
 		# TODO: send a system message to the task owner
 		pass
 
-'''
 
+'''
+	This function updates the task deadline if the viewer agreed to allow such to happen.
 '''
 def respond_deadline_ext(user, notification, decision):
 	if notification.recipient != user:
@@ -178,9 +183,10 @@ def respond_deadline_ext(user, notification, decision):
 	else:
 		# TODO: send a system message to the task owner
 		pass
-	
-'''
 
+
+'''
+	This function marks a notification as read.
 '''
 def read_notification(user, notification, decision=None):
 	if notification.recipient != user:
@@ -194,3 +200,29 @@ def read_notification(user, notification, decision=None):
 	else:
 		notification.viewed = True
 		notification.save()
+
+
+'''
+	This function sends out a notification to the viewer of a task once it has expired.
+	TODO: This function will be responsible for carrying out the appropriate consequence.
+'''
+def task_expired_notification(user, task):
+	msg = DEFAULT_EXPIRATION_MSG.format(user.username, task.name)
+
+	# Send every viewer of this task a notification regarding the expiration.
+	for viewer in task.viewers.all():
+			data = {
+				'type': Notification.EXPIRED,
+				'sender': user.id,
+				'recipient': viewer.id,
+				'task': task.id,
+				'text': msg,
+			}
+			nf = NotificationFactory(data=data)
+			validate(nf)
+			nf.save()
+
+			# The last-added notification is the one we just added.
+			notif_obj = Notification.objects.latest('pk')
+			# Send out the notification.
+			FcmPusher.sendNotification(viewer.fcm_token, user.username, msg, notif_obj)
