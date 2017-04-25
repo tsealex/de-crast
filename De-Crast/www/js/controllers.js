@@ -390,7 +390,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     myCategory = mySelector.options[mySelector.selectedIndex].value;
                     console.log(myDate + "Test timeout" + timezone);
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
-                        //console.log(JSON.stringify(data));
+                        console.log(JSON.stringify(data));
                         if (data.data.detail == "deadline")
                             $ionicLoading.show({template: 'Invalid deadline', noBackdrop: true, duration: 1000});
                         else if (data.status != 200) {
@@ -414,8 +414,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                   $cordovaLocalNotification.schedule({
                                     id: 10,
                                     title: $scope.taskName,
-                                    text: 'This task is DUE!!!',
-                                    at: ddl
+                                    text: 'This task has expired :(',
+                                    at: ddl,
+																		data: { taskId: data.data.taskId }
                                   }).then(function (result) {
                                     console.log( ddl.getTime + 'a local notification is triggered' + myEpoch*1000);
                                   });
@@ -676,7 +677,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     break;
             }
             if(notif.notif_type == 3){
-                
+
             }
             if(notif.notif_type == 5){
                 text = 'Do you want to view on the task?';
@@ -686,12 +687,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 template: text,
                 title: title,
                 scope: $scope,
-                    
+
                 buttons: [
                     { text: 'Decline',
                         onTap: function(e) {
                             $scope.sendNotification(notif, false);
-                        } 
+                        }
                     }, {
                     text: 'Accept',
                     type: 'button-positive',
@@ -703,7 +704,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
 
             myPopup.then(function(res) {
-            });    
+            });
         }
 // todooo
         $scope.sendNotification = function(notif, decision){
@@ -718,10 +719,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
     .controller('FriendsCtrl', function ($scope, Friends, $stateParams, $rootScope, ngFB, Server, $ionicLoading) {
-        
+
         //$scope.friends = Friends.all();
         $scope.$on("$ionicView.beforeEnter", function () {
-            
+
         });
         $scope.turnStar = function (index) {
             //console.log("You turn star");
@@ -1096,7 +1097,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             switch($scope.notif.notif_type){
                 case 5: // viewer invite
-                    console.log("It's a viewer invite");
+                    alert("It's a viewer invite: " + $scope.notif.notif_notificationId);
                     Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data){
                         if(data.status == 200){
                             // succeed

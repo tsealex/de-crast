@@ -9,7 +9,7 @@
 angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
 'decrast.server', 'ngOpenFB', 'ngCordova', 'ngOrderObjectBy'])
 
-.run(function($ionicPlatform, $state, ngFB, NotificationParser) {
+.run(function($ionicPlatform, $state, ngFB, Server) {
 
   ngFB.init({appId: '859339004207573'});
 
@@ -26,6 +26,12 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
       StatusBar.styleDefault();
     }
 
+		/* This callback is triggered when a Google FCM push notification for our app
+		 * is received by the device. This code lives in app.js to prevent any weird
+     * state/loading issues from occuring.
+		 *
+		 * When this occurs, we launch our notification detail screen with the given
+		 * notification parameter, which is parsed accordingly there. */
 		FCMPlugin.onNotification(function(data){
       if(data.wasTapped){
         //Notification was received on device tray and tapped by the user.
@@ -35,6 +41,20 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
 				$state.go('notifDetail', {notif: data});
       }
     });
+
+
+		/* This callback is triggered when a Cordova local notification is triggered
+		 * (aka a task expires). This code lives in app.js to prevent any weird
+     * state/loading issues from occuring.
+		 *
+		 * When this occurs, we need to tell our server that the task expired. */
+    cordova.plugins.notification.local.on("trigger", function(notification){
+				/* Remove any escaped characters from our notification JSON. */
+       var remove_escs = notification.data.replace('\"', '"');
+       notification.data = angular.fromJson(remove_escs);
+				/* Notify our server that this task has expired. */
+       Server.expireTask(notification.data.taskId);
+    }, false);
 
 
   });

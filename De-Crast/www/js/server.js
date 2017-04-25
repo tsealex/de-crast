@@ -109,6 +109,16 @@ angular.module('decrast.server', [])
                             return response;
                 });
             },
+						expireTask: function(taskId) {
+							return $http({
+											method:'POST',
+											url: ApiEndpoint.url + 'user/tasks/' + taskId + '/',
+											headers: {'Authorization': 'JWT ' + accessToken},
+											data: {expired: 1}
+									}).then(function(response) {
+										console.log('expireTask', JSON.stringify(response));
+									});
+						},
             getUserTasks: function(){
                 return $http({
                             method:'GET',
