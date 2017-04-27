@@ -792,7 +792,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $cordovaLocalNotification, $ionicPlatform, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading) {
+    .controller('LoginCtrl', function ($scope, $state, $ionicModal, $cordovaLocalNotification, $ionicPlatform, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading, $cordovaDevice, $ionicPlatform) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -814,13 +814,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         localStorage.setItem('login', 'true');
                         localStorage.setItem('fbAccessToken', response.authResponse.accessToken);
 
+                        if(ionic.Platform.isIOS() || ionic.Platform.isAndroid() ) {
 												FCMPlugin.getToken(
         									function (token) {
 													localStorage.setItem('fcmId', token);
         								},
         								function (err) {
         									alert('error retrieving FCM token: ' + err);
-      									});
+      									}); }
 
                         ngFB.api({
                             path: '/me',
