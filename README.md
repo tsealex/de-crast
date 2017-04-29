@@ -73,7 +73,7 @@ The project can be run in the browser via: `ionic serve`
 NOTE: Push notifications will only work on mobile devices. Push notifications are not supported in the browser
 version of our application.
 
-Finally, if you wish to download a compiled version of our Android code, you may do so from: https://drive.google.com/open?id=0Bw-Msnfg9-lzaXpFWDlOTGRJOEE/view
+Finally, if you wish to download a compiled version of our Android code, you may do so from: https://drive.google.com/open?id=0Bw-Msnfg9-lzaXpFWDlOTGRJOEE
 
 BACKEND INFO ================================
 
