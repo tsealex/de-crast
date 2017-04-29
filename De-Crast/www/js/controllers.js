@@ -10,6 +10,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             if (localStorage.getItem('login') == null) {
                 localStorage.clear();
                 $state.go('login', {});
+            } else {
+                // TODO: check if the facebook token has expired, if so log the user out
             }
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();
@@ -953,7 +955,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             return true;
         }
     })
-    .controller('mapCtrl', function($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory, $cordovaGeolocation, $ionicLoading, Server) {
+    .controller('mapCtrl', function($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory, 
+        $cordovaGeolocation, $ionicLoading, Server, Storage) {
 
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
@@ -1026,9 +1029,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
             console.log("Map post coordinates", coordinates);
             // This server is not function correctly            
-            Server.submitGPS($scope.taskId, coordinates).then(function(data) {
-                $ionicHistory.goBack(2);
-            });
+            Server.submitGPS($scope.taskId, coordinates).then((function(id) {
+                // TODO: delete the task locally
+                return function(data) {
+                    Storage.removeTask(id);
+                    //$ionicHistory.goBack(2);
+                    $state.go('tab.home');
+                }
+            })($scope.taskId));
         }
 
     })
