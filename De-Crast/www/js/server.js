@@ -11,8 +11,11 @@ angular.module('decrast.server', [])
         };
         var fbApi = 'https://graph.facebook.com/';
         var accessToken = localStorage.getItem('accessToken');
-        var testvar = 5;
-        console.log(testvar);
+
+        var lock = {
+            'addNewTask': false
+        };
+        
         return {
 
             loginUser: function(fid) {
@@ -78,8 +81,6 @@ angular.module('decrast.server', [])
                 });
             },
             addNewTask: function(name, description, deadline, category, type) {
-                if (testvar != 5) console.log(testvar);
-                testvar++;
                 return $http({
                     method: 'POST',
                     url: ApiEndpoint.url + 'user/tasks/',
@@ -237,16 +238,24 @@ angular.module('decrast.server', [])
                 });
             },
             //I'm sure this isn't right but it's filler for now
-            submitPhoto: function(taskId, photoData) {
-                return $http({
+            submitPhoto: function(taskId, file_uri) {
+                var form = new FormData();
+                var url = ApiEndpoint.url + 'user/tasks/' + taskId + '/evidence/';
+                form.append("file", file_uri, 'evidence.jpg');
+                return $http.post(url, form, {
+                    /*
                     method: 'POST',
                     url: ApiEndpoint.url + 'user/tasks/' + taskId + '/evidence/',
                     headers: {
                         'Authorization': 'JWT ' + accessToken,
-                        'Content-Type': 'multipart/form-data'
                     },
-                    file: photoData.substr(photoData.lastIndexOf('/') + 1)
-
+                    mimeType: "multipart/form-data",
+                    data: form*/
+                    headers: {
+                        'Authorization': 'JWT ' + accessToken,
+                        'Content-Type': undefined
+                    },
+                    transformRequest: angular.identity,
                 }).then(function(response) {
                     console.log("submitPhoto", JSON.stringify(response));
                     return response;

@@ -415,7 +415,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 var usertime = new Date($scope.time);
                                 var timezone = new Date().getTimezoneOffset();
                                 var ddl = new Date(usertime.getTime() + timezone * 60000);
-                                $cordovaLocalNotification.schedule({
+                                $cordovaLocalNotification.schedule({ // This part of code may not work in browser
                                     id: 10,
                                     title: $scope.taskName,
                                     text: 'This task has expired :(',
@@ -429,10 +429,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             });
 
                             $ionicViewSwitcher.nextDirection('back');
-                            $timeout(function() {
-                                $state.go('tab.home', {});
-                                // todo
-                            }, 1000);
+                            $state.go('tab.home', {});
                         }
                     });
                 }
@@ -1032,7 +1029,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             Server.submitGPS($scope.taskId, coordinates).then((function(id) {
                 // TODO: delete the task locally
                 return function(data) {
-                    Storage.removeTask(id);
+                    if (data.status == 200) {
+                        Storage.removeTask(id);
+                    } else {
+                        $ionicLoading.show({
+                            template: 'submission failed',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    } 
                     //$ionicHistory.goBack(2);
                     $state.go('tab.home');
                 }
@@ -1040,11 +1045,25 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
 
     })
-    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicLoading, $ionicHistory, $cordovaCamera, $stateParams, Server) {
+    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicLoading, $ionicHistory,
+        $cordovaCamera, $stateParams, Server, Storage) {
 
         $scope.task = $stateParams.task;
         $scope.taskId = $scope.task.task_id;
         $scope.image = null;
+        // TODO: move this function to the global scope, so that other controllers can use this function 
+        $scope.dataURItoBlob = function(dataURI) {
+            var byteString = atob(dataURI.split(',')[1]);
+             var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+             var ab = new ArrayBuffer(byteString.length);
+             var ia = new Uint8Array(ab);
+             for (var i = 0; i < byteString.length; i++)
+                ia[i] = byteString.charCodeAt(i);
+             
+             var bb = new Blob([ab], { "type": mimeString });
+             return bb;
+        };
 
         $scope.takePicture = function() {
             var options = {
@@ -1060,24 +1079,38 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             };
 
             $cordovaCamera.getPicture(options).then(function(imageData) {
+                //$scope.imgURI = "data:image/jpeg;base64," + imageData;
                 $scope.imgURI = "data:image/jpeg;base64," + imageData;
-                $scope.image = imageData;
+                $scope.imgBlob = $scope.dataURItoBlob("data:image/jpeg;base64," + imageData);
+                $ionicLoading.show({
+                    template: 'Picture taken!',
+                    noBackdrop: true,
+                    duration: 1000
+                });
             }, function(err) {
                 // An error occured. Show a message to the user
             });
         };
 
         //not functioning yet
-        $scope.submitPhoto = function() {
-
-            Server.submitPhoto($scope.taskId, $scope.image);
-            $ionicLoading.show({
-                template: 'Function called!',
-                noBackdrop: true,
-                duration: 1000
-            });
-
-            $state.go('home');
+        $scope.submitPhoto = function() {       
+            Server.submitPhoto($scope.taskId, $scope.imgBlob).then((function(id) {
+                // TODO: delete the task locally
+                return function(data) {
+                    if (data.status == 200) {
+                        Storage.removeTask(id);
+                    } else {
+                        $ionicLoading.show({
+                            template: 'submission failed',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    } 
+                    //$ionicHistory.goBack(2);
+                    $state.go('tab.home');
+                }
+            })($scope.taskId));
+            // $state.go('home');
 
         };
     })
