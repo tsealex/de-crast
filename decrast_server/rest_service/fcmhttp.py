@@ -46,7 +46,7 @@ class FcmPusher():
 		# Set the correct title
 		title = NOTIFICATION_TITLES[notif.type];
 
-		if rest_settings.TESTING: return
+		if rest_settings.TESTING or not receiver_id: return
 
 		# Send the notification from a worker thread, so we don't fully block our
 		# server application.
