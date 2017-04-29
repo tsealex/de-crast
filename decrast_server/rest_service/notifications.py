@@ -66,7 +66,9 @@ def send_viewer_invite(sender, receiver, task):
 '''
 def send_deadline_ext(sender, task, deadline):
 	msg = DEFAULT_DEADLINE_EXT_MSG.format(sender.username, task.name)
+	sent = False
 	for viewer in task.viewers.all():
+		sent = True
 		data = {
 			'type': Notification.DEADLINE,
 			'sender': sender.id,
@@ -83,6 +85,8 @@ def send_deadline_ext(sender, task, deadline):
 		notif_obj = nf.instance
 		# Send out the notification.
 		FcmPusher.sendNotification(viewer.fcm_token, sender.username, msg, notif_obj)
+	if not sent:
+		raise APIErrors.DoesNotExist('viewer')
 
 '''
 	This function sends and creates a reminder-to-complete notification
@@ -171,7 +175,7 @@ def respond_deadline_ext(user, notification, decision):
 	if notification.recipient != user:
 		raise APIErrors.UnpermittedAction()
 	if notification.type != Notification.DEADLINE:
-		raise APIErrors.UnpermittedAction('not an invite')
+		raise APIErrors.UnpermittedAction('not a request')
 	task = notification.task
 	notification.viewed = True
 	notification.save()
