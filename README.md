@@ -27,7 +27,7 @@ In terminal, `cd` into the De-Crast folder
 
 We have the following cordova plugins installed that must also be installed via the following commands:
 
-cordova plugin add cordova-plugin-app-even
+cordova plugin add cordova-plugin-app-event
 
 cordova plugin add cordova-plugin-camera
 
