@@ -14,15 +14,7 @@ import _thread
 import json
 
 FCM_SENDER_ID = '1086425216709'
-
-FCM_SERVER_JID = FCM_SENDER_ID + '@gcm.googleapis.com'
 FCM_SERVER_PASSWORD = rest_settings.FCM_SECRET_KEY or os.environ['FCM_SECRET_KEY']
-
-FCM_SERVER_ADDRESS = 'fcm-xmpp.googleapis.com'
-FCM_PROD_PORT = 5235
-FCM_TEST_PORT = 5236
-
-FCM_USE_PORT = FCM_PROD_PORT
 
 # Array which maps notification types to notification titles.
 # NOTE: Type four is skipped, so I put in a dummy value.
@@ -78,8 +70,6 @@ class FcmPusher():
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)
 		resp = push.notify_single_device(registration_id=user_id, message_body=m_body,
 		message_title=m_title, data_message=m_data, sound='Default', click_action='FCM_PLUGIN_ACTIVITY')
-
-#		print(json.dumps(resp))
 
 		# If our response contains a 'registration_id' key, this means that we need to update
 		# the user's token.
