@@ -24,6 +24,17 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 		getTaskList: function() {
 			return taskList;
 		},
+		cacheTaskChanges: function(task) {
+			localStorage.setItem('tmpTask' + task.task_id, angular.toJson(task));
+		},
+		applyTaskChanges: function(id) {
+			var tmpTask = localStorage.getItem('tmpTask' + id);
+			if (tmpTask != null) {
+				taskList[id] = angular.fromJson(tmpTask);
+				localStorage.setItem('task_list', angular.toJson(taskList));
+				console.log('local cached task changed: task ' + id)
+			}
+		},
 		saveTask: function(task) {
 			taskList[task.task_id] = task;
 			localStorage.setItem('task_list', angular.toJson(taskList));

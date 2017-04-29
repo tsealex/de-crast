@@ -8,6 +8,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
             if (localStorage.getItem('login') == null) {
+                localStorage.clear();
                 $state.go('login', {});
             }
             $ionicHistory.clearCache();
@@ -16,6 +17,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             Server.getUserTasks().then(function(data) {
                 $scope.populateTasks(data.data, true);
             });
+            $rootScope.task_list = Storage.getOwnedTaskList(true);
         });
         $scope.$on('$ionicView.afterEnter', function(event, viewData) {
             // prepare categories list
@@ -31,8 +33,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.name = localStorage.getItem('user');
 
         // function to fetch data from the server
-
-        $rootScope.task_list = Storage.getOwnedTaskList(true);
 
         if ($rootScope.sorting != null)
             $scope.sorting = $rootScope.sorting;
@@ -171,6 +171,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 taskData.description, taskData.category, utcDate, 
                                 $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
                             Storage.saveTask(newTask);
+                            if (owned)
+                                $rootScope.task_list = Storage.getOwnedTaskList(true);
+                            else
+                                $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
                         });
                     });
                 }
@@ -221,7 +225,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     for (i = 0; i < list.data.length; i++) {
                         var friendFbId = list.data[i].id;
                         var friendFbName = list.data[i].name;
-                        $scope.getUserByFbId(friendFbId, friendFbName);
+                        $scope.getUserByFbId(friendFbId, friendFbName);  // TODO: can you make a change here
+                        // TODO: intead of one fbId at a time, you can request for several users:
+                        // TODO: i.e. user/facebook/32425&9353&232324&2425347/ each separated by '&'
                     }
                     //localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
                 },
@@ -235,6 +241,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         $scope.getUserByFbId = function(fbId, fbName) {
             Server.getUserByFbId(fbId).then(function(data) {
+                if (data.data[0] === undefined) return;
                 var userId = data.data[0].userId;
                 var username = data.data[0].username;
                 var name = null;
@@ -455,8 +462,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, $ionicLoading, Server, $ionicPopup, EvidenceTypes) {
-        var taskId;
+    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, 
+        $ionicLoading, Server, $ionicPopup, EvidenceTypes, Storage) {
+        var taskId, tmpTask;
         var myDate;
         var myEpoch;
         var changeTime = false;
@@ -468,16 +476,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             taskId = $scope.task.task_id;
             $scope.taskName = $scope.task.task_name;
             $scope.category = $scope.task.task_category;
-            $scope.evidenceTypeName = EvidenceTypes.get($scope.task.task_evidenceType).name;
+            if ($scope.task.task_evidenceType != null)
+                $scope.evidenceTypeName = EvidenceTypes.get($scope.task.task_evidenceType).name;
             $scope.descrip = $scope.task.task_descrip;
             $scope.taskPartner = $scope.task.task_partner;
 
-            if ($scope.task.task_partner != null) {
+            if ($scope.task.task_partner != null)
                 $scope.viewer = $scope.task.task_partner.friend_name;
-            } else {
-                $scope.viewer = "No Viewer";
-            }
-
 
             // below are used for deadline change
             $scope.myFactory = new TaskFact();
@@ -497,7 +502,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
 
         $scope.editTask = function() {
-
             if ($scope.taskName == null) {
                 $ionicLoading.show({
                     template: 'Please Enter A Task Name',
@@ -510,77 +514,48 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 // $rootScope.task_list[tempTask.id] = tempTask;
                 // $scope.time is the new task deadline
                 // myEpoch is the old task deadline, newEpoch is the new task deadline
-                if (!changeTime) {
-                    $scope.setTaskLocal();
-                } else {
-                    if ($scope.time == null) {
-                        $ionicLoading.show({
-                            template: 'No new deadline is set, hit back button to discard the deadline change',
-                            noBackdrop: true,
-                            duration: 1000
-                        });
-                    } else {
-                        var newEpoch = $scope.time.getTime() / 1000.0;
-                        if (myEpoch == newEpoch) {
-                            $ionicLoading.show({
-                                template: 'Same deadline is set, hit back button to discard the deadline change',
-                                noBackdrop: true,
-                                duration: 1000
-                            });
-                            console.log("they are the same");
-                        } else {
-                            // talk to Server
-                            $scope.category = document.getElementById('category-select-edit').value;
-                            Server.editTask(taskId, $scope.taskName, $scope.descrip, $scope.category).then(function(data) {
-                                // var newDate = new Date(newEpoch * 1000.0);
-                                if (data.status == 200) { // edit task success, send notification if change of deadline
-                                    var type = 3;
-                                    var deadline = newEpoch;
-                                    Server.sendNotificationThree(type, deadline, taskId).then(function(data) {
-                                        if (data.status == 200) {
-                                            $scope.setTaskLocal();
-                                        } else {
-                                            $ionicLoading.show({
-                                                template: 'Server error, please try again',
-                                                noBackdrop: true,
-                                                duration: 1000
-                                            });
-                                        }
-                                    });
-                                } else { // display the error twice
-                                    $ionicLoading.show({
-                                        template: 'Server error, please try again',
-                                        noBackdrop: true,
-                                        duration: 1000
-                                    });
-                                }
+                var tmpTask = angular.fromJson(angular.toJson($scope.task)); // deep clone the task
+                tmpTask.task_name = $scope.taskName;
+                tmpTask.task_descrip = $scope.descrip;
+                tmpTask.task_category = $scope.category;
+                Storage.cacheTaskChanges(tmpTask);
 
-                            });
+                Server.editTask(taskId, $scope.taskName, $scope.descrip, $scope.category).then(function(data) {
+                    var msg = 'Task Saved.';
+                    if (data.status == 200) {
+                        Storage.applyTaskChanges(data.data.taskId);
+                        if (changeTime && $scope.time != undefined) {
+                            var deadline = $scope.time.getTime() / 1000.0; // TODO: bug $scope.time is undefined, please check
+                             Server.sendNotificationThree(3, deadline, taskId).then(function(data) {
+                                var msg = 'Task Saved.';
+                                if (data.status != 200) 
+                                    msg = msg + ' Notification not sent due to invalid deadline / no viewer';
+                                    
+                                $ionicLoading.show({
+                                    template: msg,
+                                    noBackdrop: true,
+                                    duration: 1000
+                                });
+                                $ionicViewSwitcher.nextDirection('back');
+                                $state.go('tab.home');
+                             });
+                             return;
                         }
-                    }
-                }
+                    } else
+                       msg = data.data.errorMsg + ": " + data.data.detail;
+
+                    $ionicLoading.show({
+                        template: msg,
+                        noBackdrop: true,
+                        duration: 1000
+                    });
+                    $ionicViewSwitcher.nextDirection('back');
+                    $state.go('tab.home');
+                });
             }
 
         };
-        $scope.setTaskLocal = function() {
 
-            var newTask = (new TaskFact()).addTask(taskId, $scope.taskName, $scope.descrip,
-                $scope.category, myDate, $scope.task.task_partner, null, $scope.task.task_evidenceType); // todo
-            $rootScope.task_list[taskId] = newTask;
-            localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
-
-            $ionicLoading.show({
-                template: 'Task Saved!',
-                noBackdrop: true,
-                duration: 1000
-            });
-            $ionicViewSwitcher.nextDirection('back');
-
-            /*$timeout(function () {
-                $state.go('tab.home', {});
-            }, 1000);*/
-            $state.go('tab.home');
-        };
         $scope.editDeadline = function() {
             console.log('click');
             var editDeadlinePopup = $ionicPopup.confirm({
