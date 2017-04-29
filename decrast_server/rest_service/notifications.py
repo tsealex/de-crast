@@ -11,13 +11,12 @@ from datetime import datetime, timezone
 
 # param: sender.username, task.name
 # TODO: refine the message (i.e. add more details such as task.description)
-DEFAULT_TASK_INVITE_MSG = """
-{} sent you an invite for viewing the task "{}".
+DEFAULT_TASK_INVITE_MSG = """{} sent you an invite for viewing the task "{}".
 """
 
 # param: sender.username, task.name, deadline
 # TODO: refine/change the message (i.e. add more details)
-DEFAULT_DEADLINE_EXT_MSG = """"
+DEFAULT_DEADLINE_EXT_MSG = """
 {} sent you a request for changing the deadline of the task "{}".
 """
 
@@ -80,9 +79,9 @@ def send_deadline_ext(sender, task, deadline):
 		validate(nf)
 		nf.save()
 
-		notif_obj = Notification.objects.latest('pk')
+		# notif_obj = Notification.objects.latest('pk')
 		# Send out the notification.
-		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj.id, Notification.DEADLINE)
+		FcmPusher.sendNotification(viewer.fcm_token, sender.username, msg, nf.instance)
 
 '''
 	This function sends and creates a reminder-to-complete notification
@@ -103,7 +102,7 @@ def send_reminder(sender, task, content):
 
 	notif_obj = Notification.objects.latest('pk')
 	# Send out the notification.
-	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
+	FcmPusher.sendNotification(task.owner.fcm_token, sender.username, content, notif_obj)
 
 
 	# refresh task last_notify_time
@@ -133,7 +132,7 @@ def send_evidence(sender, task):
 
 		notif_obj = Notification.objects.latest('pk')
 		# Send out the notification.
-		FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
+		FcmPusher.sendNotification(viewer.fcm_token, sender.username, msg, notif_obj)
 
 
 '''

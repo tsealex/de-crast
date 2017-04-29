@@ -24,6 +24,7 @@ import shutil
 # change this
 base_dir = rest_settings.TEST_BASE_DIR or '/home/ec2-user/decrast_server/'
 rest_settings.UPLOAD_DIR = 'test_uploads/'
+rest_settings.TESTING = True
 
 class UserTestCase(TestCase):
 

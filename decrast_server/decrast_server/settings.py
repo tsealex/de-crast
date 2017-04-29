@@ -40,9 +40,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_service',
-		'django_nose',
+#	'django_nose',
 ]
-
+'''
 # Use nose to run all tests
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
@@ -51,7 +51,7 @@ NOSE_ARGS = [
     '--with-coverage',
     '--cover-package=rest_service',
 ]
-
+'''
 FCM_DJANGO_SETTINGS = {
 	'FCM_SERVER_KEY': 'AIzaSyD0xVOqH302JD2NqZiIb_1LsofY0WoY8jo'
 }

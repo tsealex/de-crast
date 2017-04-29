@@ -17,7 +17,7 @@ DEFAULTS = {
 	'FACEBOOK_SECRET_KEY': None,
 
 	'FCM_SECRET_KEY': None,
-	
+
 	# TODO: multiple-viewer feature is only partially implemented
 	'SINGLE_VIEWER': True,
 	# whehter a task completion requires viewer acknowledgement
@@ -37,6 +37,8 @@ DEFAULTS = {
 	'MAGIC_FILE': None,
 	# directory that contains this server (where manage.py is located)
 	'TEST_BASE_DIR': None,
+	'TEST_RESOURCE_DIR': 'test_props/',
+	'TESTING': False,
 
 	'IMAGE_TYPES': ['image/jpeg'],
 
