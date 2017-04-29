@@ -144,6 +144,7 @@ class Notification(models.Model):
 	INVITE = 5 # from user to user
 	INVITE_ACCEPT = 6 # viewer accepted task invite
 	EXPIRED = 7
+	COMPLETED = 8
 
 	NOTIFICATION_TYPE = (
 		(REMINDER, 'REMINDER'),
@@ -153,6 +154,7 @@ class Notification(models.Model):
 		(INVITE, 'VIEWER INVITE'),
 		(INVITE_ACCEPT, 'VIEWER ACCEPT INVITE'),
 		(EXPIRED, 'TASK EXPIRED'),
+		(COMPLETED, 'TASK COMPLETED')
 	)
 	# required
 	task = models.ForeignKey(Task, on_delete=models.CASCADE)

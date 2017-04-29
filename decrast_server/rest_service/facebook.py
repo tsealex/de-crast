@@ -1,6 +1,7 @@
 import http.client
 import os
 import json
+import urllib
 
 from .errors import APIErrors
 from .settings import rest_settings
@@ -24,7 +25,7 @@ class FacebookManager():
 		self.app_access_token = self.get_app_access_token()
 		legal_token = self.verify_fb_token(fb_token, fb_id)
 		if not legal_token:
-			raise APIError(110)
+			APIErrors.ValidationError('fb_token')
 
 	'''
 	This function gets our application's access token.
@@ -39,20 +40,24 @@ class FacebookManager():
 			secret_key = rest_settings.FACEBOOK_SECRET_KEY or os.environ['FB_SECRET_KEY'] 
 
 			conn = http.client.HTTPSConnection("graph.facebook.com")
-			conn.request("GET", "/oauth/access_token?client_id={}&client_secret={}&" \
-				"grant_type=client_credentials".format(APP_ID, secret_key))
+
+			req_str = "/oauth/access_token?client_id={}&client_secret={}&" \
+				"grant_type=client_credentials".format(self.APP_ID, secret_key)
+
+			conn.request("GET", req_str)
 			resp = conn.getresponse()
 			resp_str = resp.read().decode("utf-8")
-			equals_index = resp_str.index('=')
+			as_json = json.loads(resp_str)
 
-			return resp_str[(equals_index+1):]
+			if 'access_token' in as_json:
+				return as_json['access_token']
+			else:
+				raise APIErrors.ValidationError('token_resp')
 
 		except ValueError as ve:
-			print("Illegal access token response: " + str(ve))
-			raise APIError(170)
+			APIErrors.ValidationError('token_resp')
 		except Exception as e:
-			print("Access token response error: " + str(e))
-			raise APIError(170)
+			APIErrors.ValidationError('token_type')
 
 	'''
 	This function checks to see if the provided FB user access
@@ -87,6 +92,5 @@ class FacebookManager():
 		# TODO: maybe we also need to check if the token has expired
 
 		return True
-
 
 facebook_mgr = FacebookManager()

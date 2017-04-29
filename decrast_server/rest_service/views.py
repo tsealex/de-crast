@@ -248,12 +248,18 @@ class TaskViewSet(viewsets.ViewSet):
 		# parse input
 		ids = extract_ids(query)
 		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
-		data = extract_data(request.data, None, ['name', 'description', 'category', 'expired'])
+		data = extract_data(request.data, None, ['name', 'description', 'category', 'expired', 
+'fb_token', 'completed'])
 		data['owner'] = request.user.id
 		# retrieve resource
 		task = request.user.owned_tasks.filter(id=ids[0], ended=False)
 		if not task.exists(): raise APIErrors.DoesNotExist('task id')
 		else: task = task.get()
+
+
+		if 'completed' in data:
+			print("User completed task: " + task.name)
+			task_completed_notification(request.user, task)
 
 		# If the update included an expired key, that means that this task is overdue,
 		# and we need run the logic associated with it.

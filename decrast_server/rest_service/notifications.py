@@ -35,6 +35,10 @@ DEFAULT_EXPIRATION_MSG = """
 {} failed to complete task "{}".
 """
 
+DEFAULT_COMPLETED_MSG = """
+{} successfully completed task "{}".
+"""
+
 '''
 	This function creates and sends a view-task invite notification.
 '''
@@ -226,3 +230,26 @@ def task_expired_notification(user, task):
 			notif_obj = Notification.objects.latest('pk')
 			# Send out the notification.
 			FcmPusher.sendNotification(viewer.fcm_token, user.username, msg, notif_obj)
+
+def task_completed_notification(user, task):
+	msg = DEFAULT_COMPLETED_MSG.format(user.username, task.name)
+
+	# Send every viewer of this task a notification regarding the expiration.
+	for viewer in task.viewers.all():
+			data = {
+				'type': Notification.COMPLETED,
+				'sender': user.id,
+				'recipient': viewer.id,
+				'task': task.id,
+				'text': msg,
+			}
+			nf = NotificationFactory(data=data)
+			validate(nf)
+			nf.save()
+
+			# The last-added notification is the one we just added.
+			notif_obj = Notification.objects.latest('pk')
+			# Send out the notification.
+			FcmPusher.sendNotification(viewer.fcm_token, user.username, msg, notif_obj)
+
+			task.complete()

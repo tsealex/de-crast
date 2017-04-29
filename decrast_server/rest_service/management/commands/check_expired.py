@@ -16,12 +16,14 @@ class Command(BaseCommand):
 			time = datetime.now(timezone.utc)
 			self.stdout.write(self.style.SUCCESS('TIME: ' + str(time)))
 
-			overdue = Task.objects.filter(deadline__lte=time)
+#			overdue = Task.objects.filter(deadline__lte=time)
+
+			overdue = Task.objects.all()
 
 			for ot in overdue:
 				print('TYPE: ' + ot.name)
 				print("LEN: " + str(len(ot.viewers.all())))
 				self.stdout.write(self.style.SUCCESS('Deleting task: {} -> {}'.format(ot.name, str(ot.deadline))))
-				task_expired_notification(ot.owner, ot)
+#				task_expired_notification(ot.owner, ot)
 				ot.delete()
 

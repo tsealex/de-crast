@@ -5,6 +5,7 @@
 
 from pyfcm import FCMNotification
 from .serializers import *
+from .models import *
 
 import sys
 import os
@@ -23,25 +24,16 @@ FCM_TEST_PORT = 5236
 
 FCM_USE_PORT = FCM_PROD_PORT
 
-
-# TODO: Import from models library
-# notification type
-REMINDER = 0 # from viewer to task owner
-REGULAR  = 1 # from system to task owner
-EVIDENCE = 2 # from system to viewer
-DEADLINE = 3 # from user to viewer
-INVITE   = 5 # from user to user
-INVITE_ACCEPT = 6
-EXPIRED = 7
-
 # Array which maps notification types to notification titles.
 # NOTE: Type four is skipped, so I put in a dummy value.
 NOTIFICATION_TITLES = ['Task Reminder', 'Regular Notification', 'Evidence Received',
-'Deadline Reminder', 'Space FIller', 'Task Invite', 'Task Invite Accepted', 'Task Expired']
+'Deadline Reminder', 'Space FIller', 'Task Invite', 'Task Invite Accepted', 'Task Expired',
+'Task Completed']
 
 # Class consists of static functions so an instance of one doesn't need
 # to hang around somewhere just to send off a message every now and then.
 class FcmPusher():
+	# Everything in this class is static ...
 	def __init__(self):
 		pass
 
@@ -50,7 +42,6 @@ class FcmPusher():
 		'''
 		This static function spins up a worker thread to send off a notification.
 		'''
-		print("INCOMING TYPE: " + str(notif.type))
 
 		# Set the correct title
 		title = NOTIFICATION_TITLES[notif.type];
@@ -58,6 +49,8 @@ class FcmPusher():
 		# Send the notification from a worker thread, so we don't fully block our
 		# server application.
 		_thread.start_new_thread(FcmPusher.callNotify, (receiver_id, title, body, notif))
+
+
 
 	@staticmethod
 	def callNotify(user_id, m_title, m_body, notif):
@@ -69,15 +62,15 @@ class FcmPusher():
 		m_body = m_body.strip('\n')
 
 		# Pack up the needed data depending on what type of invite it is.
-		if notif.type == INVITE:
+		if notif.type == Notification.INVITE:
 			serialized_task = TaskSerializer(notif.task)
 			m_data = {'type':notif.type, 'id':notif.id, 'notif_task':serialized_task.data}
-		elif notif.type == INVITE_ACCEPT:
+		elif notif.type == Notification.INVITE_ACCEPT:
 			m_data = {'type':notif.type, 'id':notif.id}
-		elif notif.type == EXPIRED:
+		elif notif.type == Notification.EXPIRED:
 			m_data = {'type':notif.type, 'id':notif.id}
 		else:
-			m_data = {}
+			m_data = {'type': notif.type}
 
 		# Create an instance of the FCM notificaiton class, and send out a single notification.
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)
