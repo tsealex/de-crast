@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 
 # param: sender.username, task.name
 # TODO: refine the message (i.e. add more details such as task.description)
-DEFAULT_TASK_INVITE_MSG = """{} sent you an invite for viewing the task "{}".
+DEFAULT_TASK_INVITE_MSG = """
+{} sent you an invite for viewing the task "{}".
 """
 
 # param: sender.username, task.name, deadline
@@ -55,7 +56,7 @@ def send_viewer_invite(sender, receiver, task):
 	validate(nf)
 	nf.save()
 
-	notif_obj = Notification.objects.latest('pk')
+	notif_obj = nf.instance
 	# Send out the notification.
 	FcmPusher.sendNotification(receiver.fcm_token, sender.username, msg, notif_obj)
 
@@ -79,9 +80,9 @@ def send_deadline_ext(sender, task, deadline):
 		validate(nf)
 		nf.save()
 
-		# notif_obj = Notification.objects.latest('pk')
+		notif_obj = nf.instance
 		# Send out the notification.
-		FcmPusher.sendNotification(viewer.fcm_token, sender.username, msg, nf.instance)
+		FcmPusher.sendNotification(viewer.fcm_token, sender.username, msg, notif_obj)
 
 '''
 	This function sends and creates a reminder-to-complete notification
@@ -100,7 +101,7 @@ def send_reminder(sender, task, content):
 	validate(nf)
 	nf.save()
 
-	notif_obj = Notification.objects.latest('pk')
+	notif_obj = nf.instance
 	# Send out the notification.
 	FcmPusher.sendNotification(task.owner.fcm_token, sender.username, content, notif_obj)
 
@@ -130,7 +131,7 @@ def send_evidence(sender, task):
 		validate(nf)
 		nf.save()
 
-		notif_obj = Notification.objects.latest('pk')
+		notif_obj = nf.instance
 		# Send out the notification.
 		FcmPusher.sendNotification(viewer.fcm_token, sender.username, msg, notif_obj)
 
@@ -226,7 +227,7 @@ def task_expired_notification(user, task):
 			nf.save()
 
 			# The last-added notification is the one we just added.
-			notif_obj = Notification.objects.latest('pk')
+			notif_obj = nf.instance
 			# Send out the notification.
 			FcmPusher.sendNotification(viewer.fcm_token, user.username, msg, notif_obj)
 
@@ -247,7 +248,7 @@ def task_completed_notification(user, task):
 			nf.save()
 
 			# The last-added notification is the one we just added.
-			notif_obj = Notification.objects.latest('pk')
+			notif_obj = nf.instance
 			# Send out the notification.
 			FcmPusher.sendNotification(viewer.fcm_token, user.username, msg, notif_obj)
 
