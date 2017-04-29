@@ -16,6 +16,8 @@ DEFAULTS = {
 	'FACEBOOK_NEEDED_PERMISSIONS': [],
 	'FACEBOOK_SECRET_KEY': None,
 
+	'FCM_SECRET_KEY': None,
+	
 	# TODO: multiple-viewer feature is only partially implemented
 	'SINGLE_VIEWER': True,
 	# whehter a task completion requires viewer acknowledgement
@@ -32,9 +34,9 @@ DEFAULTS = {
 	'NOTIFICATION_PEROID': 360,
 
 	# magic.gc location, don't need to be set on a Linux machine
-	'MAGIC_FILE':None,
+	'MAGIC_FILE': None,
 	# directory that contains this server (where manage.py is located)
-	'TEST_BASE_DIR':None,
+	'TEST_BASE_DIR': None,
 
 	'IMAGE_TYPES': ['image/jpeg'],
 

@@ -6,6 +6,7 @@
 from pyfcm import FCMNotification
 from .serializers import *
 from .models import *
+from .settings import rest_settings
 
 import sys
 import os
@@ -13,10 +14,9 @@ import _thread
 import json
 
 FCM_SENDER_ID = '1086425216709'
-SECRET_KEY_ENV_VAR = 'FCM_SECRET_KEY'
 
 FCM_SERVER_JID = FCM_SENDER_ID + '@gcm.googleapis.com'
-FCM_SERVER_PASSWORD = os.environ[SECRET_KEY_ENV_VAR]
+FCM_SERVER_PASSWORD = rest_settings.FCM_SECRET_KEY or os.environ['FCM_SECRET_KEY']
 
 FCM_SERVER_ADDRESS = 'fcm-xmpp.googleapis.com'
 FCM_PROD_PORT = 5235
