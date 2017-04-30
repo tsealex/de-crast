@@ -43,6 +43,7 @@ urlpatterns = [
 	# Notification
 	url(r'^user/notifications/$', NotificationViewSet.as_view({'get': 'list', 'post': 'create'})),
 	url(r'^user/notifications/respond/$', NotificationViewSet.as_view({'post': 'update'})),
+	url(r'^user/notifications/(?P<query>.+)/task/$', NotificationViewSet.as_view({'get': 'task'})),
 	url(r'^user/notifications/(?P<query>.+)/file/$', NotificationViewSet.as_view({'get': 'file'})),
 	url(r'^user/notifications/(?P<query>.+)/$', NotificationViewSet.as_view({'get': 'retrieve'})),
 
