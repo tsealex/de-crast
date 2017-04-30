@@ -1,6 +1,8 @@
 angular.module('decrast.storage', []).factory('Storage', function() {
 	var taskList = localStorage.getItem('task_list');
 	var userList = localStorage.getItem('friend_list');
+	var catList = localStorage.getItem('category_list');
+	var notifList = localStorage.getItem('notif_list');
 
 	// initiailize user/friend list
 	if (userList === null) {
@@ -8,7 +10,23 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 		userList = {};
 		localStorage.setItem('friend_list', angular.toJson(userList));
 	} else
-		taskList = angular.fromJson(userList);
+		userList = angular.fromJson(userList);
+
+	// initiailize category list
+	if (catList === null) {
+		console.log('initializing category list')
+		catList = {};
+		localStorage.setItem('category_list', angular.toJson(catList));
+	} else
+		catList = angular.fromJson(catList);
+
+	// initiailize notification list
+	if (notifList === null) {
+		console.log('initializing notification list')
+		notifList = {};
+		localStorage.setItem('notif_list', angular.toJson(notifList));
+	} else
+		notifList = angular.fromJson(notifList);
 
 	// initiailize task list
 	if (taskList === null) {
@@ -21,10 +39,63 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 	console.log('storage.js is now online');
 	return {
 		getItem: function(key) {
-			return localStorage.getItem(key);
+			return angular.fromJson(localStorage.getItem(key));
 		},
 		setItem: function(key, value) {
+			localStorage.setItem(key, angular.toJson(value));
+			console.log('cache object ' + key);
+		},
+		getJsonItem: function(key) {
+			return localStorage.getItem(key);
+		},
+		setJsonItem: function(key, value) {
 			localStorage.setItem(key, value);
+			console.log('cache json object ' + key);
+		},
+		// notification related
+		clearNotifList: function() {
+			notifList = {};
+			localStorage.setItem('notif_list', angular.toJson(notifList));
+		},
+		addNotif: function(notif) {
+			notifList[notif.notif_notificationId] = notif;
+			localStorage.setItem('notif_list', angular.toJson(notifList));
+			console.log('local cached notification added: notification ' + notif.notif_notificationId);
+		},
+		getNotif: function(id) {
+			return notifList[id];
+		},
+		getNotifList: function() {
+			return notifList;
+		},
+		removeNotif: function(id) {
+			delete notifList[id];
+			localStorage.setItem('notif_list', angular.toJson(notifList));
+			console.log('local cached notification deleted: notification ' + id);
+		},
+		// category-related
+		clearCategoryList: function() {
+			catList = {};
+			localStorage.setItem('category_list', angular.toJson(catList));
+		},
+		addCategory: function(category) {
+			catList[category.id] = category;
+			localStorage.setItem('category_list', angular.toJson(catList));
+			console.log('local cached category added: category ' + category.id);
+		},
+		removeCategory: function(id) {
+			delete catList[id];
+			localStorage.setItem('category_list', angular.toJson(catList));
+			console.log('local cached category deleted: category ' + id);
+		},
+		getCategoryList: function() {
+			return catList;
+		},
+		getCategory: function(id) {
+			return catList[id];
+		},
+		getCategoryName: function(id) {
+			return catList[id].name;
 		},
 		// user-related
 		clearUserList: function() {
@@ -43,7 +114,7 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 			localStorage.setItem('friend_list', angular.toJson(userList));
 			console.log('local cached user added: user ' + user.friend_uid);
 		},
-		removeTask: function(id) {
+		removeUser: function(id) {
 			delete userList[id];
 			localStorage.setItem('friend_list', angular.toJson(userList));
 			console.log('local cached user added: user ' + id);
