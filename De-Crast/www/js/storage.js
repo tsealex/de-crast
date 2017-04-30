@@ -1,5 +1,15 @@
 angular.module('decrast.storage', []).factory('Storage', function() {
 	var taskList = localStorage.getItem('task_list');
+	var userList = localStorage.getItem('friend_list');
+
+	// initiailize user/friend list
+	if (userList === null) {
+		console.log('initializing user list')
+		userList = {};
+		localStorage.setItem('friend_list', angular.toJson(userList));
+	} else
+		taskList = angular.fromJson(userList);
+
 	// initiailize task list
 	if (taskList === null) {
 		console.log('initializing task list')
@@ -15,6 +25,31 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 		},
 		setItem: function(key, value) {
 			localStorage.setItem(key, value);
+		},
+		// user-related
+		clearUserList: function() {
+			userList = {};
+			localStorage.setItem('friend_list', angular.toJson(userList));
+		},
+		getUserList: function() {
+			return userList;
+		},
+		getUser: function(id) {
+			console.log('local cached user loaded: user ' + id)
+			return userList[id];
+		},
+		addUser: function(user) {
+			userList[user.friend_uid] = user;
+			localStorage.setItem('friend_list', angular.toJson(userList));
+			console.log('local cached user added: user ' + user.friend_uid);
+		},
+		removeTask: function(id) {
+			delete userList[id];
+			localStorage.setItem('friend_list', angular.toJson(userList));
+			console.log('local cached user added: user ' + id);
+		},
+		existUser: function(id) {
+			return !(userList[id] === undefined);
 		},
 		// task-related
 		clearTaskList: function() {

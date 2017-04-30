@@ -209,7 +209,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fetchFBfriends = function() {
             // prepare friends container
             $rootScope.friend_list = {};
-
+            
             // FB get friends who is also using the app
             ngFB.api({
                 path: '/me/friends',
