@@ -245,16 +245,35 @@ angular.module('decrast.services', ['ngOpenFB'])
   				return Math.floor(Math.random() * (max - min)) + min;
 				}
 
+				var msg = '';
 				var randomNumber = getRandomInt(1, 5);
-				console.log("Random was: " + randomNumber);
+				switch(randomNumber) {
+					case 1:
+						msg = 'My life is out of control!';
+					break;
+					case 2:
+						msg = 'I am not as responsible as I thought :(';
+					break;
+					case 3:
+						msg = 'I need to re-evaluate everything';
+					break;
+					case 4:
+						msg = 'Well this is sure embarassing ...';
+					break;
+					case 5:
+						msg = 'I need to do better next time!';
+					break;
+				}
+
+				// TODO: Use De-crast server messages and error messages.
 
 				ngFB.api({
               path: '/me/feed',
               method: 'POST',
               params: {
-//                link: 'http://memesmix.net/media/created/3ghonp.jpg',
-//                picture: 'http://memesmix.net/media/created/3ghonp.jpg',
-                message: 'Look Megan - I did it!',
+                link: 'http://www.nooooooooooooooo.com/vader.jpg',
+                picture: 'http://www.nooooooooooooooo.com/vader.jpg',
+                message: msg,
                 access_token: fbToken,
                 privacy: "{'value': 'ALL_FRIENDS'}"
               }
