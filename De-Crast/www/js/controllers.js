@@ -408,25 +408,31 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 duration: 1000
                             });
 
-                            $ionicPlatform.ready(function() {
-                                // var now = new Date().getTime();
-                                // var _3SecondsFromNow = new Date(now + 3 * 1000);
-                                //var ddl = new Date(myEpoch*1000);
-                                var usertime = new Date($scope.time);
-                                var timezone = new Date().getTimezoneOffset();
-                                var ddl = new Date(usertime.getTime() + timezone * 60000);
-                                $cordovaLocalNotification.schedule({ // This part of code may not work in browser
-                                    id: 10,
-                                    title: $scope.taskName,
-                                    text: 'This task has expired :(',
-                                    at: ddl,
-                                    data: {
-                                        taskId: data.data.taskId
-                                    }
-                                }).then(function(result) {
-                                    console.log(ddl.getTime + 'a local notification is triggered' + myEpoch * 1000);
+                            if (window.cordova) {
+                            // when run on device, test the platform and call FCM
+                
+                                $ionicPlatform.ready(function() {
+                                    // var now = new Date().getTime();
+                                    // var _3SecondsFromNow = new Date(now + 3 * 1000);
+                                    //var ddl = new Date(myEpoch*1000);
+                                    var usertime = new Date($scope.time);
+                                    var timezone = new Date().getTimezoneOffset();
+                                    var ddl = new Date(usertime.getTime() + timezone * 60000);
+                                    $cordovaLocalNotification.schedule({ // This part of code may not work in browser
+                                        id: 10,
+                                        title: $scope.taskName,
+                                        text: 'This task has expired :(',
+                                        at: ddl,
+                                        data: {
+                                            taskId: data.data.taskId
+                                        }
+                                    }).then(function(result) {
+                                        console.log(ddl.getTime + 'a local notification is triggered' + myEpoch * 1000);
+                                    });
                                 });
-                            });
+                            }else{
+                                console.log("Run on browser, cordovaLocalNotification is disabled");
+                            }
 
                             $ionicViewSwitcher.nextDirection('back');
                             $state.go('tab.home', {});
@@ -862,6 +868,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         localStorage.setItem('login', 'true');
                         localStorage.setItem('fbAccessToken', response.authResponse.accessToken);
 
+                        if (window.cordova) {
+                        // when run on device, test the platform and call FCM
+                
                         if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
                             FCMPlugin.getToken(
                                 function(token) {
@@ -870,6 +879,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 function(err) {
                                     alert('error retrieving FCM token: ' + err);
                                 });
+                        }
+                        }else{
+                            console.log("Run on brower, FCMPlugin is disabled");
                         }
 
                         ngFB.api({
