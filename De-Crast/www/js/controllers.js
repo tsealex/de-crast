@@ -577,7 +577,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope, EvidenceTypes) {
+    .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope, EvidenceTypes, Server) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             $scope.task = $stateParams.task;
@@ -613,7 +613,41 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     task: $scope.task
                 });
             }
+						// Honor Type
+            if($scope.evidenceType.evidenceTypeId == 2){
+              $scope.decisionPopup();
+            }
         };
+
+				$scope.decisionPopup = function() {
+            var text = 'Have you actually done what you said you would?';
+            var title = 'Confirm completion';
+
+            var myPopup = $ionicPopup.show({
+                template: text,
+                title: title,
+                scope: $scope,
+
+                buttons: [
+                    { text: 'Negatory',
+                        onTap: function(e) {
+                          console.log("Well then get to it!");
+                        }
+                    }, {
+                        text: 'Of course!',
+                        type: 'button-positive',
+                        	onTap: function(e) {
+                            console.log("You better not be lying ...");
+                            Server.completeTask($scope.task.task_id);
+                        	}
+                    }
+                ]
+            });
+
+            myPopup.then(function(res) {
+            });
+          };
+
         $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
     })
 

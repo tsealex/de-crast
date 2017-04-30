@@ -8,7 +8,7 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
         'decrast.server', 'ngOpenFB', 'ngCordova', 'ngOrderObjectBy', 'decrast.storage'
     ])
 
-    .run(function($ionicPlatform, $state, ngFB, Server, Storage) {
+    .run(function($ionicPlatform, $state, ngFB, Server, Storage, FacebookPoster, NotificationHandler) {
 
         ngFB.init({
             appId: '859339004207573'
@@ -27,41 +27,35 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
                 StatusBar.styleDefault();
             }
 
-            /* This callback is triggered when a Google FCM push notification for our app
-             * is received by the device. This code lives in app.js to prevent any weird
-             * state/loading issues from occuring.
-             *
-             * When this occurs, we launch our notification detail screen with the given
-             * notification parameter, which is parsed accordingly there. */
-            FCMPlugin.onNotification(function(data) {
-                if (data.wasTapped) {
-                    //Notification was received on device tray and tapped by the user.
-                    $state.go('notifDetail', {
-                        notif: data
-                    });
-                } else {
-                    //Notification was received in foreground. Maybe the user needs to be notified.
-                    $state.go('notifDetail', {
-                        notif: data
-                    });
-                }
-            });
+						/* This callback is triggered when a Google FCM push notification for our app
+		 				 * is received by the device. This code lives in app.js to prevent any weird
+     				 * state/loading issues from occuring.
+		 				 *
+			 			 * When this occurs, we launch our notification detail screen with the given
+						 * notification parameter, which is parsed accordingly there. */
+			  		 FCMPlugin.onNotification(function(data){
+				     	 if(data.wasTapped){
+									NotificationHandler.handleFromBackground(data)
+				     	 }else{
+									NotificationHandler.handleFromInApp(data);
+				  	    }
+					   });
 
 
-            /* This callback is triggered when a Cordova local notification is triggered
-             * (aka a task expires). This code lives in app.js to prevent any weird
+         		/* This callback is triggered when a Cordova local notification is triggered
+		         * (aka a task expires). This code lives in app.js to prevent any weird
              * state/loading issues from occuring.
-             *
-             * When this occurs, we need to tell our server that the task expired. */
-            cordova.plugins.notification.local.on("trigger", function(notification) {
-                /* Remove any escaped characters from our notification JSON. */
+         		 *
+        		 * When this occurs, we need to tell our server that the task expired. */
+             cordova.plugins.notification.local.on("trigger", function(notification){
+        				/* Remove any escaped characters from our notification JSON. */
                 var remove_escs = notification.data.replace('\"', '"');
                 notification.data = angular.fromJson(remove_escs);
-                /* Notify our server that this task has expired. */
-                Server.expireTask(notification.data.taskId);
-            }, false);
 
-
+        				/* Notify our server that this task has expired. */
+          	      Server.expireTask(notification.data.taskId);
+          				FacebookPoster.makePost();
+             }, false);
         });
     })
     .constant('ApiEndpoint', {

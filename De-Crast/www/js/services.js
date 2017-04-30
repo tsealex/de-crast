@@ -1,5 +1,4 @@
-angular.module('decrast.services', [])
-
+angular.module('decrast.services', ['ngOpenFB'])
 
     // dummy Tasks data
     .factory('Tasks', function() {
@@ -215,7 +214,10 @@ angular.module('decrast.services', [])
         }, {
             evidenceTypeId: 1,
             name: 'GPS'
-        }]
+        }, {
+						evidenceTypeId: 2,
+						name: 'Honor'
+				}]
 
         return {
             all: function() {
@@ -232,15 +234,47 @@ angular.module('decrast.services', [])
         }
     })
 
-    .factory('NotificationParser', function() {
-        // currently the uid input is fbId, later will be De-Crast userId
-        return {
-            parse: function(notification) {
-                alert('PARSING: ' + JSON.stringify(notification));
-                if (notification.type == 5) {
-                    alert('Received invite');
-                    return 'login';
-                }
-            }
-        }
-    });
+.factory('FacebookPoster', function(ngFB) {
+		return {
+			makePost: function() {
+				var fbToken = localStorage.getItem('fbAccessToken');
+
+				function getRandomInt(min, max) {
+  				min = Math.ceil(min);
+  				max = Math.floor(max);
+  				return Math.floor(Math.random() * (max - min)) + min;
+				}
+
+				var randomNumber = getRandomInt(1, 5);
+				console.log("Random was: " + randomNumber);
+
+				ngFB.api({
+              path: '/me/feed',
+              method: 'POST',
+              params: {
+//                link: 'http://memesmix.net/media/created/3ghonp.jpg',
+//                picture: 'http://memesmix.net/media/created/3ghonp.jpg',
+                message: 'Look Megan - I did it!',
+                access_token: fbToken,
+                privacy: "{'value': 'ALL_FRIENDS'}"
+              }
+        }).then(function(res) {
+            console.log("FB post successful!");
+        }, function( err ) {
+          // error
+          console.log("ERROR:  " + JSON.stringify(err));
+        });
+			}
+		}
+})
+
+.factory('NotificationHandler', function() {
+			return{
+      	handleFromBackground: function(notification) {
+					console.log("Notification handler from background");
+      	},
+				handleFromInApp: function(notification) {
+					console.log("Notification handler from in-app");
+				}
+			}
+});

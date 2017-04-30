@@ -139,7 +139,17 @@ angular.module('decrast.server', [])
                     console.log('expireTask', JSON.stringify(response));
                 });
             },
-            getUserTasks: function() {
+            completeTask: function(taskId) {
+              return $http({
+                      method:'POST',
+                      url: ApiEndpoint.url + 'user/tasks/' + taskId + '/',
+                      headers: {'Authorization': 'JWT ' + accessToken},
+                      data: {completed: 1}
+                  }).then(function(response) {
+                    console.log('completeTask', JSON.stringify(response));
+                  });
+            },
+						getUserTasks: function() {
                 return $http({
                     method: 'GET',
                     url: ApiEndpoint.url + 'user/tasks/',
