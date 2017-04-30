@@ -1,8 +1,8 @@
 //Home of controllers. Most of our logic will go here.
 angular.module('decrast.controllers', ['ngOpenFB'])
 
-    .controller('HomeCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover, 
-        $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server, 
+    .controller('HomeCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover,
+        $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server,
         TaskFact, Friends, Notif, Storage) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
@@ -169,8 +169,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         Server.getEvidenceType(taskData.taskId).then(function(data) {
                             var utcDate = $scope.convertToUTC(taskData.deadline);
 
-                            var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name, 
-                                taskData.description, taskData.category, utcDate, 
+                            var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                taskData.description, taskData.category, utcDate,
                                 $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
                             Storage.saveTask(newTask);
                             if (owned)
@@ -209,7 +209,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fetchFBfriends = function() {
             // prepare friends container
             $rootScope.friend_list = {};
-            
+
             // FB get friends who is also using the app
             ngFB.api({
                 path: '/me/friends',
@@ -227,7 +227,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     for (i = 0; i < list.data.length; i++) {
                         var friendFbId = list.data[i].id;
                         var friendFbName = list.data[i].name;
-                        $scope.getUserByFbId(friendFbId, friendFbName);  // TODO: can you make a change here
+                        $scope.getUserByFbId(friendFbId, friendFbName); // TODO: can you make a change here
                         // TODO: intead of one fbId at a time, you can request for several users:
                         // TODO: i.e. user/facebook/32425&9353&232324&2425347/ each separated by '&'
                     }
@@ -461,7 +461,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact, 
+    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact,
         $ionicLoading, Server, $ionicPopup, EvidenceTypes, Storage) {
         var taskId, tmpTask;
         var myDate;
@@ -525,11 +525,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         Storage.applyTaskChanges(data.data.taskId);
                         if (changeTime && $scope.time != undefined) {
                             var deadline = $scope.time.getTime() / 1000.0; // TODO: bug $scope.time is undefined, please check
-                             Server.sendNotificationThree(3, deadline, taskId).then(function(data) {
+                            Server.sendNotificationThree(3, deadline, taskId).then(function(data) {
                                 var msg = 'Task Saved.';
-                                if (data.status != 200) 
+                                if (data.status != 200)
                                     msg = msg + ' Notification not sent due to invalid deadline / no viewer';
-                                    
+
                                 $ionicLoading.show({
                                     template: msg,
                                     noBackdrop: true,
@@ -537,11 +537,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 });
                                 $ionicViewSwitcher.nextDirection('back');
                                 $state.go('tab.home');
-                             });
-                             return;
+                            });
+                            return;
                         }
                     } else
-                       msg = data.data.errorMsg + ": " + data.data.detail;
+                        msg = data.data.errorMsg + ": " + data.data.detail;
 
                     $ionicLoading.show({
                         template: msg,
@@ -577,7 +577,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope, EvidenceTypes, Server) {
+    .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, 
+        $rootScope, EvidenceTypes, Server, Storage) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             $scope.task = $stateParams.task;
@@ -613,13 +614,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     task: $scope.task
                 });
             }
-						// Honor Type
-            if($scope.evidenceType.evidenceTypeId == 2){
-              $scope.decisionPopup();
+            // Honor Type
+            if ($scope.evidenceType.evidenceTypeId == 2) {
+                $scope.decisionPopup();
             }
         };
 
-				$scope.decisionPopup = function() {
+        $scope.decisionPopup = function() {
             var text = 'Have you actually done what you said you would?';
             var title = 'Confirm completion';
 
@@ -628,25 +629,28 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 title: title,
                 scope: $scope,
 
-                buttons: [
-                    { text: 'Negatory',
-                        onTap: function(e) {
-                          console.log("Well then get to it!");
-                        }
-                    }, {
-                        text: 'Of course!',
-                        type: 'button-positive',
-                        	onTap: function(e) {
-                            console.log("You better not be lying ...");
-                            Server.completeTask($scope.task.task_id);
-                        	}
+                buttons: [{
+                    text: 'Negatory',
+                    onTap: function(e) {
+                        console.log("Well then get to it!");
                     }
-                ]
+                }, {
+                    text: 'Of course!',
+                    type: 'button-positive',
+                    onTap: function(e) {
+                        console.log("You better not be lying ...");
+                        Server.completeTask($scope.task.task_id).then((function(id) {
+                            return function(data) {
+                                Storage.removeTask(id);
+                                $state.go('tab.home');
+                            }
+                        })($scope.task.task_id));
+                    }
+                }]
             });
 
-            myPopup.then(function(res) {
-            });
-          };
+            myPopup.then(function(res) {});
+        };
 
         $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
     })
@@ -986,7 +990,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             return true;
         }
     })
-    .controller('mapCtrl', function($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory, 
+    .controller('mapCtrl', function($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory,
         $cordovaGeolocation, $ionicLoading, Server, Storage) {
 
         $scope.onClick = function() {
@@ -1061,7 +1065,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             console.log("Map post coordinates", coordinates);
             // This server is not function correctly            
             Server.submitGPS($scope.taskId, coordinates).then((function(id) {
-                // TODO: delete the task locally
                 return function(data) {
                     if (data.status == 200) {
                         Storage.removeTask(id);
@@ -1071,7 +1074,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             noBackdrop: true,
                             duration: 1000
                         });
-                    } 
+                    }
                     //$ionicHistory.goBack(2);
                     $state.go('tab.home');
                 }
@@ -1088,15 +1091,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         // TODO: move this function to the global scope, so that other controllers can use this function 
         $scope.dataURItoBlob = function(dataURI) {
             var byteString = atob(dataURI.split(',')[1]);
-             var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+            var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
 
-             var ab = new ArrayBuffer(byteString.length);
-             var ia = new Uint8Array(ab);
-             for (var i = 0; i < byteString.length; i++)
+            var ab = new ArrayBuffer(byteString.length);
+            var ia = new Uint8Array(ab);
+            for (var i = 0; i < byteString.length; i++)
                 ia[i] = byteString.charCodeAt(i);
-             
-             var bb = new Blob([ab], { "type": mimeString });
-             return bb;
+
+            var bb = new Blob([ab], {
+                "type": mimeString
+            });
+            return bb;
         };
 
         $scope.takePicture = function() {
@@ -1127,9 +1132,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
 
         //not functioning yet
-        $scope.submitPhoto = function() {       
+        $scope.submitPhoto = function() {
             Server.submitPhoto($scope.taskId, $scope.imgBlob).then((function(id) {
-                // TODO: delete the task locally
                 return function(data) {
                     if (data.status == 200) {
                         Storage.removeTask(id);
@@ -1139,7 +1143,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             noBackdrop: true,
                             duration: 1000
                         });
-                    } 
+                    }
                     //$ionicHistory.goBack(2);
                     $state.go('tab.home');
                 }
