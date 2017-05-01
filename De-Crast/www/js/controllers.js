@@ -170,23 +170,40 @@ angular.module('decrast.controllers', ['ngOpenFB'])
          */
         $scope.populateTasks = function(response, owned) {
             for (i = 0; i < response.length; i++) {
-                if (!Storage.existTask(response[i].taskId)) {
+                //if (!Storage.existTask(response[i].taskId)) {
                     Server.getTask(response[i].taskId).then(function(data) {
                         var taskData = data.data[0];
                         Server.getEvidenceType(taskData.taskId).then(function(data) {
                             var utcDate = $scope.convertToUTC(taskData.deadline);
-
-                            var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                            console.log("load partner: ", taskData);
+                            /*var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
                                 taskData.description, taskData.category, utcDate,
                                 $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
-                            Storage.saveTask(newTask);
-                            if (owned)
+                            console.log("check newTask: ", newTask);*/
+                            /* move new Task into if(owned)-else check
+                             * if user own the task, the partner field stores the viewer object
+                             * else, the partner field stores the owner object.
+                             * hence, when view the task owned, the viewer(partner) is displayed
+                             * when view the friend's task, the owner(friend who own the task) is displayed
+                             * although they share the same field 'partner'
+                             * */
+                            if (owned){
+                                var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                taskData.description, taskData.category, utcDate,
+                                $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
+                                Storage.saveTask(newTask);
                                 $rootScope.task_list = Storage.getOwnedTaskList(true);
-                            else
+                            }
+                            else{
+                                var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                taskData.description, taskData.category, utcDate,
+                                $rootScope.friend_list[taskData.owner], null, data.data.type, owned);
+                                Storage.saveTask(newTask);
                                 $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+                            }    
                         });
                     });
-                }
+               // }
             }
         };
 
@@ -601,6 +618,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
             $scope.evidenceTypeName = $scope.evidenceType.name;
+            console.log("check partner: ", $scope.task.task_partner);
             if ($scope.task.task_partner != null) {
                 $scope.viewer = $scope.task.task_partner.friend_name;
             } else {
@@ -723,18 +741,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     title = 'Permission';
                     break;
                 case (5):
-                    text = 'Do you want to permit the deadline extension?';
+                    text = 'Do you want to view on the task?';
                     title = 'Permission';
                     break;
                 default:
                     break;
-            }
-            if (notif.notif_type == 3) {
-
-            }
-            if (notif.notif_type == 5) {
-                text = 'Do you want to view on the task?';
-                title = 'Invitation';
             }
             var myPopup = $ionicPopup.show({
                 template: text,
@@ -1051,6 +1062,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
 
         }, function(error) {
+            alert(JSON.stringify(error));
             $ionicLoading.show({
                 template: "Could not get location, please check your GPS setting and try again",
                 noBackdrop: true,
@@ -1256,7 +1268,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.title = "View Friend's Task";
             $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
             $scope.evidenceTypeName = $scope.evidenceType.name;
-            $scope.viewer = $rootScope.friend_list[$scope.task.task_partner].friend_name; // TODO: shouldn't this be the user themselves?
+            console.log("load partner", $scope.task);
+            $scope.viewer = $scope.task.task_partner.friend_name; // TODO: shouldn't this be the user themselves?
             $scope.checkCompletion($scope.task.task_id);
         });
 
