@@ -15,6 +15,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 console.log(status);
                 status.then(function(result) {
                     if(result.status == "unknown") {
+                        localStorage.clear();
                         $ionicLoading.show({ template: 'Please login', noBackdrop: true, duration: 1000 });
                         $state.go('login');
                     }
@@ -106,7 +107,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.popover.hide();
             //$state.go('logout', {});
             var confirmPopup = $ionicPopup.confirm({
-                title: 'Are You Sure to Quit?'
+                title: 'Are You Sure Want to Quit?'
             });
             confirmPopup.then(function(res) {
                 if (res) {
