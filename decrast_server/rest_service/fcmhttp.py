@@ -60,7 +60,8 @@ class FcmPusher():
 			serialized_task = TaskSerializer(notif.task)
 			m_data = {'type':notif.type, 'id':notif.id, 'notif_task':serialized_task.data}
 		elif notif.type == Notification.INVITE_ACCEPT:
-			m_data = {'type':notif.type, 'id':notif.id, 'viewer_name': notif.sender.username, 'task_id': notif.task.id}
+			m_data = {'type':notif.type, 'id':notif.id, 'viewer_name': notif.sender.username, \
+				'viewer_id': notif.sender.id, 'task_id': notif.task.id}
 		elif notif.type == Notification.EXPIRED:
 			m_data = {'type':notif.type, 'id':notif.id}
 		else:
