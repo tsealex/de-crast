@@ -95,7 +95,12 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 			return catList[id];
 		},
 		getCategoryName: function(id) {
+			if (catList[id] === undefined)
+				return 'None';
 			return catList[id].name;
+		},
+		existCategory: function(id) {
+			return !(catList[id] === undefined);
 		},
 		// user-related
 		clearUserList: function() {
@@ -158,6 +163,15 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 		},
 		existTask: function(id) {
 			return !(taskList[id] === undefined);
+		},
+		updateTaskViewer: function(id, viewer_name) {
+			if (taskList[id] !== undefined) {
+				if(taskList[id].task_partner !== undefined) {
+					taskList[id].task_partner.friend_name = viewer_name;
+				} else {
+					taskList[id].task_partner = {friend_name: viewer_name};
+				}
+			}
 		},
 		getOwnedTaskList: function(owned) {
 			var myTasks = [];

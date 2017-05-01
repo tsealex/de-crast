@@ -3,7 +3,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     .controller('HomeCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover,
         $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server,
-        TaskFact, Friends, Notif, Storage) {
+        TaskFact, Friends, Notif, Storage, Categories) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
@@ -220,26 +220,23 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
 
         $scope.populateCategories = function() {
-            $rootScope.category_list = {};
             Server.getCategory().then(function(data) {
                 if (data.data.length == 0) {
                     //$ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
                 }
                 for (i = 0; i < data.data.length; i++) {
-                    $rootScope.category_list[data.data[i].categoryId] = data.data[i];
+                    if (!Storage.existCategory(data.data[i].categoryId)) {
+                        var cat = (new Categories()).addCategory(data.data[i].categoryId, data.data[i].name);
+                        Storage.addCategory(cat);
+                    }
                 }
-                localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
+                $rootScope.category_list = Storage.getCategoryList();
+                //localStorage.setItem('category_list', angular.toJson($rootScope.category_list));
             });
         };
 
         $scope.categoryIdConverName = function(cid) {
-            var taskCategory = $rootScope.category_list[cid];
-            if (taskCategory == null) {
-                return "None";
-            } else {
-                return taskCategory.name;
-            }
-
+            return Storage.getCategoryName(cid);
         };
 
         $scope.fetchFBfriends = function() {
@@ -326,7 +323,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('AddTaskCtrl', function($rootScope, $stateParams, $scope, $ionicPlatform, $cordovaLocalNotification, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform) {
+    .controller('AddTaskCtrl', function($rootScope, $stateParams, $scope, $ionicPlatform, 
+        $cordovaLocalNotification, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, 
+        TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
         });
@@ -484,7 +483,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             mySelector = document.getElementById('category-select');
             myCategory = mySelector.options[mySelector.selectedIndex].value;
             // create temporarily task object
-            var newTask = $scope.myFactory.addTask(null, $scope.taskName, $scope.descrip, myCategory, $scope.time, null, null, parseInt(evidenceType));
+            var newTask = $scope.myFactory.addTask(null, $scope.taskName, $scope.descrip, myCategory, 
+                $scope.time, null, null, parseInt(evidenceType));
 
             localStorage.setItem('currentTask', angular.toJson(newTask));
             // we still need viewer to be posted, otherwise cannot link the task and the viewer            
@@ -534,15 +534,16 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             // myDate = new Date(myEpoch*1000.0); // convert from epoch, get UTC back
             // myDate.toLocaleString(); // get GMT
         });
+
         $scope.$on('$ionicView.afterEnter', function(event, viewData) {
             if ($scope.category != null) {
                 document.getElementById('category-select-edit').value = $scope.category;
             }
-
         });
 
 
         $scope.editTask = function() {
+            $scope.category = document.getElementById('category-select-edit').value;
             if ($scope.taskName == null) {
                 $ionicLoading.show({
                     template: 'Please Enter A Task Name',
@@ -694,8 +695,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
             myPopup.then(function(res) {});
         };
-
-        $rootScope.category_list = angular.fromJson(localStorage.getItem('category_list'));
     })
 
     .controller('FtasksCtrl', function($scope, Ftasks, $ionicLoading, $state, $rootScope) {
@@ -748,13 +747,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
              * type 2: view evidence
              */ 
             if(type == 2){
-                    $state.go('evidenceDetail', {
-                        notif: notif
-                    });
+                $state.go('evidenceDetail', {
+                    notif: notif
+                });
             }
             if(type == 3 || type == 5){
                 // you need to make a decision
                 $scope.decisionPopup(notif);
+            }
+            if(type == 6 || type == 8) {
+            	delete $rootScope.notif_list[notif.notif_notificationId];
+                Server.sendNotificationRead(notif.notif_notificationId);
             }
         }
         $scope.decisionPopup = function(notif) {
@@ -842,18 +845,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         });
 
     })
-    .controller('ManageCategoriesCtrl', function($scope, $state, $rootScope, Categories, Server, $ionicLoading) {
+    .controller('ManageCategoriesCtrl', function($scope, $state, $rootScope, Categories, Server, Storage, $ionicLoading) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             // populate the category list
-            $rootScope.category_list = {};
-
-            var categoryHold = angular.fromJson(localStorage.getItem('category_list'));
-            console.log(localStorage.getItem('category_list'));
-            if (categoryHold != null) {
-                $rootScope.category_list = categoryHold;
-            }
-
+            $rootScope.category_list = Storage.getCategoryList();
         })
 
         $scope.addCategory = function(name) {
@@ -866,9 +862,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         duration: 1000
                     });
                 } else {
-                    var newCategory = (new Categories()).addCategory(data.data.categoryId, name);
-                    $rootScope.category_list[data.data.categoryId] = newCategory;
-                    document.getElementById('categoryName-textarea').value = '';
+                    var newCategory = (new Categories()).addCategory(data.data.categoryId, data.data.name);
+                    Storage.addCategory(newCategory);
                 }
             });
         }
@@ -913,11 +908,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
                         if (window.cordova) {
                         // when run on device, test the platform and call FCM
-                
+
                         if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
                             FCMPlugin.getToken(
                                 function(token) {
                                     localStorage.setItem('fcmId', token);
+																		Server.updateFcmToken(token);
                                 },
                                 function(err) {
                                     alert('error retrieving FCM token: ' + err);
@@ -1328,7 +1324,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
         }
     })
-    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage) {
+    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage, $rootScope) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             $scope.notif = $stateParams.notif;
@@ -1420,7 +1416,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         
         $scope.finishView = function() {
-            Storage.removeNotif($scope.notif.notif_notificationId);
+            delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+            Server.sendNotificationRead($scope.notif.notif_notificationId);
             $ionicHistory.goBack();
         }
     })
