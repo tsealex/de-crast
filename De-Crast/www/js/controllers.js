@@ -11,7 +11,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 localStorage.clear();
                 $state.go('login', {});
             } else {
-                // TODO: check if the facebook token has expired, if so log the user out
+                var status = ngFB.getLoginStatus();
+                console.log(status);
+                status.then(function(result) {
+                    if(result.status == "unknown") {
+                        $ionicLoading.show({ template: 'Please login', noBackdrop: true, duration: 1000 });
+                        $state.go('login');
+                    }
+                });
             }
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();
