@@ -287,13 +287,30 @@ angular.module('decrast.services', ['ngOpenFB'])
 		}
 })
 
-.factory('NotificationHandler', function() {
+.factory('NotificationHandler', function(Storage, $state) {
 			return{
       	handleFromBackground: function(notification) {
+					/* Remove escape characters to make parsing simpler. */
 					console.log("Notification handler from background");
+					console.log(JSON.stringify(notification));
+
+					/* Handle invite request. */
+					if(notification.type == 5) {
+	          var remove_escs = notification.notif_task.replace('\"', '"');
+ 	         notification.notif_task = angular.fromJson(remove_escs);
+						$state.go('tab.notif');
+					}
+					else if(notification.type == 6) {
+						var viewer_id = notification.viewer_name;
+						var task_id = notification.task_id;
+						Storage.updateTaskViewer(task_id, viewer_id);
+					}
       	},
 				handleFromInApp: function(notification) {
 					console.log("Notification handler from in-app");
+					console.log(JSON.stringify(notification));
 				}
 			}
 });
+
+v

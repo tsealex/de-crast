@@ -359,6 +359,26 @@ angular.module('decrast.server', [])
                     return response;
                 });
             },
+            sendNotificationRead: function(notifId) {
+                return $http({
+                    method: 'POST',
+                    url: ApiEndpoint.url + 'user/notifications/respond/',
+                    headers: {
+                        'Authorization': 'JWT ' + accessToken
+                    },
+                    data: {
+                        "notification": [{
+                            id: notifId
+                        }]
+                    }
+                }).then(function(response) {
+                    console.log("sendNotificationRead", JSON.stringify(response));
+                    return response;
+                }, function(response) {
+                    console.log("sendNotificationRead", JSON.stringify(response));
+                    return response;
+                });
+            },
             decideOnInvite: function(notificationId, decision) {
                 return $http({
                     method: 'POST',

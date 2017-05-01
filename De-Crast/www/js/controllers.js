@@ -712,7 +712,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fakegoNotifDetail = function(currentNotif) {
             var notif = currentNotif;
             var type = notif.notif_type;
-            $scope.decisionPopup(notif);
+						if(type == 5) {
+            	$scope.decisionPopup(notif);
+						}
+						else if(type == 6 || type == 8) {
+            	delete $rootScope.notif_list[notif.notif_notificationId];
+							Server.sendNotificationRead(notif.notif_notificationId);
+						}
         }
         $scope.decisionPopup = function(notif) {
             var text = '';
@@ -877,11 +883,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
                         if (window.cordova) {
                         // when run on device, test the platform and call FCM
-                
+
                         if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
                             FCMPlugin.getToken(
                                 function(token) {
                                     localStorage.setItem('fcmId', token);
+																		Server.updateFcmToken(token);
                                 },
                                 function(err) {
                                     alert('error retrieving FCM token: ' + err);
