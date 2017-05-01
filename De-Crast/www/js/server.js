@@ -447,6 +447,21 @@ angular.module('decrast.server', [])
                     console.log("getEvidence", JSON.stringify(response));
                     return response;
                 });
+            },
+            getInviteTask: function(notificationId) {
+                return $http({
+                    method: 'GET',
+                    url: ApiEndpoint.url + 'user/notifications/' + notificationId + '/task/',
+                    headers: {
+                        'Authorization': 'JWT ' + accessToken
+                    }
+                }).then(function(response) {
+                    console.log("getInviteTask", JSON.stringify(response));
+                    return response;
+                }, function(response) {
+                    console.log("getInviteTask", JSON.stringify(response));
+                    return response;
+                });
             }
         }
     });

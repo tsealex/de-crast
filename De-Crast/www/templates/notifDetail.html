@@ -7,50 +7,53 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <textarea disabled type="text" name="taskName" id="taskName-textarea" style="background: transparent; resize: none;">{{task.task_name}}</textarea>
+                    <textarea disabled type="text" name="taskName" id="taskName-textarea" style="background: transparent; resize: none;">{{task.name}}</textarea>
                 </label>
             </div>
             <!--Task description-->
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <textarea disabled type="text" name="descrip" id="descrip-textarea" style="background: transparent; resize: none;">{{task.task_descrip}}</textarea>
+                    <textarea disabled type="text" name="descrip" id="descrip-textarea" style="background: transparent; resize: none;">{{task.description}}</textarea>
                 </label>
             </div>
         </div>
 
-        <!--Task Category. A text box for now but this should change.-->
         <div class="bottom">
-            <div style="float: left; width: 50%;">
-                <label class="item item-input">
-                    <textarea disabled type="text" name="category" id="category-textarea" style="background: transparent; resize: none;">{{category_list[task.task_category].name}}</textarea>
-                </label>
+            <div style="float: left; width: 50%;" >
+            <label class="item item-input">
+                <textarea disabled type="text" name="owner" id="owner-textarea" placeholder="Owner" ng-click="populateViewers()" style="background: transparent; resize: none;">{{friend_list[task.owner].friend_name}}</textarea>
+            </label>
             </div>
         </div>
+        
+        <!--Task Category wont be displayed since its from friends-->
+        <!--div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="category" id="category-textarea" style="background: transparent; resize: none;">{{category_list[task.category].name}}</textarea>
+                </label>
+            </div>
+        </div-->
 
         <!--Due Time: I don't like how this is displaying so we should fix this-->
         <div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
-                    <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
+                    <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.deadline | date: 'medium' : 'UTC'}}</textarea>
                 </label>
             </div>
         </div>
 
-         <div class="bottom">
+        <!--Task Evidence Type wont be displayed for now to keep the interface looks normal-->
+        <!--div class="bottom">
             <div style="float: left; width: 50%;">
                 <label class="item item-input">
                     <input disabled type="text" name="evidenceType" id="evidenceType-textarea" style="background: transparent; resize: none;" ng-model="evidenceTypeName"></input>
                 </label>
             </div>
-        </div>
+        </div-->
         
-        <div class="bottom">
-            <div style="float: left; width: 50%;" >
-            <label class="item item-input">
-                <input disabled type="text" name="viewer" id="viewer-textarea" ng-model="$parent.viewer" placeholder="Viewer" ng-click="populateViewers()" style="background: transparent;">
-            </label>
-            </div>
-        </div>
+        
 
         <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
         TODO file can be used by add, view, and edit -->
