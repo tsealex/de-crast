@@ -26,36 +26,42 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
                 // org.apache.cordova.statusbar required
                 StatusBar.styleDefault();
             }
-
-						/* This callback is triggered when a Google FCM push notification for our app
-		 				 * is received by the device. This code lives in app.js to prevent any weird
+            if (window.cordova) {
+                // when run on device, test the platform and call FCM
+                if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
+                    /* This callback is triggered when a Google FCM push notification for our app
+                     * is received by the device. This code lives in app.js to prevent any weird
      				 * state/loading issues from occuring.
-		 				 *
-			 			 * When this occurs, we launch our notification detail screen with the given
-						 * notification parameter, which is parsed accordingly there. */
-			  		 FCMPlugin.onNotification(function(data){
+                     *
+                     * When this occurs, we launch our notification detail screen with the given
+                     * notification parameter, which is parsed accordingly there. */
+			  		FCMPlugin.onNotification(function(data){
 				     	 if(data.wasTapped){
 									NotificationHandler.handleFromBackground(data)
 				     	 }else{
 									NotificationHandler.handleFromInApp(data);
 				  	    }
-					   });
+					});
 
 
-         		/* This callback is triggered when a Cordova local notification is triggered
-		         * (aka a task expires). This code lives in app.js to prevent any weird
-             * state/loading issues from occuring.
-         		 *
-        		 * When this occurs, we need to tell our server that the task expired. */
-             cordova.plugins.notification.local.on("trigger", function(notification){
+         	    	/* This callback is triggered when a Cordova local notification is triggered
+		             * (aka a task expires). This code lives in app.js to prevent any weird
+                     * state/loading issues from occuring.
+         	    	 *
+        		     * When this occurs, we need to tell our server that the task expired. */
+                    cordova.plugins.notification.local.on("trigger", function(notification){
         				/* Remove any escaped characters from our notification JSON. */
-                var remove_escs = notification.data.replace('\"', '"');
-                notification.data = angular.fromJson(remove_escs);
+                        var remove_escs = notification.data.replace('\"', '"');
+                        notification.data = angular.fromJson(remove_escs);
 
         				/* Notify our server that this task has expired. */
-          	      Server.expireTask(notification.data.taskId);
+          	            Server.expireTask(notification.data.taskId);
           				FacebookPoster.makePost();
-             }, false);
+                    }, false);
+                }
+            } else {
+                console.log("Run on browser, FCM Plugin is disabled");
+            }
         });
     })
     .constant('ApiEndpoint', {
