@@ -175,7 +175,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         var taskData = data.data[0];
                         Server.getEvidenceType(taskData.taskId).then(function(data) {
                             var utcDate = $scope.convertToUTC(taskData.deadline);
-                            console.log("load partner: ", taskData);
                             /*var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
                                 taskData.description, taskData.category, utcDate,
                                 $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
@@ -187,20 +186,33 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                              * when view the friend's task, the owner(friend who own the task) is displayed
                              * although they share the same field 'partner'
                              * */
-                            if (owned){
+                            if($rootScope.friend_list == null){
+                                // add task without viewer
                                 var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
                                 taskData.description, taskData.category, utcDate,
-                                $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
+                                null, null, data.data.type, owned);
                                 Storage.saveTask(newTask);
-                                $rootScope.task_list = Storage.getOwnedTaskList(true);
+                                if (owned){
+                                    $rootScope.task_list = Storage.getOwnedTaskList(true);
+                                }else{
+                                    $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+                                }
+                            }else{ // store with friends
+                                if (owned){
+                                    var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                    taskData.description, taskData.category, utcDate,
+                                    $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
+                                    Storage.saveTask(newTask);
+                                    $rootScope.task_list = Storage.getOwnedTaskList(true);
+                                }
+                                else{
+                                    var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                    taskData.description, taskData.category, utcDate,
+                                    $rootScope.friend_list[taskData.owner], null, data.data.type, owned);
+                                    Storage.saveTask(newTask);
+                                    $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+                                }    
                             }
-                            else{
-                                var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                taskData.description, taskData.category, utcDate,
-                                $rootScope.friend_list[taskData.owner], null, data.data.type, owned);
-                                Storage.saveTask(newTask);
-                                $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
-                            }    
                         });
                     });
                // }
@@ -719,6 +731,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
     .controller('NotifCtrl', function($scope, $stateParams, $state, $ionicPopup, $ionicLoading, Server, $rootScope) {
+        // console.log($rootScope.notif_list);
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             if ($stateParams.notification != null) {
                 console.log('Launching notif list with: ' + JSON.stringify($stateParams.notification));
@@ -730,7 +743,19 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fakegoNotifDetail = function(currentNotif) {
             var notif = currentNotif;
             var type = notif.notif_type;
-            $scope.decisionPopup(notif);
+            /* type 3: ddl extension
+             * type 5: invite
+             * type 2: view evidence
+             */ 
+            if(type == 2){
+                    $state.go('evidenceDetail', {
+                        notif: notif
+                    });
+            }
+            if(type == 3 || type == 5){
+                // you need to make a decision
+                $scope.decisionPopup(notif);
+            }
         }
         $scope.decisionPopup = function(notif) {
             var text = '';
@@ -1021,7 +1046,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
     .controller('mapCtrl', function($state, $stateParams, $ionicViewSwitcher, $scope, $ionicHistory,
-        $cordovaGeolocation, $ionicLoading, Server, Storage) {
+        $cordovaGeolocation, $ionicLoading, Server, Storage, $ionicPlatform) {
 
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
@@ -1029,67 +1054,82 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         $scope.task = $stateParams.task;
         $scope.taskId = $scope.task.task_id;
-
-        var options = {
-            timeout: 10000,
-            enableHighAccuracy: true
-        };
         var latLng;
-
-        $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
-
-            latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-            var pos = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-            };
-
-            var mapOptions = {
-                center: latLng,
-                zoom: 15,
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
-
-            $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
-
-            google.maps.event.addListenerOnce($scope.map, 'idle', function() {
-                var marker = new google.maps.Marker({
-                    map: $scope.map,
-                    animation: google.maps.Animation.DROP,
-                    position: latLng
-                });
-                $scope.getAddressFromLatLang(latLng, $scope.map, marker);
-            });
-
-        }, function(error) {
-            alert(JSON.stringify(error));
+        $ionicPlatform.ready(function(){
+            // add for geolocation not timeout
             $ionicLoading.show({
-                template: "Could not get location, please check your GPS setting and try again",
-                noBackdrop: true,
-                duration: 1000
+                template: '<ion-spinner icon="bubbles"></ion-spinner><br/>Acquiring location'
             });
-        });
+            
+            var options = {timeout: 10000, enableHighAccuracy: true};
+            
+            if (navigator.geolocation) {
 
-        $scope.getAddressFromLatLang = function(latLng, map, marker) {
-            var geocoder = new google.maps.Geocoder();
+            $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
+                
+                latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 
-            geocoder.geocode({
-                'latLng': latLng
-            }, function(results, status) {
-                //console.log(JSON.stringify(results));
-                if (status == google.maps.GeocoderStatus.OK) {
-                    if (results[1]) {
-                        var infowindow = new google.maps.InfoWindow();
-                        infowindow.setOptions({
-                            content: '<div>' + results[1].formatted_address + '</div>',
-                        });
-                        infowindow.open(map, marker);
+                var pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+                var mapOptions = {
+                    center: latLng,
+                    zoom: 15,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                
+                $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+                google.maps.event.addListenerOnce($scope.map, 'idle', function() {
+                    var marker = new google.maps.Marker({
+                        map: $scope.map,
+                        animation: google.maps.Animation.DROP,
+                        position: latLng
+                    });
+                    
+                    $scope.getAddressFromLatLang(latLng, $scope.map, marker);
+                });
+                $ionicLoading.hide();
+            }, function(error) {
+                $ionicLoading.hide();
+                console.log(JSON.stringify(error));
+                $ionicLoading.show({
+                    template: "Could not get location, please check your GPS setting and try again",
+                    noBackdrop: true,
+                    duration: 1000
+                });
+            });
+
+            $scope.getAddressFromLatLang = function(latLng, map, marker) {
+                var geocoder = new google.maps.Geocoder();
+
+                geocoder.geocode({
+                    'latLng': latLng
+                }, function(results, status) {
+                    //console.log(JSON.stringify(results));
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        if (results[1]) {
+                            var infowindow = new google.maps.InfoWindow();
+                            infowindow.setOptions({
+                                content: '<div>' + results[1].formatted_address + '</div>',
+                            });
+                            infowindow.open(map, marker);
+                        }
+                    } else {
+                        alert("error", JSON.stringify(status));
                     }
-                } else {
-                    alert("error", JSON.stringify(status));
-                }
-            })
-        };
+                })
+            };
+
+            } else {
+                // Browser doesn't support Geolocation
+                console.log("navigator.geolocation false");
+            }//todo 
+        });
+        
+        
 
         $scope.confirmGPS = function() {
             var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
@@ -1099,6 +1139,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 return function(data) {
                     if (data.status == 200) {
                         Storage.removeTask(id);
+                        $ionicLoading.show({
+                            template: 'Task Completed!',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
                     } else {
                         $ionicLoading.show({
                             template: 'submission failed',
@@ -1268,7 +1313,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.title = "View Friend's Task";
             $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
             $scope.evidenceTypeName = $scope.evidenceType.name;
-            console.log("load partner", $scope.task);
             $scope.viewer = $scope.task.task_partner.friend_name; // TODO: shouldn't this be the user themselves?
             $scope.checkCompletion($scope.task.task_id);
         });
@@ -1283,8 +1327,102 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 }
             });
         }
+    })
+    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage) {
+        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
+            viewData.enableBack = true;
+            $scope.notif = $stateParams.notif;
+            // if the file path end in jpg, set title to Photo, otherwise, set to GPS
+            $scope.evidence_type = ($scope.notif.notif_file.substr($scope.notif.notif_file.lastIndexOf('.')+1) 
+                                 == 'jpg') ? 'Photo' : 'GPS';
+            console.log($scope.notif.notif_file, $scope.evidence_type);
+            Server.viewEvidence($scope.notif.notif_notificationId).then(function(data){
+                console.log(data);
+                if($scope.evidence_type == 'GPS'){
+                    $scope.displayMap(data.data);
+                }
+            });
+        });
 
+        $scope.displayMap = function(data){
+            var coor = data.substr(1,data.length-2);
+            $scope.coor_lat = coor.substr(0, coor.lastIndexOf(','));
+            $scope.coor_lng = coor.substr(coor.lastIndexOf(',')+1);
+            console.log($scope.coor_lat, $scope.coor_lng);
 
+            var latLng;
+            $ionicPlatform.ready(function(){
+                // add for geolocation not timeout
+                $ionicLoading.show({
+                    template: '<ion-spinner icon="bubbles"></ion-spinner><br/>Acquiring location'
+                });
+                
+                var options = {timeout: 10000, enableHighAccuracy: true};
+                
+                $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
+                    
+                    latLng = new google.maps.LatLng($scope.coor_lat, $scope.coor_lng);
+
+                    var pos = {
+                        lat: $scope.coor_lat,
+                        lng: $scope.coor_lng
+                    };
+
+                    var mapOptions = {
+                        center: latLng,
+                        zoom: 15,
+                        mapTypeId: google.maps.MapTypeId.ROADMAP
+                    };
+                    
+                    $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+                    google.maps.event.addListenerOnce($scope.map, 'idle', function() {
+                        var marker = new google.maps.Marker({
+                            map: $scope.map,
+                            animation: google.maps.Animation.DROP,
+                            position: latLng
+                        });
+                        
+                        $scope.getAddressFromLatLang(latLng, $scope.map, marker);
+                    });
+                    $ionicLoading.hide();
+                }, function(error) {
+                    $ionicLoading.hide();
+                    console.log(JSON.stringify(error));
+                    $ionicLoading.show({
+                        template: "Could not get location, please check your GPS setting and try again",
+                        noBackdrop: true,
+                        duration: 1000
+                    });
+                });
+
+                $scope.getAddressFromLatLang = function(latLng, map, marker) {
+                    var geocoder = new google.maps.Geocoder();
+
+                    geocoder.geocode({
+                        'latLng': latLng
+                    }, function(results, status) {
+                        //console.log(JSON.stringify(results));
+                        if (status == google.maps.GeocoderStatus.OK) {
+                            if (results[1]) {
+                                var infowindow = new google.maps.InfoWindow();
+                                infowindow.setOptions({
+                                    content: '<div>' + results[1].formatted_address + '</div>',
+                                });
+                                infowindow.open(map, marker);
+                            }
+                        } else {
+                            alert("error", JSON.stringify(status));
+                        }
+                    })
+                };
+            });//todo 
+        }
+        
+        $scope.finishView = function() {
+            Storage.removeNotif($scope.notif.notif_notificationId);
+            $ionicHistory.goBack();
+        }
     })
 
 /* localStorage List:
