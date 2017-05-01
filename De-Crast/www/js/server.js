@@ -264,7 +264,7 @@ angular.module('decrast.server', [])
                     console.log("viewEvidence", JSON.stringify(response));
                     return response;
                 });
-            }
+            },
             //I'm sure this isn't right but it's filler for now
             submitPhoto: function(taskId, file_uri) {
                 var form = new FormData();
