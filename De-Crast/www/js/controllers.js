@@ -227,7 +227,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fetchFBfriends = function() {
             // FB get friends who is also using the app
             ngFB.api({
-                path: '/me/friends',
+                path: '/' + localStorage.getItem('userFBId') + '/friends',
                 params: {}
             }).then(
                 function(list) {
@@ -750,7 +750,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             if (type == 3 || type == 5) {
                 // you need to make a decision
-                $scope.decisionPopup(notif);
+                $state.go('notifDetail',{notif: notif});
+                // $scope.decisionPopup(notif);
             }
             if (type == 6 || type == 8) {
                 Storage.removeNotif(notif.notif_notificationId);
@@ -934,6 +935,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             function(user) {
                                 localStorage.setItem('user', user.name);
                                 $rootScope.userFBId = user.id;
+                                localStorage.setItem('userFBId', user.id);
                                 console.log(JSON.stringify(user));
                                 var userId; // user's De-Crast Id
                                 var accessToken;
@@ -1252,7 +1254,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.goBack();
         }
     })
-    .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, $stateParams, Server, $rootScope) {
+    .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, $stateParams, Server, $rootScope, TaskFact, Storage) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
@@ -1262,30 +1264,27 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
             if ($stateParams.notif != null) {
                 $scope.notif = $stateParams.notif;
-                //              console.log("NOTIF: " + JSON.stringify($scope.notif.notif_task));
+                console.log("NOTIF: " + JSON.stringify($scope.notif));
 
-                /* Handle opening an INVITE notification. */
-                if ($scope.notif.type == 5) {
-                    var remove_escs = $scope.notif.notif_task.replace('\"', '"');
-                    $scope.notif.task = angular.fromJson(remove_escs);
-
-                    console.log("NOTIF TASK: " + JSON.stringify($scope.notif.task));
+                if ($scope.notif.notif_type == 5) { // invite
+                    // get task detail to help determine
+                    Server.getInviteTask($scope.notif.notif_notificationId).then(function(data){
+                        if(data.status == 200){ // success
+                            $scope.task = data.data;
+                            $scope.task.deadline = $scope.convertToUTC($scope.task.deadline);
+                        }else{
+                            $ionicLoading.show({
+                                template: data.errorMsg,
+                                noBackdrop: true,
+                                duration: 1000
+                            });
+                        }
+                    });
                 }
             }
-            /*
-                        Server.getTask($scope.notif.notif_task).then(function(data){
-                            if(data.status == 200){
-                                $scope.task = data.task;
-                                                    console.log("TASK: " + JSON.stringify($scope.task));
-                                console.log("connected to server");
-                            }else{
-                                console.log("fail to connect to the server");
-                            }
-                        }); */
         });
 
         $scope.onDecision = function(decisionInt) {
-            console.log("You make a decision");
             var decision;
             if (decisionInt == 0) {
                 decision = false;
@@ -1294,18 +1293,53 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             switch ($scope.notif.notif_type) {
                 case 5: // viewer invite
-                    alert("It's a viewer invite: " + $scope.notif.notif_notificationId);
-                    Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data) {
-                        if (data.status == 200) {
-                            // succeed
-                            delete $rootScope.notif_list[$scope.notif.notif_notificationId];
-                            $state.go('tab.notif');
+                    console.log("see the task", JSON.stringify($scope.task));
+                    Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data) { // send decision
+                        if (data.status == 200) { // succeed
+                            if(!decision){ // decline the invite
+                                delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+                                $ionicHistory.goBack();
+                            }else{ // accept
+                                Server.getEvidenceType($scope.task.taskId).then(function(evidence) { // get evidence type for display
+                                    if (data.status == 200) {
+                                        // add to localstorage, so that task is shown in Ftask
+                                        var newTask = (new TaskFact()).addTask($scope.task.taskId, $scope.task.name,
+                                        $scope.task.description, null, $scope.task.deadline,
+                                        $rootScope.friend_list[$scope.task.owner], null, evidence.data.type, false);// todo1
+                                        Storage.saveTask(newTask);
+                                        $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+                                        // delete the related notif
+                                        delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+                                        $ionicHistory.goBack();
+                                    }else{ // if Server.getEvidenceType false,the notif will not be deleted, any other step to take?
+                                        $ionicLoading.show({
+                                            template: data.errorMsg,
+                                            noBackdrop: true,
+                                            duration: 1000
+                                        });
+                                    }
+                                });
+                            }
+                        }else{ // if Server.decideOnInvite false,the notif will not be deleted, any other step to take?
+                            $ionicLoading.show({
+                                template: data.errorMsg,
+                                noBackdrop: true,
+                                duration: 1000
+                            });
                         }
                     });
+                    
                     break;
                 default:
                     console.log("notification type falls into default case");
+                    break;
             }
+        }
+        $scope.convertToUTC = function(time) {
+            var ddl = new Date(time * 1000);
+            var timezone = new Date().getTimezoneOffset();
+            var date = (ddl.getTime() - timezone * 60000) / 1000.0;
+            return new Date(date * 1000);
         }
     })
     .controller('viewFTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, 
@@ -1316,7 +1350,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $scope.title = "View Friend's Task";
             $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
             $scope.evidenceTypeName = $scope.evidenceType.name;
-            $scope.viewer = $scope.task.task_partner.friend_name;
+            $scope.owner = $scope.task.task_partner.friend_name; // the owner(friend) of this friend's task (not the user)
             $scope.checkCompletion($scope.task.task_id);
 
         });

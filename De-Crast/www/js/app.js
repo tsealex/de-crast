@@ -225,6 +225,7 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
             })
             .state('viewFTask', {
                 url: '/viewFTask',
+                cache: false,
                 params: {
                     task: 'Tasks'
                 },
