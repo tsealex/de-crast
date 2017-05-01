@@ -60,7 +60,7 @@ class FcmPusher():
 			serialized_task = TaskSerializer(notif.task)
 			m_data = {'type':notif.type, 'id':notif.id, 'notif_task':serialized_task.data}
 		elif notif.type == Notification.INVITE_ACCEPT:
-			m_data = {'type':notif.type, 'id':notif.id}
+			m_data = {'type':notif.type, 'id':notif.id, 'viewer_name': notif.sender.username, 'task_id': notif.task.id}
 		elif notif.type == Notification.EXPIRED:
 			m_data = {'type':notif.type, 'id':notif.id}
 		else:
@@ -71,6 +71,7 @@ class FcmPusher():
 		resp = push.notify_single_device(registration_id=user_id, message_body=m_body,
 		message_title=m_title, data_message=m_data, sound='Default', click_action='FCM_PLUGIN_ACTIVITY')
 
+#		print(json.dumps(resp))
 		# If our response contains a 'registration_id' key, this means that we need to update
 		# the user's token.
 		# TODO: UNTESTED

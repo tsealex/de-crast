@@ -160,9 +160,22 @@ def respond_viewer_invite(user, notification, decision):
 		task.save()
 
 		msg = DEFAULT_INVITE_ACCEPT_MSG.format(viewer.username, task.name);
+		data = {
+			'type': Notification.INVITE_ACCEPT,
+			'sender': viewer.id,
+			'recipient': task.owner.id,
+			'task': task.id,
+			'text': msg,
+		}
+		nf = NotificationFactory(data=data)
+		validate(nf)
+		nf.save()
+
+		# The last-added notification is the one we just added.
+		notif_obj = nf.instance
 		# Send out the notification.
-		FcmPusher.sendNotification(task.owner.fcm_token, viewer.username, msg,
-		notification)
+		FcmPusher.sendNotification(task.owner.fcm_token, viewer.username, msg, notif_obj)
+
 	else:
 		# TODO: send a system message to the task owner
 		pass
