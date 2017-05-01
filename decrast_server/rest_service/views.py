@@ -197,7 +197,7 @@ class OwnedTaskViewSet(viewsets.ViewSet):
 	List all user's tasks: /user/tasks/ GET
 	'''
 	def list(self, request):
-		quesyset = request.user.owned_tasks.all()
+		quesyset = request.user.owned_tasks.filter(ended=False)
 		serializer = TaskIdSerializer(quesyset, many=True)
 		return Response(serializer.data)
 
@@ -249,22 +249,24 @@ class TaskViewSet(viewsets.ViewSet):
 		ids = extract_ids(query)
 		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
 		data = extract_data(request.data, None, ['name', 'description', 'category', 'expired', 
-'fb_token', 'completed'])
+			'fb_token', 'completed'])
 		data['owner'] = request.user.id
 		# retrieve resource
 		task = request.user.owned_tasks.filter(id=ids[0], ended=False)
 		if not task.exists(): raise APIErrors.DoesNotExist('task id')
 		else: task = task.get()
 
-
+		# TODO: we may not want to allow the user to edit 'completed' directly in the final version
 		if 'completed' in data:
 			print("User completed task: " + task.name)
-			task_completed_notification(request.user, task)
+			task_completed_notification(task.owner, task)
+			task.ended = True
 
 		# If the update included an expired key, that means that this task is overdue,
 		# and we need run the logic associated with it.
 		if 'expired' in data:
 			task_expired_notification(task.owner, task)
+			task.ended = True
 
 		# process input
 		factory = TaskFactory(task, data=data, partial=True)
@@ -408,6 +410,23 @@ class NotificationViewSet(viewsets.ViewSet):
 		response = HttpResponse(act_file[0], content_type=act_file[1])
 		response['Content-Disposition'] = 'attachment; filename={}'.format(act_file[2])
 		return response
+
+	'''
+	Get the associated task: /user/notifications/<id>/task/ GET
+	TODO: untested
+	'''
+	def task(self, request, query):
+		# parse input
+		ids = extract_ids(query)
+		if len(ids) != 1: raise APIErrors.BadURLQuery('multiple ids')
+		# retrieve resource
+		recv_no = request.user.recv_no.filter(id=ids[0], viewed=False)
+		if not recv_no.exists(): raise APIErrors.DoesNotExist('task id')
+		recv_no = recv_no.get()
+		# load task
+		task = recv_no.task
+		serializer = TaskSerializer(task)
+		return Response(serializer.data)
 
 '''
 
