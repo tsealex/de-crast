@@ -69,9 +69,14 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 			return notifList;
 		},
 		removeNotif: function(id) {
-			delete notifList[id];
-			localStorage.setItem('notif_list', angular.toJson(notifList));
-			console.log('local cached notification deleted: notification ' + id);
+			if (!(notifList[id] === undefined)) {
+				delete notifList[id];
+				localStorage.setItem('notif_list', angular.toJson(notifList));
+				console.log('local cached notification deleted: notification ' + id);
+			}
+		},
+		existNotif: function(id) {
+			return !(notifList[id] === undefined);
 		},
 		// category-related
 		clearCategoryList: function() {
@@ -106,6 +111,9 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 		clearUserList: function() {
 			userList = {};
 			localStorage.setItem('friend_list', angular.toJson(userList));
+		},
+		getUserListSize: function() {
+			return Object.keys(userList).length;
 		},
 		getUserList: function() {
 			return userList;
@@ -164,14 +172,12 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 		existTask: function(id) {
 			return !(taskList[id] === undefined);
 		},
-		updateTaskViewer: function(id, viewer_name) {
-			if (taskList[id] !== undefined) {
-				if(taskList[id].task_partner !== undefined) {
-					taskList[id].task_partner.friend_name = viewer_name;
-				} else {
-					taskList[id].task_partner = {friend_name: viewer_name};
-				}
-			}
+		updateTaskViewer: function(id, viewer_id) {
+			// this will not be undefined, o.w. the user wouldn't be able to 
+			// sent the viewer an invite in the first place
+			task_partner = userList[viewer_id]; 
+			taskList[id].task_partner = task_partner;
+			localStorage.setItem('task_list', angular.toJson(taskList));
 		},
 		getOwnedTaskList: function(owned) {
 			var myTasks = [];
