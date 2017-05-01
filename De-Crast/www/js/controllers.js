@@ -1366,7 +1366,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
         }
     })
-    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, Server, $cordovaFileTransfer,
+    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, Server,
         $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage, $rootScope) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
@@ -1384,7 +1384,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 if ($scope.evidence_type == 'GPS') {
                     $scope.displayMap(data.data);
                 } else {
-                    // TODO: handle photo
                      $scope.imgURI = "data:image/jpeg;base64," + data.data;
                 }
             });
