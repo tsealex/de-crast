@@ -250,18 +250,18 @@ angular.module('decrast.server', [])
             /*
             http://alext.se:8000/user/notifications/3/file/ GET
             */
-            viewEvidence: function(notifId){
+            viewEvidence: function(notifId) {
                 return $http({
                     method: 'GET',
                     url: ApiEndpoint.url + 'user/notifications/' + notifId + '/file/',
                     headers: {
                         'Authorization': 'JWT ' + accessToken
-                    }
+                    },
                 }).then(function(response) {
-                    console.log("getGPS", JSON.stringify(response));
+                    console.log("viewEvidence", JSON.stringify(response.data));
                     return response;
                 }, function(response) {
-                    console.log("getGPS", JSON.stringify(response));
+                    console.log("viewEvidence", JSON.stringify(response));
                     return response;
                 });
             },

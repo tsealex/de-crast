@@ -495,8 +495,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact,
-        $ionicLoading, Server, $ionicPopup, EvidenceTypes, Storage) {
+    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, 
+        $state, TaskFact, $ionicLoading, Server, $ionicPopup, EvidenceTypes, Storage) {
         var taskId, tmpTask;
         var myDate;
         var myEpoch;
@@ -594,7 +594,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             console.log('click');
             var editDeadlinePopup = $ionicPopup.confirm({
                 title: 'Edit Deadline',
-                template: 'You need viewer\'s permission to edit the deadline and a notification of deadline edit will be sent automatically. Do you want to continue?'
+                template: 'You need viewer\'s permission to edit the deadline ' + 
+                'and a notification of deadline edit will be sent automatically.' +
+                'Do you want to continue?'
             });
 
             editDeadlinePopup.then(function(res) {
@@ -744,6 +746,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 $state.go('evidenceDetail', {
                     notif: notif
                 });
+                // TODO: Storage.removeNotif + sendNotificationReead afterwards
             }
             if (type == 3 || type == 5) {
                 // you need to make a decision
@@ -1329,19 +1332,26 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
         }
     })
-    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, 
+    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, Server, $cordovaFileTransfer,
         $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage, $rootScope) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             $scope.notif = $stateParams.notif;
+            /////////////////////////////////////////////////
+            /////
+
+            //////
             // if the file path end in jpg, set title to Photo, otherwise, set to GPS
-            $scope.evidence_type = ($scope.notif.notif_file.substr($scope.notif.notif_file.lastIndexOf('.') + 1) ==
-                'jpg') ? 'Photo' : 'GPS';
+            $scope.evidence_type = ($scope.notif.notif_file.substr(
+                $scope.notif.notif_file.lastIndexOf('.') + 1) == 'jpg') ? 'Photo' : 'GPS';
             console.log($scope.notif.notif_file, $scope.evidence_type);
             Server.viewEvidence($scope.notif.notif_notificationId).then(function(data) {
-                console.log(data);
+                //console.log(data);
                 if ($scope.evidence_type == 'GPS') {
                     $scope.displayMap(data.data);
+                } else {
+                    // TODO: handle photo
+                     $scope.imgURI = "data:image/jpeg;base64," + data.data;
                 }
             });
         });

@@ -303,6 +303,9 @@ angular.module('decrast.services', ['ngOpenFB'])
                     var viewer_id = notification.viewer_id;
                     var task_id = notification.task_id;
                     Storage.updateTaskViewer(task_id, viewer_id);
+                } else if (notification.type == 2) {
+                	// TODO: tell the viewer a file has been uploaded as evidence
+                	$state.go('tab.notif');
                 }
             },
             handleFromInApp: function(notification) {
@@ -311,3 +314,14 @@ angular.module('decrast.services', ['ngOpenFB'])
             }
         }
     });
+
+    /**
+	REMINDER = 0 # from viewer to task owner
+	REGULAR = 1 # from system to task owner
+	EVIDENCE = 2 # from system to viewer
+	DEADLINE = 3 # from user to viewer
+	INVITE = 5 # from user to user
+	INVITE_ACCEPT = 6 # viewer accepted task invite
+	EXPIRED = 7
+	COMPLETED = 8
+    */
