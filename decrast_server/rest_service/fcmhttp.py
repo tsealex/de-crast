@@ -65,7 +65,7 @@ class FcmPusher():
 		elif notif.type == Notification.EXPIRED:
 			m_data = {'type':notif.type, 'id':notif.id}
 		else:
-			m_data = {'type': notif.type}
+			m_data = {'type':notif.type, 'id':notif.id}
 
 		# Create an instance of the FCM notificaiton class, and send out a single notification.
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)

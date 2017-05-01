@@ -5,6 +5,7 @@ from .models import *
 import re
 import mimetypes
 import random
+import base64
 
 from django.db import models
 from django import forms
@@ -96,6 +97,7 @@ def get_actual_file(file):
 		content_type = mimetypes.guess_type(file.name)
 		file = open(file.name, 'rb')
 		filename = file.name.split('/')[-1]
+		file = base64.b64encode(file.read())
 		return (file, content_type, filename)
 
 '''
