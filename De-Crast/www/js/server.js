@@ -247,6 +247,24 @@ angular.module('decrast.server', [])
                     return response;
                 });
             },
+            /*
+            http://alext.se:8000/user/notifications/3/file/ GET
+            */
+            viewEvidence: function(notifId){
+                return $http({
+                    method: 'GET',
+                    url: ApiEndpoint.url + 'user/notifications/' + notifId + '/file/',
+                    headers: {
+                        'Authorization': 'JWT ' + accessToken
+                    }
+                }).then(function(response) {
+                    console.log("getGPS", JSON.stringify(response));
+                    return response;
+                }, function(response) {
+                    console.log("getGPS", JSON.stringify(response));
+                    return response;
+                });
+            },
             //I'm sure this isn't right but it's filler for now
             submitPhoto: function(taskId, file_uri) {
                 var form = new FormData();
@@ -356,6 +374,26 @@ angular.module('decrast.server', [])
                     return response;
                 }, function(response) {
                     console.log("sendNotificationThree", JSON.stringify(response));
+                    return response;
+                });
+            },
+            sendNotificationRead: function(notifId) {
+                return $http({
+                    method: 'POST',
+                    url: ApiEndpoint.url + 'user/notifications/respond/',
+                    headers: {
+                        'Authorization': 'JWT ' + accessToken
+                    },
+                    data: {
+                        "notification": [{
+                            id: notifId
+                        }]
+                    }
+                }).then(function(response) {
+                    console.log("sendNotificationRead", JSON.stringify(response));
+                    return response;
+                }, function(response) {
+                    console.log("sendNotificationRead", JSON.stringify(response));
                     return response;
                 });
             },

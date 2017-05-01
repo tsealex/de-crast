@@ -2,6 +2,8 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <!-- add below line for goelocation work on android-->
+    <!--meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; style-src  'self' 'unsafe-inline' *"-->
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
     <title></title>
 
@@ -45,6 +47,7 @@
 
     <!-- google map api -->
     <script src="http://maps.google.com/maps/api/js?key=AIzaSyCrFOx0fsZ_Stj1hBkNBm8PAMc9RJbeU24&libraries=places"></script>
+    <!--script src="http://maps.google.com/maps/api/js?key=AIzaSyDZgD4_TXzmJfkVVTerdbdezfs_rMhH1a8&libraries=places"></script-->
   </head>
   <body ng-app="decrast">
     <!--

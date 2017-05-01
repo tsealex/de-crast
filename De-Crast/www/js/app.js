@@ -230,6 +230,15 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
                 },
                 templateUrl: 'templates/viewFTask.html',
                 controller: 'viewFTaskCtrl'
+            })
+            .state('evidenceDetail', {
+                url: '/evidenceDetail',
+                cache: false,
+                params: {
+                    notif: 'Notifications'
+                },
+                templateUrl: 'templates/evidenceDetail.html',
+                controller: 'evidenceDetail'
             });
 
         // if none of the above states are matched, use this as the fallback
