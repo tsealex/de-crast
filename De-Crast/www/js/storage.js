@@ -95,7 +95,12 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 			return catList[id];
 		},
 		getCategoryName: function(id) {
+			if (catList[id] === undefined)
+				return 'None';
 			return catList[id].name;
+		},
+		existCategory: function(id) {
+			return !(catList[id] === undefined);
 		},
 		// user-related
 		clearUserList: function() {
