@@ -31,32 +31,41 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
                 if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
                     /* This callback is triggered when a Google FCM push notification for our app
                      * is received by the device. This code lives in app.js to prevent any weird
-     				 * state/loading issues from occuring.
+                     * state/loading issues from occuring.
                      *
                      * When this occurs, we launch our notification detail screen with the given
                      * notification parameter, which is parsed accordingly there. */
-			  		FCMPlugin.onNotification(function(data){
-				     	 if(data.wasTapped){
-									NotificationHandler.handleFromBackground(data)
-				     	 }else{
-									NotificationHandler.handleFromInApp(data);
-				  	    }
-					});
+                    FCMPlugin.onNotification(function(data) {
+                        if (data.wasTapped) {
+                            NotificationHandler.handleFromBackground(data)
+                        } else {
+                            NotificationHandler.handleFromInApp(data);
+                        }
+                    });
 
 
-         	    	/* This callback is triggered when a Cordova local notification is triggered
-		             * (aka a task expires). This code lives in app.js to prevent any weird
+                    /* This callback is triggered when a Cordova local notification is triggered
+                     * (aka a task expires). This code lives in app.js to prevent any weird
                      * state/loading issues from occuring.
-         	    	 *
-        		     * When this occurs, we need to tell our server that the task expired. */
-                    cordova.plugins.notification.local.on("trigger", function(notification){
-        				/* Remove any escaped characters from our notification JSON. */
+                     *
+                     * When this occurs, we need to tell our server that the task expired. */
+                    cordova.plugins.notification.local.on("trigger", function(notification) {
+                        /* Remove any escaped characters from our notification JSON. */
                         var remove_escs = notification.data.replace('\"', '"');
                         notification.data = angular.fromJson(remove_escs);
 
-        				/* Notify our server that this task has expired. */
-          	            Server.expireTask(notification.data.taskId);
-          				FacebookPoster.makePost();
+                        /* Notify our server that this task has expired. */
+                        Server.expireTask(notification.data.taskId).then((function(tid) {
+                            return function(res) {
+                                if (res.status != 200)
+                                    return;
+                                Storage.removeTask(tid);
+                                // TODO: BUG HERE, we should reschedule notification event for 
+                                // tasks that have changed deadline before
+                                FacebookPoster.makePost(); 
+                            };
+                        })(notification.data.taskId));
+                        
                     }, false);
                 }
             } else {
@@ -225,6 +234,7 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
             })
             .state('viewFTask', {
                 url: '/viewFTask',
+                cache: false,
                 params: {
                     task: 'Tasks'
                 },

@@ -147,7 +147,8 @@ angular.module('decrast.services', ['ngOpenFB'])
                     task_partner: partner,
                     task_facebook: facebook,
                     task_evidenceType: evidenceType,
-                    task_owned: owned
+                    task_owned: owned,
+                    purposed_deadline: null
                 };
 
                 task.task_id = taskId;
@@ -215,9 +216,9 @@ angular.module('decrast.services', ['ngOpenFB'])
             evidenceTypeId: 1,
             name: 'GPS'
         }, {
-						evidenceTypeId: 2,
-						name: 'Honor'
-				}]
+            evidenceTypeId: 2,
+            name: 'Honor'
+        }]
 
         return {
             all: function() {
@@ -234,82 +235,124 @@ angular.module('decrast.services', ['ngOpenFB'])
         }
     })
 
-.factory('FacebookPoster', function(ngFB) {
-		return {
-			makePost: function() {
-				var fbToken = localStorage.getItem('fbAccessToken');
+    .factory('Utils', function() {
+    	return {
+    		base64ToFile: function(base64Str, fileType, fileName) {
+    			var blob = new Blob([base64Str], {type: 'fileType'});
+    			var file = new File([blob], fileName);
+    		}
+    	};
+    })
 
-				function getRandomInt(min, max) {
-  				min = Math.ceil(min);
-  				max = Math.floor(max);
-  				return Math.floor(Math.random() * (max - min)) + min;
-				}
+    .factory('FacebookPoster', function(ngFB) {
+        return {
+            makePost: function() {
+                var fbToken = localStorage.getItem('fbAccessToken');
 
-				var msg = '';
-				var randomNumber = getRandomInt(1, 5);
-				switch(randomNumber) {
-					case 1:
-						msg = 'My life is out of control!';
-					break;
-					case 2:
-						msg = 'I am not as responsible as I thought :(';
-					break;
-					case 3:
-						msg = 'I need to re-evaluate everything';
-					break;
-					case 4:
-						msg = 'Well this is sure embarassing ...';
-					break;
-					case 5:
-						msg = 'I need to do better next time!';
-					break;
-				}
+                function getRandomInt(min, max) {
+                    min = Math.ceil(min);
+                    max = Math.floor(max);
+                    return Math.floor(Math.random() * (max - min)) + min;
+                }
 
-				// TODO: Use De-crast server messages and error messages.
+                var msg = '';
+                var randomNumber = getRandomInt(1, 5);
+                switch (randomNumber) {
+                    case 1:
+                        msg = 'My life is out of control!';
+                        break;
+                    case 2:
+                        msg = 'I am not as responsible as I thought :(';
+                        break;
+                    case 3:
+                        msg = 'I need to re-evaluate everything';
+                        break;
+                    case 4:
+                        msg = 'Well this is sure embarassing ...';
+                        break;
+                    case 5:
+                        msg = 'I need to do better next time!';
+                        break;
+                }
 
-				ngFB.api({
-              path: '/me/feed',
-              method: 'POST',
-              params: {
-                link: 'http://www.nooooooooooooooo.com/vader.jpg',
-                picture: 'http://www.nooooooooooooooo.com/vader.jpg',
-                message: msg,
-                access_token: fbToken,
-                privacy: "{'value': 'ALL_FRIENDS'}"
-              }
-        }).then(function(res) {
-            console.log("FB post successful!");
-        }, function( err ) {
-          // error
-          console.log("ERROR:  " + JSON.stringify(err));
-        });
-			}
-		}
-})
+                // TODO: Use De-crast server messages and error messages.
 
-.factory('NotificationHandler', function(Storage, $state) {
-			return{
-      	handleFromBackground: function(notification) {
-					/* Remove escape characters to make parsing simpler. */
-					console.log("Notification handler from background");
-					console.log(JSON.stringify(notification));
+                ngFB.api({
+                    path: '/me/feed',
+                    method: 'POST',
+                    params: {
+                        link: 'http://www.nooooooooooooooo.com/vader.jpg',
+                        picture: 'http://www.nooooooooooooooo.com/vader.jpg',
+                        message: msg,
+                        access_token: fbToken,
+                        privacy: "{'value': 'ALL_FRIENDS'}"
+                    }
+                }).then(function(res) {
+                    console.log("FB post successful!");
+                }, function(err) {
+                    // error
+                    console.log("ERROR:  " + JSON.stringify(err));
+                });
+            }
+        }
+    })
 
-					/* Handle invite request. */
-					if(notification.type == 5) {
-	          var remove_escs = notification.notif_task.replace('\"', '"');
- 	         notification.notif_task = angular.fromJson(remove_escs);
-						$state.go('tab.notif');
-					}
-					else if(notification.type == 6) {
-						var viewer_id = notification.viewer_name;
-						var task_id = notification.task_id;
-						Storage.updateTaskViewer(task_id, viewer_id);
-					}
-      	},
-				handleFromInApp: function(notification) {
-					console.log("Notification handler from in-app");
-					console.log(JSON.stringify(notification));
-				}
-			}
-});
+    .factory('Utils', function() {
+    	return {
+    		convertToUTC: function(time) {
+	            var ddl = new Date(time * 1000);
+	            var timezone = new Date().getTimezoneOffset();
+	            var date = (ddl.getTime() - timezone * 60000) / 1000.0;
+	            return new Date(date * 1000);
+        	}
+    	};
+    })
 
+    .factory('NotificationHandler', function(Storage, $state) {
+        return {
+            handleFromBackground: function(notification) {
+                /* Remove escape characters to make parsing simpler. */
+                console.log("Notification handler from background");
+                console.log(JSON.stringify(notification));
+
+                /* Handle invite request. */
+                if (notification.type == 5) {
+                    var remove_escs = notification.notif_task.replace('\"', '"');
+                    notification.notif_task = angular.fromJson(remove_escs);
+                    $state.go('tab.notif');
+                } else if (notification.type == 6) {
+                    var viewer_id = notification.viewer_id;
+                    var task_id = notification.task_id;
+                    
+                    if (notif.metadata == null)
+                        Storage.updateTaskViewer(task_id, viewer_id);
+                    else  { // TODO: deadline ext
+                        newDeadline = $scope.convertToUTC(parseInt(notification.metadata));
+                        Storage.updateTaskDeadline(task_id, newDeadline);
+                    }
+                } else if (notification.type == 2) {
+                	var task_id = notification.task_id;
+                	Storage.removeTask(task_id);
+                	$state.go('tab.notif');
+                } else if (notification.type >= 7) {
+                	var task_id = notification.task_id;
+                	Storage.removeTask(task_id);
+                }
+            },
+            handleFromInApp: function(notification) {
+                console.log("Notification handler from in-app");
+                console.log(JSON.stringify(notification));
+            }
+        }
+    });
+
+    /**
+	REMINDER = 0 # from viewer to task owner
+	REGULAR = 1 # from system to task owner
+	EVIDENCE = 2 # from system to viewer
+	DEADLINE = 3 # from user to viewer
+	INVITE = 5 # from user to user
+	INVITE_ACCEPT = 6 # viewer accepted task invite
+	EXPIRED = 7
+	COMPLETED = 8
+    */

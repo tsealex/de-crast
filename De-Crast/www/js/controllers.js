@@ -3,7 +3,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     .controller('HomeCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover,
         $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server,
-        TaskFact, Friends, Notif, Storage, Categories) {
+        TaskFact, Friends, Notif, Storage, Categories, Utils) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
@@ -14,9 +14,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 var status = ngFB.getLoginStatus();
                 console.log(status);
                 status.then(function(result) {
-                    if(result.status == "unknown") {
+                    if (result.status == "unknown") {
                         localStorage.clear();
-                        $ionicLoading.show({ template: 'Please login', noBackdrop: true, duration: 1000 });
+                        $ionicLoading.show({
+                            template: 'Please login',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
                         $state.go('login');
                     }
                 });
@@ -41,7 +45,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
         });
         $scope.name = localStorage.getItem('user');
-
+        console.log(Storage.getUserList());
         // function to fetch data from the server
 
         if ($rootScope.sorting != null)
@@ -159,68 +163,52 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             // Execute action
         });
 
-        $scope.convertToUTC = function(time) {
+    /*    $scope.convertToUTC = function(time) { // I've made this a global method
             var ddl = new Date(time * 1000);
             var timezone = new Date().getTimezoneOffset();
             var date = (ddl.getTime() - timezone * 60000) / 1000.0;
             return new Date(date * 1000);
-        }
+        }*/
 
         /*
-         * Function to display the task list
+         * Function to display the task list // TODO: make this a global method, thanks
          */
         $rootScope.populateTasks = function(response, owned) {
             for (i = 0; i < response.length; i++) {
-                //if (!Storage.existTask(response[i].taskId)) {
+                if (!Storage.existTask(response[i].taskId)) {
                     Server.getTask(response[i].taskId).then(function(data) {
                         var taskData = data.data[0];
-                        Server.getEvidenceType(taskData.taskId).then(function(data) {
-                            var utcDate = $scope.convertToUTC(taskData.deadline);
-                            /*var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                taskData.description, taskData.category, utcDate,
-                                $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
-                            console.log("check newTask: ", newTask);*/
-                            /* move new Task into if(owned)-else check
-                             * if user own the task, the partner field stores the viewer object
-                             * else, the partner field stores the owner object.
-                             * hence, when view the task owned, the viewer(partner) is displayed
-                             * when view the friend's task, the owner(friend who own the task) is displayed
-                             * although they share the same field 'partner'
-                             * */
-                            if($rootScope.friend_list == null){
-                                // add task without viewer
+                        Server.getEvidenceType(taskData.taskId).then((function(taskData) {
+                            return function(data) {
+                                var utcDate = Utils.convertToUTC(taskData.deadline);
+                                var viewer = null;
+                                /* move new Task into if(owned)-else check
+                                 * if user own the task, the partner field stores the viewer object
+                                 * else, the partner field stores the owner object.
+                                 * hence, when view the task owned, the viewer(partner) is displayed
+                                 * when view the friend's task, the owner(friend who own the task) is displayed
+                                 * although they share the same field 'partner'
+                                 * */
+                                $rootScope.friend_list = Storage.getUserList();
+                                if (owned)
+                                    viewer = $rootScope.friend_list[taskData.viewer];
+                                else
+                                    viewer = $rootScope.friend_list[taskData.owner];
+
                                 var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                taskData.description, taskData.category, utcDate,
-                                null, null, data.data.type, owned);
+                                        taskData.description, taskData.category, utcDate,
+                                        viewer, null, data.data.type, owned);
                                 Storage.saveTask(newTask);
-                                if (owned){
-                                    $rootScope.task_list = Storage.getOwnedTaskList(true);
-                                }else{
-                                    $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
-                                }
-                            }else{ // store with friends
-                                if (owned){
-                                    var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                    taskData.description, taskData.category, utcDate,
-                                    $rootScope.friend_list[taskData.viewer], null, data.data.type, owned);
-                                    Storage.saveTask(newTask);
-                                    $rootScope.task_list = Storage.getOwnedTaskList(true);
-                                }
-                                else{
-                                    var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                    taskData.description, taskData.category, utcDate,
-                                    $rootScope.friend_list[taskData.owner], null, data.data.type, owned);
-                                    Storage.saveTask(newTask);
-                                    $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
-                                }    
-                            }
-                        });
+                                $rootScope.task_list = Storage.getOwnedTaskList(true);
+                            };
+                        })(taskData));
                     });
-               // }
+                }
             }
         };
 
         $rootScope.populateCategories = function() {
+
             Server.getCategory().then(function(data) {
                 if (data.data.length == 0) {
                     //$ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
@@ -240,13 +228,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             return Storage.getCategoryName(cid);
         };
 
-        $scope.fetchFBfriends = function() {
-            // prepare friends container
-            $rootScope.friend_list = {};
-
+        $scope.fetchFBfriends = function() { // TODO: make this a global method, thanks
             // FB get friends who is also using the app
             ngFB.api({
-                path: '/me/friends',
+                path: '/' + localStorage.getItem('userFBId') + '/friends',
                 params: {}
             }).then(
                 function(list) {
@@ -256,8 +241,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             noBackdrop: true,
                             duration: 2500
                         });
+                    } else if (list.data.length <= Storage.getUserListSize()) {
+                        // quick fix
+                        // we don't need to re-fetch user list from the server, if
+                        // we already have it cached
+                        // assumption: # of user's friends never changes
+                        return;
                     }
-
                     for (i = 0; i < list.data.length; i++) {
                         var friendFbId = list.data[i].id;
                         var friendFbName = list.data[i].name;
@@ -265,7 +255,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         // TODO: intead of one fbId at a time, you can request for several users:
                         // TODO: i.e. user/facebook/32425&9353&232324&2425347/ each separated by '&'
                     }
-                    //localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
                 },
                 function(error) {
                     alert('Facebook error: ' + error.error_description);
@@ -275,7 +264,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         };
 
-        $scope.getUserByFbId = function(fbId, fbName) {
+        $scope.getUserByFbId = function(fbId, fbName) { // TODO: make this a global method, thanks
             Server.getUserByFbId(fbId).then(function(data) {
                 if (data.data[0] === undefined) return;
                 var userId = data.data[0].userId;
@@ -287,8 +276,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     name = fbName;
                 }
                 var newFriend = (new Friends()).addFriend(userId, name, 'normal');
-                $rootScope.friend_list[userId] = newFriend;
-                localStorage.setItem('friend_list', angular.toJson($rootScope.friend_list));
+                Storage.addUser(newFriend);
+                $rootScope.friend_list = Storage.getUserList();
             });
             // default status as normal   
 
@@ -296,36 +285,51 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         //////////////// below may be delete if Junwei's notification system setup
         $rootScope.fakepopulateNotification = function() {
-            $rootScope.notif_list = {};
+
+            $rootScope.notif_list = Storage.getNotifList();
             Server.fakegetNotification().then(function(data) {
                 for (i = 0; i < data.data.length; i++) {
-                    $scope.fakegetNotificationDetail(data.data[i].notificationId);
+                    if (!Storage.existNotif(data.data[i].notificationId))
+                        $scope.fakegetNotificationDetail(data.data[i].notificationId);
                 }
             });
         };
 
-        $scope.fakegetNotificationDetail = function(notifId) {
+        $scope.fakegetNotificationDetail = function(notifId) { // TODO: make this a global method, thanks
             Server.fakegetNotificationDetail(notifId).then(function(data) {
                 var notif = data.data[0];
-                var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
-                $rootScope.notif_list[notif.notificationId] = newNotif;
-                localStorage.setItem('notif_list', angular.toJson($rootScope.notif_list));
+                console.log("notif.type " + notif.type);
+                var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, 
+                    notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
+                Storage.addNotif(newNotif);
+
+                if (notif.type == 6)  { // update viewer (owner side)
+                    if (notif.metadata == null)
+                        Storage.updateTaskViewer(notif.task, notif.sender);
+                    else  { // deadline ext (owner side)
+                        newDeadline = Utils.convertToUTC(parseInt(notif.metadata));
+                        Storage.updateTaskDeadline(notif.task, newDeadline);
+                    }
+                } else if (notif.type >= 7 || notif.type == 2) {
+                    Storage.removeTask(notif.task);
+                }
+                $rootScope.notif_list = Storage.getNotifList();
             });
         };
         $rootScope.populateNotif = function() {
-            $rootScope.notif_list = angular.fromJson(localStorage.getItem('notif_list'));
+            $rootScope.notif_list = Storage.getNotifList();
         };
         //////////////////////////////////////////////////////////////////////////
 
-        $scope.getViewTask = function() {
+        $scope.getViewTask = function() { // TODO: make this a global method, thanks
             Server.getViewTask().then(function(data) {
                 $rootScope.populateTasks(data.data, false);
             });
         };
     })
 
-    .controller('AddTaskCtrl', function($rootScope, $stateParams, $scope, $ionicPlatform, 
-        $cordovaLocalNotification, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state, 
+    .controller('AddTaskCtrl', function($rootScope, $stateParams, $scope, $ionicPlatform,
+        $cordovaLocalNotification, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state,
         TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
@@ -385,7 +389,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 });
             } else {
                 /* Add Task to localStorage
-                var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, $scope.category, $scope.time, null, null, null);
+                var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, 
+                    $scope.category, $scope.time, null, null, null);
 
                 $rootScope.task_list[newTask.task_id] = newTask;
                 localStorage.setItem('task_list', angular.toJson($rootScope.task_list));
@@ -406,18 +411,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     var myDate = new Date($scope.time);
                     var timezone = new Date().getTimezoneOffset();
                     var myEpoch = (myDate.getTime() + timezone * 60000) / 1000.0;
-                    /*
-                                        var usertime = new Date($scope.time);
-                                        var timezone = new Date().getTimezoneOffset();
-                                        var ddl = new Date(user.getTime() + timezone.getTime());
-                    */
-                    //                    var myDate = new Date($scope.time); // my Date is GMT, $scope.time is Z, we store GMT
-                    // console.log(myDate, $scope.time);
-                    //                    var myEpoch = myDate.getTime()/1000.0;
+
                     mySelector = document.getElementById('category-select');
                     myCategory = mySelector.options[mySelector.selectedIndex].value;
                     console.log(myDate + "Test timeout" + timezone);
-                    Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, parseInt(evidenceType)).then(function(data) {
+                    Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, 
+                        parseInt(evidenceType)).then(function(data) {
                         console.log(JSON.stringify(data));
                         if (data.data.detail == "deadline")
                             $ionicLoading.show({
@@ -445,8 +444,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             });
 
                             if (window.cordova) {
-                            // when run on device, test the platform and call FCM
-                
+                                // when run on device, test the platform and call FCM
+
                                 $ionicPlatform.ready(function() {
                                     // var now = new Date().getTime();
                                     // var _3SecondsFromNow = new Date(now + 3 * 1000);
@@ -466,7 +465,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                         console.log(ddl.getTime + 'a local notification is triggered' + myEpoch * 1000);
                                     });
                                 });
-                            }else{
+                            } else {
                                 console.log("Run on browser, cordovaLocalNotification is disabled");
                             }
 
@@ -484,7 +483,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             mySelector = document.getElementById('category-select');
             myCategory = mySelector.options[mySelector.selectedIndex].value;
             // create temporarily task object
-            var newTask = $scope.myFactory.addTask(null, $scope.taskName, $scope.descrip, myCategory, 
+            var newTask = $scope.myFactory.addTask(null, $scope.taskName, $scope.descrip, myCategory,
                 $scope.time, null, null, parseInt(evidenceType));
 
             localStorage.setItem('currentTask', angular.toJson(newTask));
@@ -504,8 +503,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, $state, TaskFact,
-        $ionicLoading, Server, $ionicPopup, EvidenceTypes, Storage) {
+    .controller('EditTaskCtrl', function($scope, $rootScope, $stateParams, $ionicViewSwitcher, 
+        $state, TaskFact, $ionicLoading, Server, $ionicPopup, EvidenceTypes, Storage) {
         var taskId, tmpTask;
         var myDate;
         var myEpoch;
@@ -569,19 +568,25 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         Storage.applyTaskChanges(data.data.taskId);
                         if (changeTime && $scope.time != undefined) {
                             var deadline = $scope.time.getTime() / 1000.0; // TODO: bug $scope.time is undefined, please check
-                            Server.sendNotificationThree(3, deadline, taskId).then(function(data) {
-                                var msg = 'Task Saved.';
-                                if (data.status != 200)
-                                    msg = msg + ' Notification not sent due to invalid deadline / no viewer';
+                            Server.sendNotificationThree(3, deadline, taskId).then((function(id, deadline) {
+                                return function(data) {
+                                    var msg = 'Task Saved.';
 
-                                $ionicLoading.show({
-                                    template: msg,
-                                    noBackdrop: true,
-                                    duration: 1000
-                                });
-                                $ionicViewSwitcher.nextDirection('back');
-                                $state.go('tab.home');
-                            });
+                                    if (data.status != 200)
+                                        msg = msg + ' Notification not sent due to invalid deadline / no viewer';
+
+                                    $ionicLoading.show({
+                                        template: msg,
+                                        noBackdrop: true,
+                                        duration: 1000
+                                    });
+                                    task = Storage.getTask(id);
+                                    task.purposed_deadline = deadline;
+                                    Storage.saveTask(task);
+                                    $ionicViewSwitcher.nextDirection('back');
+                                    $state.go('tab.home');
+                                }
+                            })(data.data.taskId, deadline));
                             return;
                         }
                     } else
@@ -603,7 +608,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             console.log('click');
             var editDeadlinePopup = $ionicPopup.confirm({
                 title: 'Edit Deadline',
-                template: 'You need viewer\'s permission to edit the deadline and a notification of deadline edit will be sent automatically. Do you want to continue?'
+                template: 'You need viewer\'s permission to edit the deadline ' + 
+                'and a notification of deadline edit will be sent automatically.' +
+                'Do you want to continue?'
             });
 
             editDeadlinePopup.then(function(res) {
@@ -621,7 +628,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, 
+    .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup,
         $rootScope, EvidenceTypes, Server, Storage) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
@@ -684,6 +691,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     type: 'button-positive',
                     onTap: function(e) {
                         console.log("You better not be lying ...");
+
                         Server.completeTask($scope.task.task_id).then((function(id) {
                             return function(data) {
                                 Storage.removeTask(id);
@@ -698,8 +706,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('FtasksCtrl', function($scope, Ftasks, $ionicLoading, $state, $rootScope) {
+    .controller('FtasksCtrl', function($scope, Ftasks, $ionicLoading, $state, $rootScope, Storage) {
         //$ionicLoading.show({template: 'No friends\' Tasks found', noBackdrop: true, duration: 2500});
+        $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+
+
         $scope.goDetail = function(task) {
             $state.go('viewFTask', {
                 task: task
@@ -730,14 +741,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $rootScope.sorting = $scope.sorting;
         };
     })
-    .controller('NotifCtrl', function($scope, $stateParams, $state, $ionicPopup, $ionicLoading, Server, $rootScope) {
+    .controller('NotifCtrl', function($scope, $stateParams, $state, $ionicPopup, $ionicLoading,
+        Server, Storage, $rootScope, Utils) {
         // console.log($rootScope.notif_list);
+        
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             if ($stateParams.notification != null) {
                 console.log('Launching notif list with: ' + JSON.stringify($stateParams.notification));
             } else {
                 console.log("Launching notification list without a pre-determined notification.");
             }
+            $rootScope.notif_list = Storage.getNotifList();
         });
 
         $scope.fakegoNotifDetail = function(currentNotif) {
@@ -746,18 +760,24 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             /* type 3: ddl extension
              * type 5: invite
              * type 2: view evidence
-             */ 
-            if(type == 2){
+             */
+            if (type == 2) {
                 $state.go('evidenceDetail', {
                     notif: notif
                 });
+                // TODO: Storage.removeNotif + sendNotificationReead afterwards
             }
-            if(type == 3 || type == 5){
+            else if (type == 3 || type == 5) {
+                // TODO: display the deadline to the user (it's stored in notif.meta)
+                $scope.decisionPopup(notif); 
+            }
+            else if (type == 5) {
                 // you need to make a decision
-                $scope.decisionPopup(notif);
+                // $state.go('notifDetail',{notif: notif});  // TODO: make sure the code is working first
+                // $scope.decisionPopup(notif);
             }
-            if(type == 6 || type == 8) {
-            	delete $rootScope.notif_list[notif.notif_notificationId];
+            else  {
+                Storage.removeNotif(notif.notif_notificationId);
                 Server.sendNotificationRead(notif.notif_notificationId);
             }
         }
@@ -790,6 +810,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     text: 'Accept',
                     type: 'button-positive',
                     onTap: function(e) {
+                        // update the task deadline (viewer side)
+                        newDeadline = Utils.convertToUTC(parseInt(notif.notif_metadata));
+                        Storage.updateTaskDeadline(notif.notif_task, newDeadline);
                         $scope.sendNotification(notif, true);
                     }
                 }]
@@ -799,25 +822,28 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         // todooo
         $scope.sendNotification = function(notif, decision) {
-            Server.decideOnInvite(notif.notif_notificationId, decision).then(function(data) {
-                if (data.status == 200) {
-                    // succeed
-                    delete $rootScope.notif_list[notif.notif_notificationId];
-                } else {
-                    $ionicLoading.show({
-                        template: data.data.errMsg,
-                        noBackdrop: true,
-                        duration: 1000
-                    });
-                }
-            });
+            Server.decideOnInvite(notif.notif_notificationId, decision).then((function(nid) {
+                return function(data) {
+                    if (data.status == 200) {
+                        // succeed
+                        Storage.removeNotif(nid);
+                    } else {
+                        $ionicLoading.show({
+                            template: data.data.errMsg,
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    }
+                };
+            })(notif.notif_notificationId));
         }
     })
-    .controller('FriendsCtrl', function($scope, Friends, $stateParams, $rootScope, ngFB, Server, $ionicLoading) {
+    .controller('FriendsCtrl', function($scope, Friends, $stateParams, $rootScope, ngFB, 
+        Server, Storage, $ionicLoading) {
 
         //$scope.friends = Friends.all();
         $scope.$on("$ionicView.beforeEnter", function() {
-
+            $rootScope.friend_list = Storage.getUserList();
         });
         $scope.turnStar = function(index) {
             //console.log("You turn star");
@@ -833,7 +859,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
 
-    .controller('SettingsCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state) {
+    .controller('SettingsCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, 
+        $ionicViewSwitcher, $state) {
 
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
@@ -846,7 +873,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         });
 
     })
-    .controller('ManageCategoriesCtrl', function($scope, $state, $rootScope, Categories, Server, Storage, $ionicLoading) {
+    .controller('ManageCategoriesCtrl', function($scope, $state, $rootScope, Categories, Server, 
+        Storage, $ionicLoading) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             // populate the category list
@@ -883,7 +911,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
 
-    .controller('LoginCtrl', function($scope, $state, $ionicModal, $cordovaLocalNotification, $ionicPlatform, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup, $rootScope, $ionicLoading, $cordovaDevice, $ionicPlatform) {
+    .controller('LoginCtrl', function($scope, $state, $ionicModal, $cordovaLocalNotification, 
+        $ionicPlatform, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup,
+         $rootScope, $ionicLoading, $cordovaDevice, $ionicPlatform) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -908,19 +938,19 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         localStorage.setItem('fbAccessToken', response.authResponse.accessToken);
 
                         if (window.cordova) {
-                        // when run on device, test the platform and call FCM
+                            // when run on device, test the platform and call FCM
 
-                        if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
-                            FCMPlugin.getToken(
-                                function(token) {
-                                    localStorage.setItem('fcmId', token);
-																		Server.updateFcmToken(token);
-                                },
-                                function(err) {
-                                    alert('error retrieving FCM token: ' + err);
-                                });
-                        }
-                        }else{
+                            if (ionic.Platform.isIOS() || ionic.Platform.isAndroid()) {
+                                FCMPlugin.getToken(
+                                    function(token) {
+                                        localStorage.setItem('fcmId', token);
+                                        Server.updateFcmToken(token);
+                                    },
+                                    function(err) {
+                                        alert('error retrieving FCM token: ' + err);
+                                    });
+                            }
+                        } else {
                             console.log("Run on brower, FCMPlugin is disabled");
                         }
 
@@ -933,6 +963,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             function(user) {
                                 localStorage.setItem('user', user.name);
                                 $rootScope.userFBId = user.id;
+                                localStorage.setItem('userFBId', user.id);
                                 console.log(JSON.stringify(user));
                                 var userId; // user's De-Crast Id
                                 var accessToken;
@@ -983,7 +1014,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         }
     })
-    .controller('setUsernameCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, Server, $ionicLoading) {
+    .controller('setUsernameCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory,
+     Server, $ionicLoading) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
@@ -1052,317 +1084,26 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.task = $stateParams.task;
         $scope.taskId = $scope.task.task_id;
         var latLng;
-        $ionicPlatform.ready(function(){
+        $ionicPlatform.ready(function() {
             // add for geolocation not timeout
             $ionicLoading.show({
                 template: '<ion-spinner icon="bubbles"></ion-spinner><br/>Acquiring location'
             });
-            
-            var options = {timeout: 10000, enableHighAccuracy: true};
-            
+
+            var options = {
+                timeout: 10000,
+                enableHighAccuracy: true
+            };
+
             if (navigator.geolocation) {
 
-            $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
-                
-                latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-
-                var pos = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-
-                var mapOptions = {
-                    center: latLng,
-                    zoom: 15,
-                    mapTypeId: google.maps.MapTypeId.ROADMAP
-                };
-                
-                $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
-
-                google.maps.event.addListenerOnce($scope.map, 'idle', function() {
-                    var marker = new google.maps.Marker({
-                        map: $scope.map,
-                        animation: google.maps.Animation.DROP,
-                        position: latLng
-                    });
-                    
-                    $scope.getAddressFromLatLang(latLng, $scope.map, marker);
-                });
-                $ionicLoading.hide();
-            }, function(error) {
-                $ionicLoading.hide();
-                console.log(JSON.stringify(error));
-                $ionicLoading.show({
-                    template: "Could not get location, please check your GPS setting and try again",
-                    noBackdrop: true,
-                    duration: 1000
-                });
-            });
-
-            $scope.getAddressFromLatLang = function(latLng, map, marker) {
-                var geocoder = new google.maps.Geocoder();
-
-                geocoder.geocode({
-                    'latLng': latLng
-                }, function(results, status) {
-                    //console.log(JSON.stringify(results));
-                    if (status == google.maps.GeocoderStatus.OK) {
-                        if (results[1]) {
-                            var infowindow = new google.maps.InfoWindow();
-                            infowindow.setOptions({
-                                content: '<div>' + results[1].formatted_address + '</div>',
-                            });
-                            infowindow.open(map, marker);
-                        }
-                    } else {
-                        alert("error", JSON.stringify(status));
-                    }
-                })
-            };
-
-            } else {
-                // Browser doesn't support Geolocation
-                console.log("navigator.geolocation false");
-            }//todo 
-        });
-        
-        
-
-        $scope.confirmGPS = function() {
-            var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
-            console.log("Map post coordinates", coordinates);
-            // This server is not function correctly            
-            Server.submitGPS($scope.taskId, coordinates).then((function(id) {
-                return function(data) {
-                    if (data.status == 200) {
-                        Storage.removeTask(id);
-                        $ionicLoading.show({
-                            template: 'Task Completed!',
-                            noBackdrop: true,
-                            duration: 1000
-                        });
-                    } else {
-                        $ionicLoading.show({
-                            template: 'submission failed',
-                            noBackdrop: true,
-                            duration: 1000
-                        });
-                    }
-                    //$ionicHistory.goBack(2);
-                    $state.go('tab.home');
-                }
-            })($scope.taskId));
-        }
-
-    })
-    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, $ionicLoading, $ionicHistory,
-        $cordovaCamera, $stateParams, Server, Storage) {
-
-        $scope.task = $stateParams.task;
-        $scope.taskId = $scope.task.task_id;
-        $scope.image = null;
-        // TODO: move this function to the global scope, so that other controllers can use this function 
-        $scope.dataURItoBlob = function(dataURI) {
-            var byteString = atob(dataURI.split(',')[1]);
-            var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-
-            var ab = new ArrayBuffer(byteString.length);
-            var ia = new Uint8Array(ab);
-            for (var i = 0; i < byteString.length; i++)
-                ia[i] = byteString.charCodeAt(i);
-
-            var bb = new Blob([ab], {
-                "type": mimeString
-            });
-            return bb;
-        };
-
-        $scope.takePicture = function() {
-            var options = {
-                quality: 75,
-                destinationType: Camera.DestinationType.DATA_URL,
-                sourceType: Camera.PictureSourceType.CAMERA,
-                allowEdit: false,
-                encodingType: Camera.EncodingType.JPEG,
-                targetWidth: 300,
-                targetHeight: 300,
-                popoverOptions: CameraPopoverOptions,
-                saveToPhotoAlbum: true
-            };
-
-            $cordovaCamera.getPicture(options).then(function(imageData) {
-                //$scope.imgURI = "data:image/jpeg;base64," + imageData;
-                $scope.imgURI = "data:image/jpeg;base64," + imageData;
-                $scope.imgBlob = $scope.dataURItoBlob("data:image/jpeg;base64," + imageData);
-                $ionicLoading.show({
-                    template: 'Picture taken!',
-                    noBackdrop: true,
-                    duration: 1000
-                });
-            }, function(err) {
-                // An error occured. Show a message to the user
-            });
-        };
-
-        //not functioning yet
-        $scope.submitPhoto = function() {
-            Server.submitPhoto($scope.taskId, $scope.imgBlob).then((function(id) {
-                return function(data) {
-                    if (data.status == 200) {
-                        Storage.removeTask(id);
-                    } else {
-                        $ionicLoading.show({
-                            template: 'submission failed',
-                            noBackdrop: true,
-                            duration: 1000
-                        });
-                    }
-                    //$ionicHistory.goBack(2);
-                    $state.go('tab.home');
-                }
-            })($scope.taskId));
-            // $state.go('home');
-
-        };
-    })
-    .controller('selectViewerCtrl', function($stateParams, $rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
-        $scope.onClick = function() {
-            $ionicViewSwitcher.nextDirection('back');
-            // $ionicHistory.goBack();   
-        }
-
-        var selectedViewer;
-        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
-            $rootScope.friend_list = angular.fromJson(localStorage.getItem('friend_list'));
-            $scope.task = $stateParams.task;
-        });
-        $scope.changeViewer = function(viewer) {
-            selectedViewer = viewer;
-        };
-        $scope.data = {
-            clientSide: 'ng'
-        };
-        $scope.confirmViewer = function() {
-            localStorage.setItem('selectedViewer', angular.toJson(selectedViewer));
-            $ionicHistory.goBack();
-        }
-    })
-    .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, $stateParams, Server, $rootScope) {
-        $scope.onClick = function() {
-            $ionicViewSwitcher.nextDirection('back');
-            $ionicHistory.goBack();
-        }
-        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
-            viewData.enableBack = true;
-
-            if ($stateParams.notif != null) {
-                $scope.notif = $stateParams.notif;
-                //              console.log("NOTIF: " + JSON.stringify($scope.notif.notif_task));
-
-                /* Handle opening an INVITE notification. */
-                if ($scope.notif.type == 5) {
-                    var remove_escs = $scope.notif.notif_task.replace('\"', '"');
-                    $scope.notif.task = angular.fromJson(remove_escs);
-
-                    console.log("NOTIF TASK: " + JSON.stringify($scope.notif.task));
-                }
-            }
-            /*
-                        Server.getTask($scope.notif.notif_task).then(function(data){
-                            if(data.status == 200){
-                                $scope.task = data.task;
-                                                    console.log("TASK: " + JSON.stringify($scope.task));
-                                console.log("connected to server");
-                            }else{
-                                console.log("fail to connect to the server");
-                            }
-                        }); */
-        });
-
-        $scope.onDecision = function(decisionInt) {
-            console.log("You make a decision");
-            var decision;
-            if (decisionInt == 0) {
-                decision = false;
-            } else {
-                decision = true;
-            }
-            switch ($scope.notif.notif_type) {
-                case 5: // viewer invite
-                    alert("It's a viewer invite: " + $scope.notif.notif_notificationId);
-                    Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data) {
-                        if (data.status == 200) {
-                            // succeed
-                            delete $rootScope.notif_list[$scope.notif.notif_notificationId];
-                            $state.go('tab.notif');
-                        }
-                    });
-                    break;
-                default:
-                    console.log("notification type falls into default case");
-            }
-        }
-    })
-    .controller('viewFTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, $rootScope, EvidenceTypes, Server) {
-        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
-            viewData.enableBack = true;
-            $scope.task = $stateParams.task;
-            $scope.title = "View Friend's Task";
-            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
-            $scope.evidenceTypeName = $scope.evidenceType.name;
-            $scope.viewer = $scope.task.task_partner.friend_name; // TODO: shouldn't this be the user themselves?
-            $scope.checkCompletion($scope.task.task_id);
-        });
-
-        $scope.checkCompletion = function(taskId) {
-            Server.getEvidence(taskId).then(function(data) {
-                if (data.data.file == null) {
-                    $scope.complete = "Not Complete";
-                } else {
-                    $scope.complete = "Complete";
-                    // document.getElementById('getEvidence-button').classList.add("button-positive");
-                }
-            });
-        }
-    })
-    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage, $rootScope) {
-        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
-            viewData.enableBack = true;
-            $scope.notif = $stateParams.notif;
-            // if the file path end in jpg, set title to Photo, otherwise, set to GPS
-            $scope.evidence_type = ($scope.notif.notif_file.substr($scope.notif.notif_file.lastIndexOf('.')+1) 
-                                 == 'jpg') ? 'Photo' : 'GPS';
-            console.log($scope.notif.notif_file, $scope.evidence_type);
-            Server.viewEvidence($scope.notif.notif_notificationId).then(function(data){
-                console.log(data);
-                if($scope.evidence_type == 'GPS'){
-                    $scope.displayMap(data.data);
-                }
-            });
-        });
-
-        $scope.displayMap = function(data){
-            var coor = data.substr(1,data.length-2);
-            $scope.coor_lat = coor.substr(0, coor.lastIndexOf(','));
-            $scope.coor_lng = coor.substr(coor.lastIndexOf(',')+1);
-            console.log($scope.coor_lat, $scope.coor_lng);
-
-            var latLng;
-            $ionicPlatform.ready(function(){
-                // add for geolocation not timeout
-                $ionicLoading.show({
-                    template: '<ion-spinner icon="bubbles"></ion-spinner><br/>Acquiring location'
-                });
-                
-                var options = {timeout: 10000, enableHighAccuracy: true};
-                
                 $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
-                    
-                    latLng = new google.maps.LatLng($scope.coor_lat, $scope.coor_lng);
+
+                    latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 
                     var pos = {
-                        lat: $scope.coor_lat,
-                        lng: $scope.coor_lng
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
                     };
 
                     var mapOptions = {
@@ -1370,7 +1111,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         zoom: 15,
                         mapTypeId: google.maps.MapTypeId.ROADMAP
                     };
-                    
+
                     $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
                     google.maps.event.addListenerOnce($scope.map, 'idle', function() {
@@ -1379,7 +1120,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             animation: google.maps.Animation.DROP,
                             position: latLng
                         });
-                        
+
                         $scope.getAddressFromLatLang(latLng, $scope.map, marker);
                     });
                     $ionicLoading.hide();
@@ -1413,9 +1154,349 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         }
                     })
                 };
-            });//todo 
+
+            } else {
+                // Browser doesn't support Geolocation
+                console.log("navigator.geolocation false");
+            } //todo 
+        });
+
+
+
+        $scope.confirmGPS = function() {
+            var coordinates = '(' + latLng.lat() + ',' + latLng.lng() + ')';
+            console.log("Map post coordinates", coordinates);
+            // This server is not function correctly            
+            Server.submitGPS($scope.taskId, coordinates).then((function(id) {
+                return function(data) {
+                    if (data.status == 200) {
+                        Storage.removeTask(id);
+                        $ionicLoading.show({
+                            template: 'Task Completed!',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    } else {
+                        $ionicLoading.show({
+                            template: 'submission failed',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    }
+                    //$ionicHistory.goBack(2);
+                    $state.go('tab.home');
+                }
+            })($scope.taskId));
+        }
+
+    })
+    .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, 
+        $ionicLoading, $ionicHistory, $cordovaCamera, $stateParams, Server, Storage) {
+
+        $scope.task = $stateParams.task;
+        $scope.taskId = $scope.task.task_id;
+        $scope.image = null;
+        // TODO: move this function to the global scope, so that other controllers can use this function 
+        $scope.dataURItoBlob = function(dataURI) {
+            var byteString = atob(dataURI.split(',')[1]);
+            var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+            var ab = new ArrayBuffer(byteString.length);
+            var ia = new Uint8Array(ab);
+            for (var i = 0; i < byteString.length; i++)
+                ia[i] = byteString.charCodeAt(i);
+
+            var bb = new Blob([ab], {
+                "type": mimeString
+            });
+            return bb;
+        };
+
+        $scope.takePicture = function() {
+            var options = {
+                quality: 100,
+                destinationType: Camera.DestinationType.DATA_URL,
+                sourceType: Camera.PictureSourceType.CAMERA,
+                allowEdit: false,
+                encodingType: Camera.EncodingType.JPEG,
+                targetWidth: 500,
+                targetHeight: 500,
+                popoverOptions: CameraPopoverOptions,
+                saveToPhotoAlbum: true
+            };
+
+            $cordovaCamera.getPicture(options).then(function(imageData) {
+                //$scope.imgURI = "data:image/jpeg;base64," + imageData;
+                $scope.imgURI = "data:image/jpeg;base64," + imageData;
+                $scope.imgBlob = $scope.dataURItoBlob("data:image/jpeg;base64," + imageData);
+                $ionicLoading.show({
+                    template: 'Picture taken!',
+                    noBackdrop: true,
+                    duration: 1000
+                });
+            }, function(err) {
+                // An error occured. Show a message to the user
+            });
+        };
+
+        //not functioning yet
+        $scope.submitPhoto = function() {
+            Server.submitPhoto($scope.taskId, $scope.imgBlob).then((function(id) {
+                return function(data) {
+                    if (data.status == 200) {
+                        Storage.removeTask(id);
+                        $ionicLoading.show({
+                            template: 'Task Completed!',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    } else {
+                        $ionicLoading.show({
+                            template: 'submission failed',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    }
+                    //$ionicHistory.goBack(2);
+                    $state.go('tab.home');
+                }
+            })($scope.taskId));
+            // $state.go('home');
+
+        };
+    })
+    .controller('selectViewerCtrl', function($stateParams, $rootScope, $state, Storage, 
+        $ionicViewSwitcher, $scope, $ionicHistory) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            // $ionicHistory.goBack();   
+        }
+
+        var selectedViewer;
+        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
+            $rootScope.friend_list = Storage.getUserList();
+            $scope.task = $stateParams.task;
+        });
+        $scope.changeViewer = function(viewer) {
+            selectedViewer = viewer;
+        };
+        $scope.data = {
+            clientSide: 'ng'
+        };
+        $scope.confirmViewer = function() {
+            localStorage.setItem('selectedViewer', angular.toJson(selectedViewer));
+            $ionicHistory.goBack();
+        }
+    })
+    .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, 
+        $stateParams, Server, $rootScope, TaskFact, Storage, Utils) {
+        $scope.onClick = function() {
+            $ionicViewSwitcher.nextDirection('back');
+            $ionicHistory.goBack();
+        }
+        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
+            viewData.enableBack = true;
+
+            if ($stateParams.notif != null) {
+                $scope.notif = $stateParams.notif;
+                console.log("NOTIF: " + JSON.stringify($scope.notif));
+
+                if ($scope.notif.notif_type == 5) { // invite
+                    // get task detail to help determine
+                    Server.getInviteTask($scope.notif.notif_notificationId).then(function(data){
+                        if(data.status == 200){ // success
+                            $scope.task = data.data;
+                            $scope.task.deadline = Utils.convertToUTC($scope.task.deadline);
+                        }else{
+                            $ionicLoading.show({
+                                template: data.errorMsg,
+                                noBackdrop: true,
+                                duration: 1000
+                            });
+                        }
+                    });
+                }
+            }
+        });
+
+        $scope.onDecision = function(decisionInt, Storage) {
+            var decision;
+            if (decisionInt == 0) {
+                decision = false;
+            } else {
+                decision = true;
+            }
+            switch ($scope.notif.notif_type) {
+                case 5: // viewer invite
+                    console.log("see the task", JSON.stringify($scope.task));
+                    Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data) { // send decision
+                        if (data.status == 200) { // succeed
+                            if(!decision){ // decline the invite
+                                delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+                                $ionicHistory.goBack();
+                            }else{ // accept
+                                Server.getEvidenceType($scope.task.taskId).then(function(evidence) { // get evidence type for display
+                                    if (data.status == 200) {
+                                        // add to localstorage, so that task is shown in Ftask
+                                        var newTask = (new TaskFact()).addTask($scope.task.taskId, $scope.task.name,
+                                        $scope.task.description, null, $scope.task.deadline,
+                                        $rootScope.friend_list[$scope.task.owner], null, evidence.data.type, false);// todo1
+                                        Storage.saveTask(newTask);
+                                        $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+                                        // delete the related notif
+                                        delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+                                        $ionicHistory.goBack();
+                                    }else{ // if Server.getEvidenceType false,the notif will not be deleted, any other step to take?
+                                        $ionicLoading.show({
+                                            template: data.errorMsg,
+                                            noBackdrop: true,
+                                            duration: 1000
+                                        });
+                                    }
+                                });
+                            }
+                        }else{ // if Server.decideOnInvite false,the notif will not be deleted, any other step to take?
+                            $ionicLoading.show({
+                                template: data.errorMsg,
+                                noBackdrop: true,
+                                duration: 1000
+                            });
+                        }
+                    });
+                    
+                    break;
+                default:
+                    console.log("notification type falls into default case");
+                    break;
+            }
         }
         
+    })
+    .controller('viewFTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, 
+        $rootScope, EvidenceTypes, Server, Storage) {
+        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
+            viewData.enableBack = true;
+            $scope.task = $stateParams.task;
+            $scope.title = "View Friend's Task";
+            $scope.evidenceType = EvidenceTypes.get($scope.task.task_evidenceType);
+            $scope.evidenceTypeName = $scope.evidenceType.name;
+            $scope.owner = $scope.task.task_partner.friend_name; // the owner(friend) of this friend's task (not the user)
+            $scope.checkCompletion($scope.task.task_id);
+
+        });
+
+        $scope.checkCompletion = function(taskId) {
+            Server.getEvidence(taskId).then(function(data) {
+                if (data.data.file == null) {
+                    $scope.complete = "Not Complete";
+                } else {
+                    $scope.complete = "Complete";
+                    // document.getElementById('getEvidence-button').classList.add("button-positive");
+                }
+            });
+        }
+    })
+    .controller('evidenceDetail', function($scope, $state, $stateParams, $ionicViewSwitcher, Server,
+        $ionicHistory, Server, $ionicPlatform, $ionicLoading, $cordovaGeolocation, Storage, $rootScope) {
+        $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
+            viewData.enableBack = true;
+            $scope.notif = $stateParams.notif;
+            /////////////////////////////////////////////////
+            /////
+
+            //////
+            // if the file path end in jpg, set title to Photo, otherwise, set to GPS
+            $scope.evidence_type = ($scope.notif.notif_file.substr(
+                $scope.notif.notif_file.lastIndexOf('.') + 1) == 'jpg') ? 'Photo' : 'GPS';
+            console.log($scope.notif.notif_file, $scope.evidence_type);
+            Server.viewEvidence($scope.notif.notif_notificationId).then(function(data) {
+                //console.log(data);
+                if ($scope.evidence_type == 'GPS') {
+                    $scope.displayMap(data.data);
+                } else {
+                     $scope.imgURI = "data:image/jpeg;base64," + data.data;
+                }
+            });
+        });
+
+        $scope.displayMap = function(data) {
+            var coor = data.substr(1, data.length - 2);
+            $scope.coor_lat = coor.substr(0, coor.lastIndexOf(','));
+            $scope.coor_lng = coor.substr(coor.lastIndexOf(',') + 1);
+            console.log($scope.coor_lat, $scope.coor_lng);
+
+            var latLng;
+            $ionicPlatform.ready(function() {
+                // add for geolocation not timeout
+                $ionicLoading.show({
+                    template: '<ion-spinner icon="bubbles"></ion-spinner><br/>Acquiring location'
+                });
+
+                var options = {
+                    timeout: 10000,
+                    enableHighAccuracy: true
+                };
+
+                $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
+
+                    latLng = new google.maps.LatLng($scope.coor_lat, $scope.coor_lng);
+
+                    var pos = {
+                        lat: $scope.coor_lat,
+                        lng: $scope.coor_lng
+                    };
+
+                    var mapOptions = {
+                        center: latLng,
+                        zoom: 15,
+                        mapTypeId: google.maps.MapTypeId.ROADMAP
+                    };
+
+                    $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+                    google.maps.event.addListenerOnce($scope.map, 'idle', function() {
+                        var marker = new google.maps.Marker({
+                            map: $scope.map,
+                            animation: google.maps.Animation.DROP,
+                            position: latLng
+                        });
+
+                        $scope.getAddressFromLatLang(latLng, $scope.map, marker);
+                    });
+                    $ionicLoading.hide();
+                }, function(error) {
+                    $ionicLoading.hide();
+                    console.log(JSON.stringify(error));
+                    $ionicLoading.show({
+                        template: "Could not get location, please check your GPS setting and try again",
+                        noBackdrop: true,
+                        duration: 1000
+                    });
+                });
+
+                $scope.getAddressFromLatLang = function(latLng, map, marker) {
+                    var geocoder = new google.maps.Geocoder();
+
+                    geocoder.geocode({
+                        'latLng': latLng
+                    }, function(results, status) {
+                        //console.log(JSON.stringify(results));
+                        if (status == google.maps.GeocoderStatus.OK) {
+                            if (results[1]) {
+                                var infowindow = new google.maps.InfoWindow();
+                                infowindow.setOptions({
+                                    content: '<div>' + results[1].formatted_address + '</div>',
+                                });
+                                infowindow.open(map, marker);
+                            }
+                        } else {
+                            alert("error", JSON.stringify(status));
+                        }
+                    })
+                };
+            }); //todo 
+        }
+
         $scope.finishView = function() {
             delete $rootScope.notif_list[$scope.notif.notif_notificationId];
             Server.sendNotificationRead($scope.notif.notif_notificationId);
