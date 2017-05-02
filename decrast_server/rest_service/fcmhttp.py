@@ -51,21 +51,27 @@ class FcmPusher():
 		'''
 			This function is responsible for sending out a notification to the specified user.
 		'''
-
 		# Newline characters cause the notification message to format weirdly.
 		m_body = m_body.strip('\n')
 
 		# Pack up the needed data depending on what type of invite it is.
+		task_id = notif.task.id
 		if notif.type == Notification.INVITE:
 			serialized_task = TaskSerializer(notif.task)
-			m_data = {'type':notif.type, 'id':notif.id, 'notif_task':serialized_task.data}
+			m_data = {'type':notif.type, 'id':notif.id, 'task_id':task_id, \
+				 'notif_task':serialized_task.data}
+		elif notif.type == Notification.DEADLINE:
+			m_data = {'type':notif.type, 'id':notif.id, 'task_id':task_id, 'metadata':notif.metadata}
 		elif notif.type == Notification.INVITE_ACCEPT:
+			# overload accepting deadline extension and viewer invite
+			if notif.metadata is not None:
+				m_title = 'Deadline extended'
 			m_data = {'type':notif.type, 'id':notif.id, 'viewer_name': notif.sender.username, \
-				'viewer_id': notif.sender.id, 'task_id': notif.task.id}
+				'viewer_id': notif.sender.id, 'task_id': notif.task.id, 'metadata':notif.metadata}
 		elif notif.type == Notification.EXPIRED:
-			m_data = {'type':notif.type, 'id':notif.id}
+			m_data = {'type':notif.type, 'id':notif.id, 'task_id':task_id}
 		else:
-			m_data = {'type':notif.type, 'id':notif.id}
+			m_data = {'type':notif.type, 'id':notif.id, 'task_id':task_id}
 
 		# Create an instance of the FCM notificaiton class, and send out a single notification.
 		push = FCMNotification(api_key=FCM_SERVER_PASSWORD)

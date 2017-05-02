@@ -54,8 +54,9 @@ class Task(models.Model):
 				notifications = Notification.objects.filter(task=self, viewed=False) \
 					.exclude(type=Notification.EVIDENCE)
 				for notification in notifications:
-					notification.viewed = True
-					notification.save()
+					if notification.type <= Notification.INVITE_ACCEPT:
+						notification.viewed = True
+						notification.save()
 				return True
 		except: pass
 		return False

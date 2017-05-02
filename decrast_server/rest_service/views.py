@@ -260,13 +260,13 @@ class TaskViewSet(viewsets.ViewSet):
 		if 'completed' in data:
 			print("User completed task: " + task.name)
 			task_completed_notification(task.owner, task)
-			task.ended = True
+			task.complete()
 
 		# If the update included an expired key, that means that this task is overdue,
 		# and we need run the logic associated with it.
 		if 'expired' in data:
 			task_expired_notification(task.owner, task)
-			task.ended = True
+			task.complete()
 
 		# process input
 		factory = TaskFactory(task, data=data, partial=True)
@@ -373,7 +373,7 @@ class NotificationViewSet(viewsets.ViewSet):
 		data = extract_data(request.data, ['notification'])
 		data = [extract_data(n, ['id'], ['decision']) for n in data['notification']]
 		for ndata in data:
-			notification = request.user.recv_no.filter(id=ndata['id'])
+			notification = request.user.recv_no.filter(id=ndata['id'], viewed=False)
 			if notification.exists():
 				read_notification(request.user, notification.get(), ndata.get('decision'))
 
