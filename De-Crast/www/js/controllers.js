@@ -341,6 +341,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.evidenceTypes = EvidenceTypes.all();
         $scope.myFactory = new TaskFact();
         $scope.consequence = "";
+        $scope.con_bool = false;
+        $scope.dis = "disabled";
         $scope.viewerObject = {}; // used to hold viewer
 
         $scope.$on('$ionicView.afterEnter', function(event, viewData) {
@@ -374,6 +376,16 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
 
         });
+
+
+        $scope.addText = function() {
+
+            document.getElementById("consequence-textarea").disabled = !($scope.con_bool);
+            console.log($scope.con_bool);
+
+        };
+
+
 
         $scope.onSubmit = function() {
             if ($scope.taskName == null) {
@@ -438,8 +450,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 $scope.fakesendNotification($scope.viewerObject.friend_uid, data.data.taskId);
                             }
                             //////////////////////////////////////////////////////////////////////////
-                            if($scope.consequence != null || $scope.consequence != "") {
-                                Server.submitConsequence(data.data.taskId, $scope.consequence).then(function (result) {
+                            if($scope.con_bool) {
+                                console.log("submit consequence");
+                                Server.submitConsequence(data.data.taskId, $scope.consequence, null).then(function (result) {
                                     console.log(JSON.stringify(result));
 
                                 });

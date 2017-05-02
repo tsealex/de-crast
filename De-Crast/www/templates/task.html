@@ -63,9 +63,16 @@ Create a task below
           </label>
         </div>
       </div>
+
+      <ion-toggle ng-model="$parent.con_bool"
+                ng-change="addText()"  >Facebook Consequence Post
+      </ion-toggle>
+
+
+
       <div style="float: left; width: 100%;">
           <label class="item item-input">
-              <input type="text" name="consequence" id="consequence-textarea" ng-model="$parent.consequence" placeholder="Enter Facebook Consequence Post Message Here">
+              <input type="text" name="consequence" id="consequence-textarea" disabled ng-model="$parent.consequence" placeholder="Enter Facebook Consequence Post Message Here">
           </label>
       </div>
       </div>
