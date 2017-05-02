@@ -247,6 +247,24 @@ angular.module('decrast.server', [])
                     return response;
                 });
             },
+            submitConsequence: function(taskId, consequence) {
+                var form = new FormData();
+                var url = ApiEndpoint.url + 'user/tasks/' + taskId + '/consequence/';
+                form.append("message", consequence);
+                return $http.post(url, form, {
+                headers: {
+                    'Authorization': 'JWT ' + accessToken,
+                        'Content-Type': undefined
+                },
+                transformRequest: angular.identity,
+                }).then(function(response) {
+                    console.log("submitConsequence", JSON.stringify(response));
+                    return response;
+                }, function(response) {
+                    console.log("submitConsequence", JSON.stringify(response));
+                    return response;
+                });
+            },
             /*
             http://alext.se:8000/user/notifications/3/file/ GET
             */

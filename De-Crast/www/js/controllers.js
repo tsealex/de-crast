@@ -340,6 +340,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.title = "Add";
         $scope.evidenceTypes = EvidenceTypes.all();
         $scope.myFactory = new TaskFact();
+        $scope.consequence = "";
         $scope.viewerObject = {}; // used to hold viewer
 
         $scope.$on('$ionicView.afterEnter', function(event, viewData) {
@@ -389,7 +390,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 });
             } else {
                 /* Add Task to localStorage
-                var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip, 
+                var newTask = $scope.myFactory.addTask($scope.taskName, $scope.descrip,
                     $scope.category, $scope.time, null, null, null);
 
                 $rootScope.task_list[newTask.task_id] = newTask;
@@ -415,7 +416,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     mySelector = document.getElementById('category-select');
                     myCategory = mySelector.options[mySelector.selectedIndex].value;
                     console.log(myDate + "Test timeout" + timezone);
-                    Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory, 
+                    Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory,
                         parseInt(evidenceType)).then(function(data) {
                         console.log(JSON.stringify(data));
                         if (data.data.detail == "deadline")
@@ -437,6 +438,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 $scope.fakesendNotification($scope.viewerObject.friend_uid, data.data.taskId);
                             }
                             //////////////////////////////////////////////////////////////////////////
+                            if($scope.consequence != null || $scope.consequence != "") {
+                                Server.submitConsequence(data.data.taskId, $scope.consequence).then(function (result) {
+                                    console.log(JSON.stringify(result));
+
+                                });
+                            }
                             $ionicLoading.show({
                                 template: 'Task Saved!',
                                 noBackdrop: true,
@@ -1197,7 +1204,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.taskId = $scope.task.task_id;
         $scope.image = null;
         // TODO: move this function to the global scope, so that other controllers can use this function 
-        $scope.dataURItoBlob = function(dataURI) {
+        $rootScope.dataURItoBlob = function(dataURI) {
             var byteString = atob(dataURI.split(',')[1]);
             var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
 
