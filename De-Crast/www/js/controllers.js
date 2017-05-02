@@ -45,7 +45,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
         });
         $scope.name = localStorage.getItem('user');
-
+        console.log(Storage.getUserList());
         // function to fetch data from the server
 
         if ($rootScope.sorting != null)
@@ -293,12 +293,20 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fakegetNotificationDetail = function(notifId) {
             Server.fakegetNotificationDetail(notifId).then(function(data) {
                 var notif = data.data[0];
+                console.log("notif.type " + notif.type);
                 var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, 
                     notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
                 Storage.addNotif(newNotif);
 
-                if (notif.type == 6) // for borwser only   
-                    Storage.updateTaskViewer(notif.notif_task, notif.notif_sender);
+                if (notif.type == 6)  {
+                    if (notif.metadata == null)
+                        Storage.updateTaskViewer(notif.task, notif.sender);
+                    else  { // TODO: deadline ext
+                        newDeadline = $scope.convertToUTC(parseInt(notif.metadata));
+                        Storage.updateTaskDeadline(notif.task, newDeadline);
+                    }
+                }
+                $rootScope.notif_list = Storage.getNotifList();
             });
         };
         $scope.populateNotif = function() {
@@ -396,14 +404,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     var myDate = new Date($scope.time);
                     var timezone = new Date().getTimezoneOffset();
                     var myEpoch = (myDate.getTime() + timezone * 60000) / 1000.0;
-                    /*
-                    var usertime = new Date($scope.time);
-                    var timezone = new Date().getTimezoneOffset();
-                    var ddl = new Date(user.getTime() + timezone.getTime());
-                    */
-                    //                    var myDate = new Date($scope.time); // my Date is GMT, $scope.time is Z, we store GMT
-                    // console.log(myDate, $scope.time);
-                    //                    var myEpoch = myDate.getTime()/1000.0;
+
                     mySelector = document.getElementById('category-select');
                     myCategory = mySelector.options[mySelector.selectedIndex].value;
                     console.log(myDate + "Test timeout" + timezone);
@@ -560,19 +561,25 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         Storage.applyTaskChanges(data.data.taskId);
                         if (changeTime && $scope.time != undefined) {
                             var deadline = $scope.time.getTime() / 1000.0; // TODO: bug $scope.time is undefined, please check
-                            Server.sendNotificationThree(3, deadline, taskId).then(function(data) {
-                                var msg = 'Task Saved.';
-                                if (data.status != 200)
-                                    msg = msg + ' Notification not sent due to invalid deadline / no viewer';
+                            Server.sendNotificationThree(3, deadline, taskId).then((function(id, deadline) {
+                                return function(data) {
+                                    var msg = 'Task Saved.';
 
-                                $ionicLoading.show({
-                                    template: msg,
-                                    noBackdrop: true,
-                                    duration: 1000
-                                });
-                                $ionicViewSwitcher.nextDirection('back');
-                                $state.go('tab.home');
-                            });
+                                    if (data.status != 200)
+                                        msg = msg + ' Notification not sent due to invalid deadline / no viewer';
+
+                                    $ionicLoading.show({
+                                        template: msg,
+                                        noBackdrop: true,
+                                        duration: 1000
+                                    });
+                                    task = Storage.getTask(id);
+                                    task.purposed_deadline = deadline;
+                                    Storage.saveTask(task);
+                                    $ionicViewSwitcher.nextDirection('back');
+                                    $state.go('tab.home');
+                                }
+                            })(data.data.taskId, deadline));
                             return;
                         }
                     } else
@@ -677,9 +684,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     type: 'button-positive',
                     onTap: function(e) {
                         console.log("You better not be lying ...");
+
                         Server.completeTask($scope.task.task_id).then((function(id) {
+                            Storage.removeTask(id);
                             return function(data) {
-                                Storage.removeTask(id);
                                 $state.go('tab.home');
                             }
                         })($scope.task.task_id));
@@ -724,15 +732,16 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
     .controller('NotifCtrl', function($scope, $stateParams, $state, $ionicPopup, $ionicLoading,
-     Server, Storage, $rootScope) {
+        Server, Storage, $rootScope) {
         // console.log($rootScope.notif_list);
-        $rootScope.notif_list = Storage.getNotifList();
+        
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             if ($stateParams.notification != null) {
                 console.log('Launching notif list with: ' + JSON.stringify($stateParams.notification));
             } else {
                 console.log("Launching notification list without a pre-determined notification.");
             }
+            $rootScope.notif_list = Storage.getNotifList();
         });
 
         $scope.fakegoNotifDetail = function(currentNotif) {
@@ -748,12 +757,16 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 });
                 // TODO: Storage.removeNotif + sendNotificationReead afterwards
             }
-            if (type == 3 || type == 5) {
+            else if (type == 3 || type == 5) {
+                // TODO: display the deadline to the user (it's stored in notif.meta)
+                $scope.decisionPopup(notif); 
+            }
+            else if (type == 5) {
                 // you need to make a decision
-                $state.go('notifDetail',{notif: notif});
+                // $state.go('notifDetail',{notif: notif});  // TODO: make sure the code is working first
                 // $scope.decisionPopup(notif);
             }
-            if (type == 6 || type == 8) {
+            else  {
                 Storage.removeNotif(notif.notif_notificationId);
                 Server.sendNotificationRead(notif.notif_notificationId);
             }
@@ -796,18 +809,20 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
         // todooo
         $scope.sendNotification = function(notif, decision) {
-            Server.decideOnInvite(notif.notif_notificationId, decision).then(function(data) {
-                if (data.status == 200) {
-                    // succeed
-                    delete $rootScope.notif_list[notif.notif_notificationId];
-                } else {
-                    $ionicLoading.show({
-                        template: data.data.errMsg,
-                        noBackdrop: true,
-                        duration: 1000
-                    });
-                }
-            });
+            Server.decideOnInvite(notif.notif_notificationId, decision).then((function(nid) {
+                return function(data) {
+                    if (data.status == 200) {
+                        // succeed
+                        Storage.removeNotif(nid);
+                    } else {
+                        $ionicLoading.show({
+                            template: data.data.errMsg,
+                            noBackdrop: true,
+                            duration: 1000
+                        });
+                    }
+                };
+            })(notif.notif_notificationId));
         }
     })
     .controller('FriendsCtrl', function($scope, Friends, $stateParams, $rootScope, ngFB, 
@@ -1186,13 +1201,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         $scope.takePicture = function() {
             var options = {
-                quality: 75,
+                quality: 100,
                 destinationType: Camera.DestinationType.DATA_URL,
                 sourceType: Camera.PictureSourceType.CAMERA,
                 allowEdit: false,
                 encodingType: Camera.EncodingType.JPEG,
-                targetWidth: 300,
-                targetHeight: 300,
+                targetWidth: 500,
+                targetHeight: 500,
                 popoverOptions: CameraPopoverOptions,
                 saveToPhotoAlbum: true
             };
@@ -1232,7 +1247,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         };
     })
-    .controller('selectViewerCtrl', function($stateParams, $rootScope, $state, $ionicViewSwitcher, $scope, $ionicHistory) {
+    .controller('selectViewerCtrl', function($stateParams, $rootScope, $state, Storage, 
+        $ionicViewSwitcher, $scope, $ionicHistory) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             // $ionicHistory.goBack();   
@@ -1254,7 +1270,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.goBack();
         }
     })
-    .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, $stateParams, Server, $rootScope, TaskFact, Storage) {
+    .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, 
+        $stateParams, Server, $rootScope, TaskFact, Storage) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
@@ -1284,7 +1301,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
         });
 
-        $scope.onDecision = function(decisionInt) {
+        $scope.onDecision = function(decisionInt, Storage) {
             var decision;
             if (decisionInt == 0) {
                 decision = false;

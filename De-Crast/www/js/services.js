@@ -147,7 +147,8 @@ angular.module('decrast.services', ['ngOpenFB'])
                     task_partner: partner,
                     task_facebook: facebook,
                     task_evidenceType: evidenceType,
-                    task_owned: owned
+                    task_owned: owned,
+                    purposed_deadline: null
                 };
 
                 task.task_id = taskId;
@@ -234,6 +235,15 @@ angular.module('decrast.services', ['ngOpenFB'])
         }
     })
 
+    .factory('Utils', function() {
+    	return {
+    		base64ToFile: function(base64Str, fileType, fileName) {
+    			var blob = new Blob([base64Str], {type: 'fileType'});
+    			var file = new File([blob], fileName);
+    		}
+    	};
+    })
+
     .factory('FacebookPoster', function(ngFB) {
         return {
             makePost: function() {
@@ -302,7 +312,13 @@ angular.module('decrast.services', ['ngOpenFB'])
                 } else if (notification.type == 6) {
                     var viewer_id = notification.viewer_id;
                     var task_id = notification.task_id;
-                    Storage.updateTaskViewer(task_id, viewer_id);
+                    
+                    if (notif.metadata == null)
+                        Storage.updateTaskViewer(task_id, viewer_id);
+                    else  { // TODO: deadline ext
+                        newDeadline = $scope.convertToUTC(parseInt(notification.metadata));
+                        Storage.updateTaskDeadline(task_id, newDeadline);
+                    }
                 } else if (notification.type == 2) {
                 	// TODO: tell the viewer a file has been uploaded as evidence
                 	$state.go('tab.notif');
