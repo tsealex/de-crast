@@ -115,14 +115,14 @@ def get_random_msg():
 
 	if msg_count == 0 or img_count == 0:
 		return None, None
-	msg_idx = int(random.uniform(1, msg_count - 1))
-	img_idx = int(random.uniform(1, img_count - 1))
+	msg_idx = int(random.uniform(0, msg_count))
+	img_idx = int(random.uniform(0, img_count))
 
 	msg = TextTemplate.objects.all()[msg_idx]
 	img = ImageTemplate.objects.all()[img_idx]
 
-	print('Selected image : ' + img.file.url)
-	print('Selected mesage: ' + msg.text)
+	print('Selected image {}: '.format(img_idx) + img.file.url)
+	print('Selected mesage {}: '.format(msg_idx) + msg.text)
 
 	return img, msg
 

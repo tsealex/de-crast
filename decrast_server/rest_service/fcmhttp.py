@@ -53,6 +53,7 @@ class FcmPusher():
 		'''
 		# Newline characters cause the notification message to format weirdly.
 		m_body = m_body.strip('\n')
+		print('send')
 
 		# Pack up the needed data depending on what type of invite it is.
 		task_id = notif.task.id

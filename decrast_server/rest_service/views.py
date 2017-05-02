@@ -619,7 +619,7 @@ class MemePopulator(viewsets.ViewSet):
 	def get_random(self, request):
 		file, message = get_random_msg()
 		file = get_actual_file(file.file, encode64=False)
-		return HttpResponse(file, content_type="image/jpeg")
+		return HttpResponse(file[0], content_type=file[1])
 
 
 	'''
