@@ -297,6 +297,17 @@ angular.module('decrast.services', ['ngOpenFB'])
         }
     })
 
+    .factory('Utils', function() {
+    	return {
+    		convertToUTC: function(time) {
+	            var ddl = new Date(time * 1000);
+	            var timezone = new Date().getTimezoneOffset();
+	            var date = (ddl.getTime() - timezone * 60000) / 1000.0;
+	            return new Date(date * 1000);
+        	}
+    	};
+    })
+
     .factory('NotificationHandler', function(Storage, $state) {
         return {
             handleFromBackground: function(notification) {
@@ -320,7 +331,8 @@ angular.module('decrast.services', ['ngOpenFB'])
                         Storage.updateTaskDeadline(task_id, newDeadline);
                     }
                 } else if (notification.type == 2) {
-                	// TODO: tell the viewer a file has been uploaded as evidence
+                	var task_id = notification.task_id;
+                	Storage.removeTask(task_id);
                 	$state.go('tab.notif');
                 } else if (notification.type >= 7) {
                 	var task_id = notification.task_id;

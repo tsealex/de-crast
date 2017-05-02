@@ -3,7 +3,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     .controller('HomeCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover,
         $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server,
-        TaskFact, Friends, Notif, Storage, Categories) {
+        TaskFact, Friends, Notif, Storage, Categories, Utils) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
@@ -163,15 +163,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             // Execute action
         });
 
-        $scope.convertToUTC = function(time) {
+    /*    $scope.convertToUTC = function(time) { // I've made this a global method
             var ddl = new Date(time * 1000);
             var timezone = new Date().getTimezoneOffset();
             var date = (ddl.getTime() - timezone * 60000) / 1000.0;
             return new Date(date * 1000);
-        }
+        }*/
 
         /*
-         * Function to display the task list
+         * Function to display the task list // TODO: make this a global method, thanks
          */
         $scope.populateTasks = function(response, owned) {
             for (i = 0; i < response.length; i++) {
@@ -180,7 +180,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         var taskData = data.data[0];
                         Server.getEvidenceType(taskData.taskId).then((function(taskData) {
                             return function(data) {
-                                var utcDate = $scope.convertToUTC(taskData.deadline);
+                                var utcDate = Utils.convertToUTC(taskData.deadline);
                                 var viewer = null;
                                 /* move new Task into if(owned)-else check
                                  * if user own the task, the partner field stores the viewer object
@@ -207,7 +207,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
         };
 
-        $scope.populateCategories = function() {
+        $scope.populateCategories = function() { // TODO: make this a global method, thanks
             Server.getCategory().then(function(data) {
                 if (data.data.length == 0) {
                     //$ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
@@ -227,7 +227,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             return Storage.getCategoryName(cid);
         };
 
-        $scope.fetchFBfriends = function() {
+        $scope.fetchFBfriends = function() { // TODO: make this a global method, thanks
             // FB get friends who is also using the app
             ngFB.api({
                 path: '/' + localStorage.getItem('userFBId') + '/friends',
@@ -263,7 +263,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
         };
 
-        $scope.getUserByFbId = function(fbId, fbName) {
+        $scope.getUserByFbId = function(fbId, fbName) { // TODO: make this a global method, thanks
             Server.getUserByFbId(fbId).then(function(data) {
                 if (data.data[0] === undefined) return;
                 var userId = data.data[0].userId;
@@ -283,7 +283,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
 
         //////////////// below may be delete if Junwei's notification system setup
-        $scope.fakepopulateNotification = function() {
+        $scope.fakepopulateNotification = function() { // TODO: make this a global method, thanks
             $rootScope.notif_list = Storage.getNotifList();
             Server.fakegetNotification().then(function(data) {
                 for (i = 0; i < data.data.length; i++) {
@@ -293,7 +293,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
         };
 
-        $scope.fakegetNotificationDetail = function(notifId) {
+        $scope.fakegetNotificationDetail = function(notifId) { // TODO: make this a global method, thanks
             Server.fakegetNotificationDetail(notifId).then(function(data) {
                 var notif = data.data[0];
                 console.log("notif.type " + notif.type);
@@ -301,11 +301,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
                 Storage.addNotif(newNotif);
 
-                if (notif.type == 6)  {
+                if (notif.type == 6)  { // update viewer (owner side)
                     if (notif.metadata == null)
                         Storage.updateTaskViewer(notif.task, notif.sender);
-                    else  { // TODO: deadline ext
-                        newDeadline = $scope.convertToUTC(parseInt(notif.metadata));
+                    else  { // deadline ext (owner side)
+                        newDeadline = Utils.convertToUTC(parseInt(notif.metadata));
                         Storage.updateTaskDeadline(notif.task, newDeadline);
                     }
                 } else if (notif.type >= 7 || notif.type == 2) {
@@ -319,7 +319,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
         //////////////////////////////////////////////////////////////////////////
 
-        $scope.getViewTask = function() {
+        $scope.getViewTask = function() { // TODO: make this a global method, thanks
             Server.getViewTask().then(function(data) {
                 $scope.populateTasks(data.data, false);
             });
@@ -740,7 +740,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
     .controller('NotifCtrl', function($scope, $stateParams, $state, $ionicPopup, $ionicLoading,
-        Server, Storage, $rootScope) {
+        Server, Storage, $rootScope, Utils) {
         // console.log($rootScope.notif_list);
         
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
@@ -808,6 +808,9 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     text: 'Accept',
                     type: 'button-positive',
                     onTap: function(e) {
+                        // update the task deadline (viewer side)
+                        newDeadline = Utils.convertToUTC(parseInt(notif.notif_metadata));
+                        Storage.updateTaskDeadline(notif.notif_task, newDeadline);
                         $scope.sendNotification(notif, true);
                     }
                 }]
@@ -1284,7 +1287,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
     })
     .controller('notifDetailCtrl', function($state, $ionicViewSwitcher, $scope, $ionicHistory, 
-        $stateParams, Server, $rootScope, TaskFact, Storage) {
+        $stateParams, Server, $rootScope, TaskFact, Storage, Utils) {
         $scope.onClick = function() {
             $ionicViewSwitcher.nextDirection('back');
             $ionicHistory.goBack();
@@ -1301,7 +1304,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     Server.getInviteTask($scope.notif.notif_notificationId).then(function(data){
                         if(data.status == 200){ // success
                             $scope.task = data.data;
-                            $scope.task.deadline = $scope.convertToUTC($scope.task.deadline);
+                            $scope.task.deadline = Utils.convertToUTC($scope.task.deadline);
                         }else{
                             $ionicLoading.show({
                                 template: data.errorMsg,
@@ -1365,12 +1368,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     break;
             }
         }
-        $scope.convertToUTC = function(time) {
-            var ddl = new Date(time * 1000);
-            var timezone = new Date().getTimezoneOffset();
-            var date = (ddl.getTime() - timezone * 60000) / 1000.0;
-            return new Date(date * 1000);
-        }
+        
     })
     .controller('viewFTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup, 
         $rootScope, EvidenceTypes, Server, Storage) {
