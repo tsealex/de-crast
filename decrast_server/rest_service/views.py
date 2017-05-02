@@ -233,7 +233,7 @@ class TaskViewSet(viewsets.ViewSet):
 		ids = extract_ids(query) # parse input & process input
 		user = request.user
 		queryset = Task.objects.filter(viewers=user) | Task.objects.filter(owner=user)
-		queryset = queryset.filter(pk__in=ids)
+		queryset = queryset.filter(pk__in=ids, ended=False)
 		serializer = TaskSerializer(queryset, many=True)
 		if rest_settings.SINGLE_VIEWER:
 			for task in serializer.data:
@@ -258,13 +258,14 @@ class TaskViewSet(viewsets.ViewSet):
 
 		# TODO: we may not want to allow the user to edit 'completed' directly in the final version
 		if 'completed' in data:
-			print("User completed task: " + task.name)
+			task.ended = True
 			task_completed_notification(task.owner, task)
 			task.complete()
 
 		# If the update included an expired key, that means that this task is overdue,
 		# and we need run the logic associated with it.
 		if 'expired' in data:
+			task.ended = True
 			task_expired_notification(task.owner, task)
 			task.complete()
 
