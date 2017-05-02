@@ -178,27 +178,30 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 if (!Storage.existTask(response[i].taskId)) {
                     Server.getTask(response[i].taskId).then(function(data) {
                         var taskData = data.data[0];
-                        Server.getEvidenceType(taskData.taskId).then(function(data) {
-                            var utcDate = $scope.convertToUTC(taskData.deadline);
-                            var viewer = null;
-                            /* move new Task into if(owned)-else check
-                             * if user own the task, the partner field stores the viewer object
-                             * else, the partner field stores the owner object.
-                             * hence, when view the task owned, the viewer(partner) is displayed
-                             * when view the friend's task, the owner(friend who own the task) is displayed
-                             * although they share the same field 'partner'
-                             * */
-                            if (owned)
-                                viewer = $rootScope.friend_list[taskData.viewer];
-                            else
-                                viewer = $rootScope.friend_list[taskData.owner];
+                        Server.getEvidenceType(taskData.taskId).then((function(taskData) {
+                            return function(data) {
+                                var utcDate = $scope.convertToUTC(taskData.deadline);
+                                var viewer = null;
+                                /* move new Task into if(owned)-else check
+                                 * if user own the task, the partner field stores the viewer object
+                                 * else, the partner field stores the owner object.
+                                 * hence, when view the task owned, the viewer(partner) is displayed
+                                 * when view the friend's task, the owner(friend who own the task) is displayed
+                                 * although they share the same field 'partner'
+                                 * */
+                                $rootScope.friend_list = Storage.getUserList();
+                                if (owned)
+                                    viewer = $rootScope.friend_list[taskData.viewer];
+                                else
+                                    viewer = $rootScope.friend_list[taskData.owner];
 
-                             var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                    taskData.description, taskData.category, utcDate,
-                                    viewer, null, data.data.type, owned);
-                            Storage.saveTask(newTask);
-                            $rootScope.task_list = Storage.getOwnedTaskList(true);
-                        });
+                                var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                        taskData.description, taskData.category, utcDate,
+                                        viewer, null, data.data.type, owned);
+                                Storage.saveTask(newTask);
+                                $rootScope.task_list = Storage.getOwnedTaskList(true);
+                            };
+                        })(taskData));
                     });
                 }
             }
@@ -305,6 +308,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         newDeadline = $scope.convertToUTC(parseInt(notif.metadata));
                         Storage.updateTaskDeadline(notif.task, newDeadline);
                     }
+                } else if (notif.type >= 7 || notif.type == 2) {
+                    Storage.removeTask(notif.task);
                 }
                 $rootScope.notif_list = Storage.getNotifList();
             });
@@ -686,8 +691,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         console.log("You better not be lying ...");
 
                         Server.completeTask($scope.task.task_id).then((function(id) {
-                            Storage.removeTask(id);
                             return function(data) {
+                                Storage.removeTask(id);
                                 $state.go('tab.home');
                             }
                         })($scope.task.task_id));
@@ -699,8 +704,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
 
-    .controller('FtasksCtrl', function($scope, Ftasks, $ionicLoading, $state, $rootScope) {
+    .controller('FtasksCtrl', function($scope, Ftasks, $ionicLoading, $state, $rootScope, Storage) {
         //$ionicLoading.show({template: 'No friends\' Tasks found', noBackdrop: true, duration: 2500});
+        $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+
+
         $scope.goDetail = function(task) {
             $state.go('viewFTask', {
                 task: task
@@ -1232,6 +1240,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 return function(data) {
                     if (data.status == 200) {
                         Storage.removeTask(id);
+                        $ionicLoading.show({
+                            template: 'Task Completed!',
+                            noBackdrop: true,
+                            duration: 1000
+                        });
                     } else {
                         $ionicLoading.show({
                             template: 'submission failed',

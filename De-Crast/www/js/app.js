@@ -55,8 +55,17 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
                         notification.data = angular.fromJson(remove_escs);
 
                         /* Notify our server that this task has expired. */
-                        Server.expireTask(notification.data.taskId);
-                        FacebookPoster.makePost();
+                        Server.expireTask(notification.data.taskId).then((function(tid) {
+                            return function(res) {
+                                if (res.status != 200)
+                                    return;
+                                Storage.removeTask(tid);
+                                // TODO: BUG HERE, we should reschedule notification event for 
+                                // tasks that have changed deadline before
+                                FacebookPoster.makePost(); 
+                            };
+                        })(notification.data.taskId));
+                        
                     }, false);
                 }
             } else {

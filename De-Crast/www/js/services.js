@@ -322,6 +322,9 @@ angular.module('decrast.services', ['ngOpenFB'])
                 } else if (notification.type == 2) {
                 	// TODO: tell the viewer a file has been uploaded as evidence
                 	$state.go('tab.notif');
+                } else if (notification.type >= 7) {
+                	var task_id = notification.task_id;
+                	Storage.removeTask(task_id);
                 }
             },
             handleFromInApp: function(notification) {
