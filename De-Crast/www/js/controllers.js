@@ -1235,7 +1235,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $cordovaCamera.getPicture(options).then(function(imageData) {
                 //$scope.imgURI = "data:image/jpeg;base64," + imageData;
                 $scope.imgURI = "data:image/jpeg;base64," + imageData;
-                $scope.imgBlob = $scope.dataURItoBlob("data:image/jpeg;base64," + imageData);
+                $scope.imgBlob = $rootScope.dataURItoBlob("data:image/jpeg;base64," + imageData);
                 $ionicLoading.show({
                     template: 'Picture taken!',
                     noBackdrop: true,
