@@ -10,7 +10,7 @@ urlpatterns = [
 	# Temporary / Debugging Views
 	url(r'^list/$', AuthViewSet.as_view({'get': 'list'})), # TODO: remove this
 	url(r'^user/list/$', UserViewSet.as_view({'get': 'list'})), # TODO: remove this
-	url(r'^meme/image/$', MemePopulator.as_view({'post': 'image'})),
+	url(r'^meme/image/$', MemePopulator.as_view({'post': 'image', 'get': 'get_random'})),
 	url(r'^meme/message/$', MemePopulator.as_view({'post': 'message'})),
 	url(r'^meme/image/(?P<query>.+)/$', MemePopulator.as_view({'delete': 'del_image'})),
 	url(r'^meme/message/(?P<query>.+)/$', MemePopulator.as_view({'delete': 'del_message'})),

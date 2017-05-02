@@ -1,6 +1,6 @@
 from .settings import rest_settings
 from .errors import APIErrors
-from .models import *
+from .user import User
 
 import re
 import mimetypes
@@ -90,28 +90,40 @@ def create_GPS_doc(gps):
 '''
 
 '''
-def get_actual_file(file):
+def get_actual_file(file, encode64=True):
 	if not bool(file):
 		return None
 	else:
 		content_type = mimetypes.guess_type(file.name)
 		file = open(file.name, 'rb')
 		filename = file.name.split('/')[-1]
-		file = base64.b64encode(file.read())
+		if encode64 == True:
+			file = base64.b64encode(file.read())
+		else:
+			file = file.read()
 		return (file, content_type, filename)
 
 '''
 
 '''
 def get_random_msg():
+	from .models import TextTemplate
+	from .models import ImageTemplate
+
 	msg_count = TextTemplate.objects.count()
 	img_count = ImageTemplate.objects.count()
+
 	if msg_count == 0 or img_count == 0:
 		return None, None
-	msg_idx = random.uniform(1, msg_count)
-	img_idx = random.uniform(1, img_count)
+	msg_idx = int(random.uniform(1, msg_count - 1))
+	img_idx = int(random.uniform(1, img_count - 1))
+
 	msg = TextTemplate.objects.all()[msg_idx]
 	img = ImageTemplate.objects.all()[img_idx]
+
+	print('Selected image : ' + img.file.url)
+	print('Selected mesage: ' + msg.text)
+
 	return img, msg
 
 '''
