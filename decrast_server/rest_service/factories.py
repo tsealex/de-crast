@@ -175,6 +175,8 @@ class ConsequenceFactory(serializers.ModelSerializer):
 	def validate_file(self, file):
 		if self.instance and bool(self.instance.file):
 			raise APIErrors.AlreadyExists('file')
+		if file is None:
+			return file
 		if file.size > rest_settings.MAX_CONSEQUENCE_FILE_SIZE:
 			raise APIErrors.ValidationError('file')
 		if rest_settings.MAGIC_FILE:

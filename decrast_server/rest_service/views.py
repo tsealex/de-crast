@@ -526,6 +526,10 @@ class ConsequenceViewSet(viewsets.ViewSet):
 		# process input
 		file = request.data.get('file')
 		message = request.data.get('message')
+
+		if file == 'NULL': file = None
+		if message == 'NULL': message = None
+
 		dup_file = False
 		if not file and not message and not consequence.message and  \
 			not bool(consequence.file):
