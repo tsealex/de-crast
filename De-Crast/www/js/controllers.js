@@ -25,17 +25,17 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.clearHistory();
 
             Server.getUserTasks().then(function(data) {
-                $scope.populateTasks(data.data, true);
+                $rootScope.populateTasks(data.data, true);
             });
             $rootScope.task_list = Storage.getOwnedTaskList(true);
         });
         $scope.$on('$ionicView.afterEnter', function(event, viewData) {
             // prepare categories list
-            $scope.populateCategories();
+            $rootScope.populateCategories();
             // prepare friends list
             $scope.fetchFBfriends();
             //////////////// below may be delete if Junwei's notification system setup
-            $scope.fakepopulateNotification();
+            $rootScope.fakepopulateNotification();
             //////////////////////////////////////////////////////////////////////////
             $scope.getViewTask();
             $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
@@ -169,7 +169,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         /*
          * Function to display the task list
          */
-        $scope.populateTasks = function(response, owned) {
+        $rootScope.populateTasks = function(response, owned) {
             for (i = 0; i < response.length; i++) {
                 //if (!Storage.existTask(response[i].taskId)) {
                     Server.getTask(response[i].taskId).then(function(data) {
@@ -220,7 +220,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
         };
 
-        $scope.populateCategories = function() {
+        $rootScope.populateCategories = function() {
             Server.getCategory().then(function(data) {
                 if (data.data.length == 0) {
                     //$ionicLoading.show({template: 'No categories found', noBackdrop: true, duration: 2500});
@@ -295,7 +295,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
 
         //////////////// below may be delete if Junwei's notification system setup
-        $scope.fakepopulateNotification = function() {
+        $rootScope.fakepopulateNotification = function() {
             $rootScope.notif_list = {};
             Server.fakegetNotification().then(function(data) {
                 for (i = 0; i < data.data.length; i++) {
@@ -312,14 +312,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 localStorage.setItem('notif_list', angular.toJson($rootScope.notif_list));
             });
         };
-        $scope.populateNotif = function() {
+        $rootScope.populateNotif = function() {
             $rootScope.notif_list = angular.fromJson(localStorage.getItem('notif_list'));
         };
         //////////////////////////////////////////////////////////////////////////
 
         $scope.getViewTask = function() {
             Server.getViewTask().then(function(data) {
-                $scope.populateTasks(data.data, false);
+                $rootScope.populateTasks(data.data, false);
             });
         };
     })
@@ -478,7 +478,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
         };
 
-        $scope.populateViewers = function() {
+        $rootScope.populateViewers = function() {
             // get all the setting
             evidenceType = document.getElementById('evidenceType-select').value;
             mySelector = document.getElementById('category-select');
