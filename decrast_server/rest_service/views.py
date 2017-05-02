@@ -536,6 +536,8 @@ class ConsequenceViewSet(viewsets.ViewSet):
 			file, message = get_random_msg()
 			if not file or not message: raise APIErrors.ValidationError(
 				'no file / message supplied') 
+			file = file.file
+			message = message.text
 			dup_file = True
 		factory = ConsequenceFactory(consequence, data={
 			'file':file, 'message':message, 'dup_file':dup_file}, partial=True)
