@@ -51,6 +51,8 @@ cordova plugin add ionic-plugin-keyboard
 
 cordova plugin add cordova-plugin-fcm
 
+cordova plugin add cordova-plugin-geolocation
+
 
 You can check which ones you have installed using `cordova plugin`
 
