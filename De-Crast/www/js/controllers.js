@@ -8,7 +8,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
             if (localStorage.getItem('login') == null) {
-                localStorage.clear();
+                //localStorage.clear();
                 $state.go('login', {});
             } else {
                 var status = ngFB.getLoginStatus();
