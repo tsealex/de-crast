@@ -408,7 +408,7 @@ angular.module('decrast.server', [])
                     return response;
                 });
             },
-            fakesendNotification: function(type, recipient, task) {
+            sendNotification: function(type, recipient, task) {
                 return $http({
                     method: 'POST',
                     url: ApiEndpoint.url + 'user/notifications/',
@@ -421,14 +421,14 @@ angular.module('decrast.server', [])
                         task: task
                     }
                 }).then(function(response) {
-                    console.log("fakesendNotification", JSON.stringify(response));
+                    console.log("sendNotification", JSON.stringify(response));
                     return response;
                 }, function(response) {
-                    console.log("fakesendNotification", JSON.stringify(response));
+                    console.log("sendNotification", JSON.stringify(response));
                     return response;
                 });
             },
-            fakegetNotification: function() {
+            getNotification: function() {
                 return $http({
                     method: 'GET',
                     url: ApiEndpoint.url + 'user/notifications/',
@@ -436,14 +436,14 @@ angular.module('decrast.server', [])
                         'Authorization': 'JWT ' + accessToken
                     }
                 }).then(function(response) {
-                    console.log("fakegetNotification", JSON.stringify(response));
+                    console.log("getNotification", JSON.stringify(response));
                     return response;
                 }, function(response) {
-                    console.log("fakegetNotification", JSON.stringify(response));
+                    console.log("getNotification", JSON.stringify(response));
                     return response;
                 });
             },
-            fakegetNotificationDetail: function(notifId) {
+            getNotificationDetail: function(notifId) {
                 return $http({
                     method: 'GET',
                     url: ApiEndpoint.url + 'user/notifications/' + notifId + '/',
@@ -451,10 +451,10 @@ angular.module('decrast.server', [])
                         'Authorization': 'JWT ' + accessToken
                     }
                 }).then(function(response) {
-                    console.log("fakegetNotificationDetail", JSON.stringify(response));
+                    console.log("getNotificationDetail", JSON.stringify(response));
                     return response;
                 }, function(response) {
-                    console.log("fakegetNotificationDetail", JSON.stringify(response));
+                    console.log("getNotificationDetail", JSON.stringify(response));
                     return response;
                 });
             },
