@@ -7,15 +7,21 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
+            console.log("this is login: " + localStorage.getItem('login'))
             if (localStorage.getItem('login') == null) {
-                localStorage.clear();
+                //localStorage.clear();
                 $state.go('login', {});
-            } else {
-                var status = ngFB.getLoginStatus();
-                console.log(status);
-                status.then(function(result) {
+            } else { /*
+                 //ngFB.getLoginStatus();
+                //console.log(status);
+               // console.log("status: " + status);
+
+                ngFB.getLoginStatus().then(function(result) {
+                    console.log("result: " + result.status);
                     if (result.status == "unknown") {
-                        localStorage.clear();
+
+                        console.log("result inside: " + result.status);
+                        //localStorage.clear();
                         $ionicLoading.show({
                             template: 'Please login',
                             noBackdrop: true,
@@ -23,7 +29,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         });
                         $state.go('login');
                     }
-                });
+                });*/
             }
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();
