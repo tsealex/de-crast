@@ -3,7 +3,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     .controller('HomeCtrl', function($rootScope, $scope, $ionicModal, $ionicLoading, $ionicPopover,
         $ionicViewSwitcher, $state, Tasks, $stateParams, ngFB, $ionicHistory, $ionicPopup, Server,
-        TaskFact, Friends, Notif, Storage, Categories, Utils) {
+        TaskFact, Friends, Notif, Storage, Categories, Utils, View) {
         //$scope.tasks = Tasks.all();
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
 
@@ -27,22 +27,21 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();
-
-            Server.getUserTasks().then(function(data) {
-                $rootScope.populateTasks(data.data, true);
-            });
-            $rootScope.task_list = Storage.getOwnedTaskList(true);
-        });
-        $scope.$on('$ionicView.afterEnter', function(event, viewData) {
-            // prepare categories list
-            $rootScope.populateCategories();
-            // prepare friends list
+            
+            // move global
             $scope.fetchFBfriends();
-            //////////////// below may be delete if Junwei's notification system setup
-            $rootScope.fakepopulateNotification();
-            //////////////////////////////////////////////////////////////////////////
-            $scope.getViewTask();
+            View.getUserTasks();
+            View.getViewTask();
+            View.populateNotification();
+        });
+        $scope.$on('$ionicView.enter', function(event, viewData) {
+            // This event will fire, whether it was the first load or a cached view.
+            $rootScope.task_list = Storage.getOwnedTaskList(true);
             $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+            $rootScope.friend_list = Storage.getUserList();
+            $rootScope.notif_list = Storage.getNotifList();
+            $rootScope.populateCategories();
+
         });
         $scope.name = localStorage.getItem('user');
         console.log(Storage.getUserList());
@@ -163,51 +162,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             // Execute action
         });
 
-    /*    $scope.convertToUTC = function(time) { // I've made this a global method
-            var ddl = new Date(time * 1000);
-            var timezone = new Date().getTimezoneOffset();
-            var date = (ddl.getTime() - timezone * 60000) / 1000.0;
-            return new Date(date * 1000);
-        }*/
-
-        /*
-         * Function to display the task list // TODO: make this a global method, thanks
-         */
-        $rootScope.populateTasks = function(response, owned) {
-            for (i = 0; i < response.length; i++) {
-                if (!Storage.existTask(response[i].taskId)) {
-                    Server.getTask(response[i].taskId).then(function(data) {
-                        var taskData = data.data[0];
-                        Server.getEvidenceType(taskData.taskId).then((function(taskData) {
-                            return function(data) {
-                                var utcDate = Utils.convertToUTC(taskData.deadline);
-                                console.log("check time: ", utcDate);
-                                var viewer = null;
-                                /* move new Task into if(owned)-else check
-                                 * if user own the task, the partner field stores the viewer object
-                                 * else, the partner field stores the owner object.
-                                 * hence, when view the task owned, the viewer(partner) is displayed
-                                 * when view the friend's task, the owner(friend who own the task) is displayed
-                                 * although they share the same field 'partner'
-                                 * */
-                                $rootScope.friend_list = Storage.getUserList();
-                                if (owned)
-                                    viewer = $rootScope.friend_list[taskData.viewer];
-                                else
-                                    viewer = $rootScope.friend_list[taskData.owner];
-
-                                var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                        taskData.description, taskData.category, utcDate,
-                                        viewer, null, data.data.type, owned);
-                                Storage.saveTask(newTask);
-                                $rootScope.task_list = Storage.getOwnedTaskList(true);
-                            };
-                        })(taskData));
-                    });
-                }
-            }
-        };
-
         $rootScope.populateCategories = function() {
 
             Server.getCategory().then(function(data) {
@@ -229,7 +183,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             return Storage.getCategoryName(cid);
         };
 
-        $scope.fetchFBfriends = function() { // TODO: make this a global method, thanks
+        $scope.fetchFBfriends = function() {
             // FB get friends who is also using the app
             ngFB.api({
                 path: '/' + localStorage.getItem('userFBId') + '/friends',
@@ -242,91 +196,29 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             noBackdrop: true,
                             duration: 2500
                         });
-                    } else if (list.data.length <= Storage.getUserListSize()) {
-                        // quick fix
-                        // we don't need to re-fetch user list from the server, if
-                        // we already have it cached
-                        // assumption: # of user's friends never changes
-                        return;
-                    }
-                    for (i = 0; i < list.data.length; i++) {
-                        var friendFbId = list.data[i].id;
-                        var friendFbName = list.data[i].name;
-                        $scope.getUserByFbId(friendFbId, friendFbName); // TODO: can you make a change here
-                        // TODO: intead of one fbId at a time, you can request for several users:
-                        // TODO: i.e. user/facebook/32425&9353&232324&2425347/ each separated by '&'
+                    } else{
+                        if (list.data.length <= Storage.getUserListSize()) {
+                            // quick fix
+                            // we don't need to re-fetch user list from the server, if
+                            // we already have it cached
+                            // assumption: # of user's friends never changes
+                            return;
+                        }
+                        var friendFbId = list.data[0].id;
+                        var friendFbName = [list.data[0].name];
+                        for (i = 1; i < list.data.length; i++) {
+                            friendFbId += '&' + list.data[i].id;
+                            friendFbName.push(list.data[i].name);
+                            View.getUserByFbId(friendFbId, friendFbName);
+                        }
+                        // console.log("check list: ", friendFbId, JSON.stringify(friendFbName));
                     }
                 },
                 function(error) {
-                    alert('Facebook error: ' + error.error_description);
+                    console.log('Facebook friends error: ' + error.error_description);
                 });
-
-            // populate view
-
         };
 
-        $scope.getUserByFbId = function(fbId, fbName) { // TODO: make this a global method, thanks
-            Server.getUserByFbId(fbId).then(function(data) {
-                if (data.data[0] === undefined) return;
-                var userId = data.data[0].userId;
-                var username = data.data[0].username;
-                var name = null;
-                if (username != null) {
-                    name = username;
-                } else {
-                    name = fbName;
-                }
-                var newFriend = (new Friends()).addFriend(userId, name, 'normal');
-                Storage.addUser(newFriend);
-                $rootScope.friend_list = Storage.getUserList();
-            });
-            // default status as normal   
-
-        };
-
-        //////////////// below may be delete if Junwei's notification system setup
-        $rootScope.fakepopulateNotification = function() {
-
-            $rootScope.notif_list = Storage.getNotifList();
-            Server.fakegetNotification().then(function(data) {
-                for (i = 0; i < data.data.length; i++) {
-                    if (!Storage.existNotif(data.data[i].notificationId))
-                        $scope.fakegetNotificationDetail(data.data[i].notificationId);
-                }
-            });
-        };
-
-        $scope.fakegetNotificationDetail = function(notifId) { // TODO: make this a global method, thanks
-            Server.fakegetNotificationDetail(notifId).then(function(data) {
-                var notif = data.data[0];
-                console.log("notif.type " + notif.type);
-                var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, 
-                    notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
-                Storage.addNotif(newNotif);
-
-                if (notif.type == 6)  { // update viewer (owner side)
-                    if (notif.metadata == null)
-                        Storage.updateTaskViewer(notif.task, notif.sender);
-                    else  { // deadline ext (owner side)
-                        newDeadline = Utils.convertToUTC(parseInt(notif.metadata));
-                        Storage.updateTaskDeadline(notif.task, newDeadline);
-                    }
-                } else if (notif.type >= 7 || notif.type == 2) {
-                    Storage.removeTask(notif.task);
-                }
-                $rootScope.notif_list = Storage.getNotifList();
-            });
-        };
-        $rootScope.populateNotif = function() {
-            $rootScope.notif_list = Storage.getNotifList();
-        };
-        //////////////////////////////////////////////////////////////////////////
-
-        $scope.getViewTask = function() { // TODO: make this a global method, thanks
-            Server.getViewTask().then(function(data) {
-                $rootScope.populateTasks(data.data, false);
-            });
-        };
     })
 
     .controller('AddTaskCtrl', function($rootScope, $stateParams, $scope, $ionicPlatform,
@@ -446,11 +338,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 duration: 1000
                             });
                         } else {
-                            //////////////// below may be delete if Junwei's notification system setup
+                            
                             if ($scope.viewerObject) {
-                                $scope.fakesendNotification($scope.viewerObject.friend_uid, data.data.taskId);
+                                $scope.sendNotification($scope.viewerObject.friend_uid, data.data.taskId);
                             }
-                            //////////////////////////////////////////////////////////////////////////
+                            
                             if($scope.con_bool) {
                                 console.log("submit consequence");
                                 Server.submitConsequence(data.data.taskId, $scope.consequence, null).then(function (result) {
@@ -514,13 +406,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
         };
 
-        //////////////// below may be delete if Junwei's notification system setup
-        $scope.fakesendNotification = function(recipientId, taskId) {
+        $scope.sendNotification = function(recipientId, taskId) {
             var type = 5; // Viewer invite
             console.log(type, recipientId, taskId);
-            Server.fakesendNotification(type, recipientId, taskId).then(function(data) {});
+            Server.sendNotification(type, recipientId, taskId).then(function(data) {});
         };
-        //////////////////////////////////////////////////////////////////////////
 
     })
 
@@ -639,7 +529,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     document.getElementById('time-textarea').style.display = "none";
                     document.getElementById('time-input').style.display = "block";
                     changeTime = true;
-                    // TODO: send notification
+                    // TODO: 
                     // how to indicate the deadline is under pending: set the mark?
                     console.log("need send notification function");
                 } else {
@@ -763,7 +653,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         };
     })
     .controller('NotifCtrl', function($scope, $stateParams, $state, $ionicPopup, $ionicLoading,
-        Server, Storage, $rootScope, Utils) {
+        Server, Storage, $rootScope, Utils, View) {
         // console.log($rootScope.notif_list);
         
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
@@ -772,10 +662,16 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             } else {
                 console.log("Launching notification list without a pre-determined notification.");
             }
+        });
+        // below 2 state: at enter state check for new notif, at after enter populate the view
+        $scope.$on('$ionicView.enter', function(event, viewData) {
+            View.populateNotification();
+        });
+        $scope.$on('$ionicView.afterEnter', function(event, viewData) {
             $rootScope.notif_list = Storage.getNotifList();
         });
 
-        $scope.fakegoNotifDetail = function(currentNotif) {
+        $scope.goNotifDetail = function(currentNotif) {
             var notif = currentNotif;
             var type = notif.notif_type;
             /* type 3: ddl extension
@@ -788,19 +684,14 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 });
                 // TODO: Storage.removeNotif + sendNotificationReead afterwards
             }
-            /*else if (type == 3 || type == 5) {
-                // TODO: display the deadline to the user (it's stored in notif.meta)
-                $scope.decisionPopup(notif); 
-            }*/
             else if (type == 3 || type == 5) {
-                $state.go('notifDetail',{notif: notif});  // TODO: make sure the code is working first
-                // $scope.decisionPopup(notif);
+                $state.go('notifDetail',{notif: notif});
             }
             else  {
                 Storage.removeNotif(notif.notif_notificationId);
                 Server.sendNotificationRead(notif.notif_notificationId);
             }
-        }
+        }/*
         $scope.decisionPopup = function(notif) {
             var text = '';
             var title = '';
@@ -839,8 +730,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
 
             myPopup.then(function(res) {});
-        }
-        // todooo
+        }*/
+        
         $scope.sendNotification = function(notif, decision) {
             Server.decideOnInvite(notif.notif_notificationId, decision).then((function(nid) {
                 return function(data) {
@@ -1011,7 +902,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 });
                             },
                             function(error) {
-                                alert('Facebook error: ' + error.error_description);
+                                console.log('Facebook error: ' + error.error_description);
                             });
 
                         console.log('Facebook login succeeded');
@@ -1178,7 +1069,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             } else {
                 // Browser doesn't support Geolocation
                 console.log("navigator.geolocation false");
-            } //todo 
+            }
         });
 
 
@@ -1211,7 +1102,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     })
     .controller('cameraCtrl', function($rootScope, $state, $ionicViewSwitcher, $scope, 
-        $ionicLoading, $ionicHistory, $cordovaCamera, $stateParams, Server, Storage) {
+        $ionicLoading, $ionicHistory, $cordovaCamera, $stateParams, Server, Storage, Utils) {
 
         $scope.task = $stateParams.task;
         $scope.taskId = $scope.task.task_id;
@@ -1329,11 +1220,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             }
         });
 
-        $scope.onDecision = function(decision, Storage) {
+        $scope.onDecision = function(decision) {
                 Server.decideOnInvite($scope.notif.notif_notificationId, decision).then(function(data) {
                     if (data.status == 200) {
                         // delete from local when decision sent success
-                        delete $rootScope.notif_list[$scope.notif.notif_notificationId];
+                        Storage.removeNotif($scope.notif.notif_notificationId);
                         $ionicHistory.goBack();
                         if(decision){ // add task to FTask if accept to view
                             if($scope.notif.notif_type == 5){ // an intive
@@ -1375,7 +1266,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
 
         $scope.deadlineChangeDetail = function(){
-            $scope.task = Storage.getTask($scope.notif.notif_task); // this help get the old, which is deadline already in UTC form
+            var oldTask = Storage.getTask($scope.notif.notif_task); // this help get the old, which is deadline already in UTC form
+            // but user can also edit the task! ( // TODO: Problem? what if the owner change the task to a completely different thing?)
+            
+            Server.getTask($scope.notif.notif_task).then(function(taskData){
+                var newTask = (new TaskFact()).addTask(taskData.data[0].taskId, taskData.data[0].name,
+                                taskData.data[0].description, taskData.data[0].category, oldTask.task_time,
+                                oldTask.task_partner, null, oldTask.task_evidenceType, false);
+                $scope.task = newTask;
+            });
             var deadline_string = $filter('date')(Utils.convertToUTC($scope.notif.notif_metadata), 'medium', 'UTC');
             // write to the html page
             document.getElementById('new-time-textarea').innerHTML = 
@@ -1397,6 +1296,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         }
 
         $scope.updateDeadline = function(){
+            Storage.removeTask($scope.notif.notif_task);
             $scope.task.task_time = Utils.convertToUTC($scope.notif.notif_metadata);
             Storage.saveTask($scope.task);
         }
@@ -1523,7 +1423,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         }
                     })
                 };
-            }); //todo 
+            });
         }
 
         $scope.finishView = function() {
