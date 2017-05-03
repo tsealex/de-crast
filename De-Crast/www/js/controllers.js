@@ -120,15 +120,26 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             });
             confirmPopup.then(function(res) {
                 if (res) {
+                    ngFB.getLoginStatus().then(function(response) {
+                        console.log("login status: ", response);
+                        if (response && response.status === 'connected') {
+                            FB.logout(function(response) {
+                                document.location.reload();
+                            });
+                        }
+                    });
+                    /*
                     ngFB.logout().then(
                         function(response) {
+                            console.log(response);
+                            
                             console.log('Facebook logout succeeded');
                             $scope.ignoreDirty = true; //Prevent loop
                             localStorage.clear();
                             $ionicHistory.clearCache();
                             $ionicHistory.clearHistory();
                             $state.go('login');
-                        });
+                        });*/
                 } else {
                     console.log('You stay');
                 }
@@ -1337,18 +1348,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             $scope.notif = $stateParams.notif;
-            /////////////////////////////////////////////////
-            /////
-
-            //////
             // if the file path end in jpg, set title to Photo, otherwise, set to GPS
             $scope.evidence_type = ($scope.notif.notif_file.substr(
                 $scope.notif.notif_file.lastIndexOf('.') + 1) == 'jpg') ? 'Photo' : 'GPS';
             console.log($scope.notif.notif_file, $scope.evidence_type);
             Server.viewEvidence($scope.notif.notif_notificationId).then(function(data) {
-                //console.log(data);
                 if ($scope.evidence_type == 'GPS') {
-                    $scope.displayMap(data.data);
+                    $scope.displayMap(window.atob(data.data));
                 } else {
                      $scope.imgURI = "data:image/jpeg;base64," + data.data;
                 }
@@ -1373,7 +1379,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     enableHighAccuracy: true
                 };
 
-                $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
+                // $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
 
                     latLng = new google.maps.LatLng($scope.coor_lat, $scope.coor_lng);
 
@@ -1400,7 +1406,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         $scope.getAddressFromLatLang(latLng, $scope.map, marker);
                     });
                     $ionicLoading.hide();
-                }, function(error) {
+                /*}, function(error) {
                     $ionicLoading.hide();
                     console.log(JSON.stringify(error));
                     $ionicLoading.show({
@@ -1408,7 +1414,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         noBackdrop: true,
                         duration: 1000
                     });
-                });
+                });*/
 
                 $scope.getAddressFromLatLang = function(latLng, map, marker) {
                     var geocoder = new google.maps.Geocoder();
