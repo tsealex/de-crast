@@ -15,7 +15,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 console.log(status);
                 status.then(function(result) {
                     if (result.status == "unknown") {
-                        localStorage.clear();
+                        //localStorage.clear();
                         $ionicLoading.show({
                             template: 'Please login',
                             noBackdrop: true,
