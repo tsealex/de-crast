@@ -28,6 +28,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             duration: 1000
                         });
                         $state.go('login');
+                    }else{ // if status is connected, fetch friends
+                        $scope.fetchFBfriends();
                     }
                 });
             }
@@ -35,7 +37,6 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.clearHistory();
             
             // move global
-            $scope.fetchFBfriends();
             View.getUserTasks();
             View.getViewTask();
             View.populateNotification();
@@ -121,25 +122,22 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             confirmPopup.then(function(res) {
                 if (res) {
                     ngFB.getLoginStatus().then(function(response) {
-                        console.log("login status: ", response);
+                        
                         if (response && response.status === 'connected') {
-                            FB.logout(function(response) {
-                                document.location.reload();
+                            ngFB.logout().then(function(response) {
                             });
                         }
+                        $scope.ignoreDirty = true; //Prevent loop
+                        localStorage.clear();
+                        $ionicHistory.clearCache();
+                        $ionicHistory.clearHistory();
+                        
+                        Storage.clearCategoryList();
+                        Storage.clearUserList();
+                        Storage.clearTaskList();
+                        Storage.clearNotifList();
+                        $state.go('login');
                     });
-                    /*
-                    ngFB.logout().then(
-                        function(response) {
-                            console.log(response);
-                            
-                            console.log('Facebook logout succeeded');
-                            $scope.ignoreDirty = true; //Prevent loop
-                            localStorage.clear();
-                            $ionicHistory.clearCache();
-                            $ionicHistory.clearHistory();
-                            $state.go('login');
-                        });*/
                 } else {
                     console.log('You stay');
                 }
@@ -233,7 +231,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     }
                 },
                 function(error) {
-                    console.log('Facebook friends error: ' + error.error_description);
+                    alert('Facebook friends error: ' + error.error_description);
                 });
         };
 
@@ -339,6 +337,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     mySelector = document.getElementById('category-select');
                     myCategory = mySelector.options[mySelector.selectedIndex].value;
                     console.log(myDate + "Test timeout" + timezone);
+                    //console.log("show me the category Id: ", myCategory);
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory,
                         parseInt(evidenceType)).then(function(data) {
                         console.log(JSON.stringify(data));
@@ -822,6 +821,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                 } else {
                     var newCategory = (new Categories()).addCategory(data.data.categoryId, data.data.name);
                     Storage.addCategory(newCategory);
+                    document.getElementById('categoryName-textarea').value = '';
                 }
             });
         }
@@ -920,7 +920,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 });
                             },
                             function(error) {
-                                console.log('Facebook error: ' + error.error_description);
+                                alert('Facebook fetch user info error: ' + error.error_description);
                             });
 
                         console.log('Facebook login succeeded');
