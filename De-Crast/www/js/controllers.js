@@ -11,10 +11,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             if (localStorage.getItem('login') == null) {
                 //localStorage.clear();
                 $state.go('login', {});
-            } else { /*
-                 //ngFB.getLoginStatus();
-                //console.log(status);
-               // console.log("status: " + status);
+            } else {
+                 ngFB.getLoginStatus();
+                console.log(status);
+               console.log("status: " + status);
 
                 ngFB.getLoginStatus().then(function(result) {
                     console.log("result: " + result.status);
@@ -29,7 +29,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         });
                         $state.go('login');
                     }
-                });*/
+                });
             }
             $ionicHistory.clearCache();
             $ionicHistory.clearHistory();

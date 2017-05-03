@@ -295,8 +295,9 @@ angular.module('decrast.services', ['ngOpenFB'])
                     path: '/me/feed',
                     method: 'POST',
                     params: {
-                        link: 'http://www.nooooooooooooooo.com/vader.jpg',
-                        picture: 'http://www.nooooooooooooooo.com/vader.jpg',
+                        link: 'http://alext.se:8000/meme/image/', // TODO: change this to something else?
+                        // https://github.com/timdohm/de-crast/tree/frontend-master <- i.e. our repo
+                        picture: 'http://alext.se:8000/meme/image/',
                         message: msg,
                         access_token: fbToken,
                         privacy: "{'value': 'ALL_FRIENDS'}"
