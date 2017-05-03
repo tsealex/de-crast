@@ -192,7 +192,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
         $scope.fetchFBfriends = function() {
             // FB get friends who is also using the app
             ngFB.api({
-                path: '/' + localStorage.getItem('userFBId') + '/friends',
+                //path: '/' + localStorage.getItem('userFBId') + '/friends',
+                path: '/me/friends',
                 params: {}
             }).then(
                 function(list) {
