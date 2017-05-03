@@ -1269,6 +1269,10 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         if(data.status == 200){ // success
                             $scope.task = data.data;
                             $scope.task.deadline = $scope.convertToUTC($scope.task.deadline);
+                            // prepare the task so that add to storage when accept viewing
+                            $scope.newTask = (new TaskFact()).addTask($scope.task.taskId, $scope.task.name,
+                                                $scope.task.description, null, $scope.task.deadline,
+                                                $rootScope.friend_list[$scope.task.owner], null, evidence.data.type, false);
                         }else{
                             $ionicLoading.show({
                                 template: data.errorMsg,
@@ -1277,6 +1281,19 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                             });
                         }
                     });
+                }
+                if($scope.notif.notif_type == 3) {
+                    // hook data
+                    $scope.task = Storage.getTask($scope.notif.notif_task);
+                    $scope.task.deadline = $scope.convertToUTC($scope.task.task_time);
+                    console.log($scope.task.task_time);
+                    document.getElementById('new-time-textarea').innerHTML = 
+                    "<div style=\"float: left; width: 100%;\"> \
+                        <label class=\"item item-input\"> \
+                            <textarea disabled type=\"text\" name=\"new-time\" placeholder=\"New Deadline\" style=\"background: transparent; resize: none; \">{{task.task_time | date: 'medium' : 'UTC'}}</textarea> \
+                        </label> \
+                    </div>";
+                    console.log(JSON.stringify($scope.task));
                 }
             }
         });
@@ -1300,10 +1317,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 Server.getEvidenceType($scope.task.taskId).then(function(evidence) { // get evidence type for display
                                     if (data.status == 200) {
                                         // add to localstorage, so that task is shown in Ftask
-                                        var newTask = (new TaskFact()).addTask($scope.task.taskId, $scope.task.name,
-                                        $scope.task.description, null, $scope.task.deadline,
-                                        $rootScope.friend_list[$scope.task.owner], null, evidence.data.type, false);// todo1
-                                        Storage.saveTask(newTask);
+                                        Storage.saveTask($scope.newTask);
                                         $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
                                         // delete the related notif
                                         delete $rootScope.notif_list[$scope.notif.notif_notificationId];

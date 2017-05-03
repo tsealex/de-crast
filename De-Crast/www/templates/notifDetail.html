@@ -7,21 +7,21 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <div class="bottom">
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <textarea disabled type="text" name="taskName" id="taskName-textarea" style="background: transparent; resize: none;">{{task.name}}</textarea>
+                    <textarea disabled type="text" name="taskName" id="taskName-textarea" placeholder="Title" style="background: transparent; resize: none;">{{task.task_name}}</textarea>
                 </label>
             </div>
             <!--Task description-->
             <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <textarea disabled type="text" name="descrip" id="descrip-textarea" style="background: transparent; resize: none;">{{task.description}}</textarea>
+                    <textarea disabled type="text" name="descrip" id="descrip-textarea" placeholder="Description" style="background: transparent; resize: none;">{{task.task_descrip}}</textarea>
                 </label>
             </div>
         </div>
 
         <div class="bottom">
-            <div style="float: left; width: 50%;" >
+            <div style="float: left; width: 100%;" >
             <label class="item item-input">
-                <textarea disabled type="text" name="owner" id="owner-textarea" placeholder="Owner" ng-click="populateViewers()" style="background: transparent; resize: none;">{{friend_list[task.owner].friend_name}}</textarea>
+                <textarea disabled type="text" name="owner" id="owner-textarea" placeholder="Owner" ng-click="populateViewers()" style="background: transparent; resize: none;">{{task.task_partner.friend_name}}</textarea>
             </label>
             </div>
         </div>
@@ -35,13 +35,16 @@ link up to anything in particular in the controllers. We'll want to hook these u
             </div>
         </div-->
 
-        <!--Due Time: I don't like how this is displaying so we should fix this-->
+        <!--Old Due Time: I don't like how this is displaying so we should fix this-->
         <div class="bottom">
-            <div style="float: left; width: 50%;">
+            <div style="float: left; width: 100%;">
                 <label class="item item-input">
-                    <textarea disabled type="text" name="time" id="time-textarea" style="background: transparent; resize: none;">{{task.deadline | date: 'medium' : 'UTC'}}</textarea>
+                    <textarea disabled type="text" name="time" id="time-textarea" placeholder="Original Deadline" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
                 </label>
             </div>
+        </div>
+        <!--New Due Time-->
+        <div class="bottom" id="new-time-textarea">
         </div>
 
         <!--Task Evidence Type wont be displayed for now to keep the interface looks normal-->
