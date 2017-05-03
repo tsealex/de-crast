@@ -43,7 +43,7 @@ link up to anything in particular in the controllers. We'll want to hook these u
                 </label>
             </div>
         </div>
-        <!--New Due Time-->
+        <!--New Due Time, this field only used/display in deadline change notif-->
         <div class="bottom" id="new-time-textarea">
         </div>
 
@@ -61,8 +61,8 @@ link up to anything in particular in the controllers. We'll want to hook these u
         <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
         TODO file can be used by add, view, and edit -->
         <div id="footer">
-            <button style="float: left; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(0)">Decline</button>
-            <button style="float: right; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(1)">Accept</button>
+            <button style="float: left; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(false)">Decline</button>
+            <button style="float: right; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(true)">Accept</button>
         </div>
     </ion-content>
 </ion-view>

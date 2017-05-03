@@ -64,6 +64,19 @@ Create a task below
         </div>
       </div>
 
+      <ion-toggle ng-model="$parent.con_bool"
+                ng-change="addText()"  >Facebook Consequence Post
+      </ion-toggle>
+
+
+
+      <div style="float: left; width: 100%;">
+          <label class="item item-input">
+              <input type="text" name="consequence" id="consequence-textarea" disabled ng-model="$parent.consequence" placeholder="Enter Facebook Consequence Post Message Here">
+          </label>
+      </div>
+      </div>
+
         <button class="button button-full" ng-click="onSubmit()">Create Task</button>
   </ion-content>
 </ion-view>

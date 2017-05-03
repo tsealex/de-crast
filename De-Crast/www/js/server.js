@@ -247,21 +247,122 @@ angular.module('decrast.server', [])
                     return response;
                 });
             },
+            submitConsequence: function(taskId, consequence, data_uri) {
+                var con = false;
+                var uri = false;
+                console.log("incoming consequence message");
+                console.log(consequence);
+                var form = new FormData();
+                var form2 = new FormData();
+                var url = ApiEndpoint.url + 'user/tasks/' + taskId + '/consequence/';
+
+                if(consequence != null && consequence != "") {
+                    form.append("message", consequence);
+                    console.log("con appended");
+                    console.log(form);
+                    con = true;
+                }
+                else {
+                    console.log("con not appended");
+                    form = null;
+                }
+
+                console.log("this is data uri: " + data_uri);
+
+                if(data_uri != null && data_uri != "") {
+                    form2.append("file", data_uri, 'consequence.jpg');
+                    uri = true;
+                    console.log("IS THIS HAPPENING????");
+                }
+                else {
+                    form2 = null;
+                }
+
+                console.log("con is: " + con);
+                console.log("uri is: " + uri);
+                if(con && uri) {
+                    console.log("case both null");
+                    return $http.post(url, form, form2, {
+                        headers: {
+                            'Authorization': 'JWT ' + accessToken,
+                            'Content-Type': undefined
+                        },
+                        transformRequest: angular.identity,
+                    }).then(function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    }, function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    });
+                }
+                else if(con && !uri) {
+                    console.log("case uri null");
+                    return $http.post(url, form, {
+                        headers: {
+                            'Authorization': 'JWT ' + accessToken,
+                            'Content-Type': undefined
+                        },
+                        transformRequest: angular.identity,
+                    }).then(function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    }, function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    });
+
+                }
+                else if(!con && uri) {
+                    console.log("case message null");
+                    return $http.post(url, form2, {
+                        headers: {
+                            'Authorization': 'JWT ' + accessToken,
+                            'Content-Type': undefined
+                        },
+                        transformRequest: angular.identity,
+                    }).then(function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    }, function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    });
+
+                }
+                else {
+                    console.log("case both null");
+                    return $http.post(url, {
+                        headers: {
+                            'Authorization': 'JWT ' + accessToken,
+                            'Content-Type': undefined
+                        }
+                       // transformRequest: angular.identity,
+                    }).then(function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    }, function (response) {
+                        console.log("submitConsequence", JSON.stringify(response));
+                        return response;
+                    });
+
+                }
+            },
             /*
             http://alext.se:8000/user/notifications/3/file/ GET
             */
-            viewEvidence: function(notifId){
+            viewEvidence: function(notifId) {
                 return $http({
                     method: 'GET',
                     url: ApiEndpoint.url + 'user/notifications/' + notifId + '/file/',
                     headers: {
                         'Authorization': 'JWT ' + accessToken
-                    }
+                    },
                 }).then(function(response) {
-                    console.log("getGPS", JSON.stringify(response));
+                    console.log("viewEvidence", JSON.stringify(response.data));
                     return response;
                 }, function(response) {
-                    console.log("getGPS", JSON.stringify(response));
+                    console.log("viewEvidence", JSON.stringify(response));
                     return response;
                 });
             },

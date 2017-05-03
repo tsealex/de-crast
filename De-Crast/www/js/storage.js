@@ -179,6 +179,11 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 			taskList[id].task_partner = task_partner;
 			localStorage.setItem('task_list', angular.toJson(taskList));
 		},
+		updateTaskDeadline: function(id, deadline) {
+			taskList[id].task_time = deadline;
+			taskList[id].purposed_deadline = null;
+			localStorage.setItem('task_list', angular.toJson(taskList));
+		},
 		getOwnedTaskList: function(owned) {
 			var myTasks = [];
 			for (var id in taskList) {
