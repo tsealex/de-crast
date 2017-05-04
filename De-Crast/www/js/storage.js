@@ -176,10 +176,12 @@ angular.module('decrast.storage', []).factory('Storage', function() {
 			// this will not be undefined, o.w. the user wouldn't be able to 
 			// sent the viewer an invite in the first place
 			task_partner = userList[viewer_id]; 
+			if (taskList[id] === undefined) return;
 			taskList[id].task_partner = task_partner;
 			localStorage.setItem('task_list', angular.toJson(taskList));
 		},
 		updateTaskDeadline: function(id, deadline) {
+			if (taskList[id] === undefined) return;
 			taskList[id].task_time = deadline;
 			taskList[id].purposed_deadline = null;
 			localStorage.setItem('task_list', angular.toJson(taskList));
