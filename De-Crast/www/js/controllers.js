@@ -240,7 +240,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     .controller('AddTaskCtrl', function($rootScope, $stateParams, $scope, $ionicPlatform,
         $cordovaLocalNotification, $ionicModal, $ionicLoading, $ionicViewSwitcher, $state,
-        TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform) {
+        TaskFact, $timeout, Server, EvidenceTypes, $ionicPlatform, Utils) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
         });
@@ -289,13 +289,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
 
         $scope.addText = function() {
-
             document.getElementById("consequence-textarea").disabled = !($scope.con_bool);
-            console.log($scope.con_bool);
-
         };
-
-
 
         $scope.onSubmit = function() {
             if ($scope.taskName == null) {
@@ -321,14 +316,13 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                     });
                 } else {
                     // convert from readable time to UNIX
-                    var myDate = new Date($scope.time);
-                    var timezone = new Date().getTimezoneOffset();
-                    var myEpoch = (myDate.getTime() + timezone * 60000) / 1000.0;
+                    var myEpoch = Utils.parseDateStr($scope.time) / 1000;
 
                     mySelector = document.getElementById('category-select');
                     myCategory = mySelector.options[mySelector.selectedIndex].value;
 
                     //console.log("show me the category Id: ", myCategory);
+                    var tmp = Utils.parseDateStr($scope.time);
                     Server.addNewTask($scope.taskName, $scope.descrip, myEpoch, myCategory,
                         parseInt(evidenceType)).then(function(data) {
                         console.log(JSON.stringify(data));
@@ -351,29 +345,22 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                 $scope.sendNotification($scope.viewerObject.friend_uid, data.data.taskId);
                             }
 
-                            if ($scope.con_bool) {
-                                console.log("submit consequence");
-                                Server.submitConsequence(data.data.taskId, $scope.consequence, null).then(function(result) {
-                                    console.log(JSON.stringify(result));
-
-                                });
-                            }
-                            $ionicLoading.show({
-                                template: 'Task Saved!',
-                                noBackdrop: true,
-                                duration: 1000
+                            if (!$scope.con_bool)
+                                $scope.consequence = null;
+                            // we need to initialize the consequence anyway, to do that we must make a call
+                            // if no consequence has been specified, a random message will be chosen
+                            console.log("submit consequence");
+                            Server.submitConsequence(data.data.taskId, $scope.consequence, null).then(function(result) {
+                                console.log(JSON.stringify(result));
                             });
+                            
+                            
 
                             if (window.cordova) {
                                 // when run on device, test the platform and call FCM
-
                                 $ionicPlatform.ready(function() {
-                                    // var now = new Date().getTime();
-                                    // var _3SecondsFromNow = new Date(now + 3 * 1000);
-                                    //var ddl = new Date(myEpoch*1000);
-                                    var usertime = new Date($scope.time);
-                                    var timezone = new Date().getTimezoneOffset();
-                                    var ddl = new Date(usertime.getTime() + timezone * 60000);
+                                    var timestamp = Utils.parseDateStr($scope.time);
+                                    var ddl = new Date(timestamp);
                                     $cordovaLocalNotification.schedule({ // This part of code may not work in browser
                                         id: 10,
                                         title: $scope.taskName,
@@ -383,7 +370,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                             taskId: data.data.taskId
                                         }
                                     }).then(function(result) {
-                                        console.log(ddl.getTime + 'a local notification is triggered' + myEpoch * 1000);
+                                        console.log('a local notification is triggered' + timestamp);
+                                        $ionicLoading.show({
+                                            template: 'Task Saved!',
+                                            noBackdrop: true,
+                                            duration: 1000
+                                        });
                                     });
                                 });
                             } else {
@@ -548,7 +540,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
     })
 
     .controller('ViewTaskCtrl', function($scope, $state, $stateParams, $ionicViewSwitcher, $ionicPopup,
-        $rootScope, EvidenceTypes, Server, Storage) {
+        $rootScope, EvidenceTypes, Server, Storage, $ionicLoading) {
         $scope.$on('$ionicView.beforeEnter', function(event, viewData) {
             viewData.enableBack = true;
             $scope.task = $stateParams.task;
@@ -614,6 +606,12 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         Server.completeTask($scope.task.task_id).then((function(id) {
                             return function(data) {
                                 Storage.removeTask(id);
+                                $ionicLoading.show({
+                                    template: "Task Completed!",
+                                    noBackdrop: true,
+                                    duration: 1000
+                                });
+
                                 $state.go('tab.home');
                             }
                         })($scope.task.task_id));
@@ -834,7 +832,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
 
     .controller('LoginCtrl', function($scope, $state, $ionicModal, $cordovaLocalNotification,
         $ionicPlatform, $timeout, ngFB, $ionicHistory, $http, ApiEndpoint, Server, $ionicPopup,
-        $rootScope, $ionicLoading, $cordovaDevice, $ionicPlatform) {
+        $rootScope, $ionicLoading, $cordovaDevice, $ionicPlatform, Storage) {
         /*
         $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
             viewData.enableBack = true;
@@ -905,6 +903,11 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                                                 alert('Oh no ... FCM errored out')
                                             }
                                         });
+                                        // initiailization (clear cache)
+                                        Storage.clearNotifList();
+                                        Storage.clearCategoryList();
+                                        Storage.clearUserList();
+                                        Storage.clearTaskList();
                                         $state.go('tab.home');
                                     } else {
                                         $state.go('setUsername');
@@ -1099,7 +1102,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         });
                     } else {
                         $ionicLoading.show({
-                            template: 'submission failed',
+                            template: 'Submission Failed',
                             noBackdrop: true,
                             duration: 1000
                         });
@@ -1173,7 +1176,7 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         });
                     } else {
                         $ionicLoading.show({
-                            template: 'submission failed',
+                            template: 'Submission Failed',
                             noBackdrop: true,
                             duration: 1000
                         });

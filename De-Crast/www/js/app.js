@@ -54,15 +54,21 @@ angular.module('decrast', ['ionic', 'decrast.controllers', 'decrast.services',
                         var remove_escs = notification.data.replace('\"', '"');
                         notification.data = angular.fromJson(remove_escs);
 
-                        /* Notify our server that this task has expired. */
+                        // Server.expireTask(notification.data.taskId);
+                        // FacebookPoster.makePost();
+                        
+                        // Notify our server that this task has expired. 
                         Server.expireTask(notification.data.taskId).then((function(tid) {
                             return function(res) {
                                 if (res.status != 200)
                                     return;
+
+                                Server.getConsequence(tid).then(function(res) {
+                                    // TODO: BUG HERE, we should reschedule notification event for 
+                                    // tasks that have changed deadline before
+                                    FacebookPoster.makePost(res.data.message, res.data.file); 
+                                });
                                 Storage.removeTask(tid);
-                                // TODO: BUG HERE, we should reschedule notification event for 
-                                // tasks that have changed deadline before
-                                FacebookPoster.makePost(); 
                             };
                         })(notification.data.taskId));
                         

@@ -237,6 +237,9 @@ angular.module('decrast.services', ['ngOpenFB'])
 
     .factory('Utils', function() {
     	return {
+            testPrt: function() {
+                console.log('log');
+            },
     		base64ToFile: function(base64Str, fileType, fileName) {
     			var blob = new Blob([base64Str], {type: 'fileType'});
     			var file = new File([blob], fileName);
@@ -254,13 +257,29 @@ angular.module('decrast.services', ['ngOpenFB'])
                     "type": mimeString
                 });
                 return bb;
+            },
+            // input: date string (i.e. 2018-11-21T08:45)
+            // output: timestamp (in ms)
+            parseDateStr: function(dateStr) {
+                var date = new Date(dateStr + '-0000');
+                // TODO: this should be date.getTimezoneOffset();
+                // otherwise there will be issues related to DST
+                var timezone = new Date().getTimezoneOffset(); 
+                var timestamp = date.getTime() + timezone * 60000;
+                return timestamp;
+            },
+            convertToUTC: function(time) {
+                var ddl = new Date(time * 1000);
+                var timezone = ddl.getTimezoneOffset();
+                var date = (ddl.getTime() - timezone * 60000) / 1000;
+                return new Date(date * 1000);
             }
     	};
     })
 
     .factory('FacebookPoster', function(ngFB) {
         return {
-            makePost: function() {
+            makePost: function(msg, file) {
                 var fbToken = localStorage.getItem('fbAccessToken');
 
                 function getRandomInt(min, max) {
@@ -268,7 +287,7 @@ angular.module('decrast.services', ['ngOpenFB'])
                     max = Math.floor(max);
                     return Math.floor(Math.random() * (max - min)) + min;
                 }
-
+                /*
                 var msg = '';
                 var randomNumber = getRandomInt(1, 5);
                 switch (randomNumber) {
@@ -287,17 +306,16 @@ angular.module('decrast.services', ['ngOpenFB'])
                     case 5:
                         msg = 'I need to do better next time!';
                         break;
-                }
-
-                // TODO: Use De-crast server messages and error messages.
-
+                }*/
+                
+                // use De-crast server messages and error messages.
                 ngFB.api({
                     path: '/me/feed',
                     method: 'POST',
                     params: {
-                        link: 'http://alext.se:8000/meme/image/', // TODO: change this to something else?
+                        link: 'http://alext.se:8000/' + file, // TODO: change this to something else?
                         // https://github.com/timdohm/de-crast/tree/frontend-master <- i.e. our repo
-                        picture: 'http://alext.se:8000/meme/image/',
+                        picture: 'http://alext.se:8000/' + file,
                         message: msg,
                         access_token: fbToken,
                         privacy: "{'value': 'ALL_FRIENDS'}"
@@ -310,17 +328,6 @@ angular.module('decrast.services', ['ngOpenFB'])
                 });
             }
         }
-    })
-
-    .factory('Utils', function() {
-    	return {
-    		convertToUTC: function(time) {
-	            var ddl = new Date(time * 1000);
-	            var timezone = new Date().getTimezoneOffset();
-	            var date = (ddl.getTime() - timezone * 60000) / 1000.0;
-	            return new Date(date * 1000);
-        	}
-    	};
     })
 
     .factory('NotificationHandler', function(Storage, $state) {
@@ -377,9 +384,9 @@ angular.module('decrast.services', ['ngOpenFB'])
                         Server.getTask(response[i].taskId).then(function(data) {
                             var taskData = data.data[0];
                             Server.getEvidenceType(taskData.taskId).then((function(taskData) {
-                                return function(data) {
+                                return function(data, owned) {
                                     var utcDate = Utils.convertToUTC(taskData.deadline);
-                                    console.log("check time: ", utcDate);
+                                    // onsole.log("check time: ", utcDate);
                                     var viewer = null;
                                     /* move new Task into if(owned)-else check
                                     * if user own the task, the partner field stores the viewer object
@@ -402,7 +409,7 @@ angular.module('decrast.services', ['ngOpenFB'])
                                     Storage.saveTask(newTask);
                                     $rootScope.task_list = Storage.getOwnedTaskList(true);
                                 };
-                            })(taskData));
+                            })(taskData, owned));
                         });
                     }
                 }
@@ -434,7 +441,6 @@ angular.module('decrast.services', ['ngOpenFB'])
             };
 
             view.populateNotification = function() {
-
                 Server.getNotification().then(function(data) {
                     for (i = 0; i < data.data.length; i++) {
                         if (!Storage.existNotif(data.data[i].notificationId))

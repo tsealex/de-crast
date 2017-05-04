@@ -137,6 +137,7 @@ angular.module('decrast.server', [])
                     }
                 }).then(function(response) {
                     console.log('expireTask', JSON.stringify(response));
+                    return response;
                 });
             },
             completeTask: function(taskId) {
@@ -247,6 +248,21 @@ angular.module('decrast.server', [])
                     return response;
                 });
             },
+            getConsequence: function(taskId) {
+                return $http({
+                    method: 'GET',
+                    url: ApiEndpoint.url + 'user/tasks/' + taskId + '/consequence/',
+                    headers: {
+                        'Authorization': 'JWT ' + accessToken
+                    }
+                }).then(function(response) {
+                    console.log("getConsequence", JSON.stringify(response));
+                    return response;
+                }, function(response) {
+                    console.log("getConsequence", JSON.stringify(response));
+                    return response;
+                });
+            },
             submitConsequence: function(taskId, consequence, data_uri) {
                 var con = false;
                 var uri = false;
@@ -280,6 +296,9 @@ angular.module('decrast.server', [])
 
                 console.log("con is: " + con);
                 console.log("uri is: " + uri);
+                // TODO: why not just use a single form ?
+                // TODO: this one probably would not work
+                /*
                 if(con && uri) {
                     console.log("case both null");
                     return $http.post(url, form, form2, {
@@ -296,7 +315,8 @@ angular.module('decrast.server', [])
                         return response;
                     });
                 }
-                else if(con && !uri) {
+                else */
+                if(con && !uri) {
                     console.log("case uri null");
                     return $http.post(url, form, {
                         headers: {
@@ -313,6 +333,7 @@ angular.module('decrast.server', [])
                     });
 
                 }
+                /*
                 else if(!con && uri) {
                     console.log("case message null");
                     return $http.post(url, form2, {
@@ -330,9 +351,10 @@ angular.module('decrast.server', [])
                     });
 
                 }
+                */
                 else {
                     console.log("case both null");
-                    return $http.post(url, {
+                    return $http.post(url, new FormData(), {
                         headers: {
                             'Authorization': 'JWT ' + accessToken,
                             'Content-Type': undefined
