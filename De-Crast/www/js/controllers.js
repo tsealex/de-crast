@@ -33,9 +33,15 @@ angular.module('decrast.controllers', ['ngOpenFB'])
             $ionicHistory.clearHistory();
 
             // move global
+            console.log('fu');
             View.getUserTasks();
             View.getViewTask();
             View.populateNotification();
+            $rootScope.task_list = Storage.getOwnedTaskList(true);
+            $rootScope.viewTask_list = Storage.getOwnedTaskList(false);
+            $rootScope.friend_list = Storage.getUserList();
+            $rootScope.notif_list = Storage.getNotifList();
+            $rootScope.populateCategories();
         });
         $scope.$on('$ionicView.enter', function(event, viewData) {
             // This event will fire, whether it was the first load or a cached view.
@@ -220,8 +226,8 @@ angular.module('decrast.controllers', ['ngOpenFB'])
                         for (i = 1; i < list.data.length; i++) {
                             friendFbId += '&' + list.data[i].id;
                             friendFbName.push(list.data[i].name);
-                            View.getUserByFbId(friendFbId, friendFbName);
                         }
+                        View.getUserByFbId(friendFbId, friendFbName);
                         // console.log("check list: ", friendFbId, JSON.stringify(friendFbName));
                     }
                 },

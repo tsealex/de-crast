@@ -372,110 +372,119 @@ angular.module('decrast.services', ['ngOpenFB'])
               function(Server, Storage, Utils, TaskFact, Friends, $rootScope, Notif) {
         var view = {};
         //return {
-    		view.getUserTasks = function(){
-                Server.getUserTasks().then(function(data) {
-                    view.populateTasks(data.data, true);
-                });
-            };
+		view.getUserTasks = function(){
+            Server.getUserTasks().then(function(data) {
+                view.populateTasks(data.data, true);
+            });
+        };
 
-            view.populateTasks = function(response, owned) {
-                for (i = 0; i < response.length; i++) {
-                    if (!Storage.existTask(response[i].taskId)) {
-                        Server.getTask(response[i].taskId).then(function(data) {
-                            var taskData = data.data[0];
-                            Server.getEvidenceType(taskData.taskId).then((function(taskData) {
-                                return function(data, owned) {
-                                    var utcDate = Utils.convertToUTC(taskData.deadline);
-                                    // onsole.log("check time: ", utcDate);
-                                    var viewer = null;
-                                    /* move new Task into if(owned)-else check
-                                    * if user own the task, the partner field stores the viewer object
-                                    * else, the partner field stores the owner object.
-                                    * hence, when view the task owned, the viewer(partner) is displayed
-                                    * when view the friend's task, the owner(friend who own the task) is displayed
-                                    * although they share the same field 'partner'
-                                    * */
-                                    var friend_list = Storage.getUserList();
-                                    if(friend_list != null){ // you are not alone!
-                                        if (owned)
-                                            viewer = friend_list[taskData.viewer];
-                                        else
-                                            viewer = friend_list[taskData.owner];
-                                    }
-
-                                    var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
-                                            taskData.description, taskData.category, utcDate,
-                                            viewer, null, data.data.type, owned);
-                                    Storage.saveTask(newTask);
-                                    $rootScope.task_list = Storage.getOwnedTaskList(true);
-                                };
-                            })(taskData, owned));
-                        });
-                    }
+        view.populateTasks = function(response, owned) {
+            var query = ''; 
+            var count = 0;
+            for (i = 0; i < response.length; i++) {
+                if (!Storage.existTask(response[i].taskId)) {
+                    if (count > 0) query += '&';
+                    query += response[i].taskId;
+                    count++;
                 }
-            };
+            }
+            
+            if (count > 0) {
+                Server.getTask(query).then((function(owned) {
+                    return function(res) {
+                        var friend_list = Storage.getUserList();
+                        for (i = 0; i < res.data.length; i++) {
+                            var taskData = res.data[i];
+                            var utcDate = Utils.convertToUTC(taskData.deadline);
+                            // onsole.log("check time: ", utcDate);
+                            var viewer = null;
 
-            view.getViewTask = function(){
-                Server.getViewTask().then(function(data) {
-                    view.populateTasks(data.data, false);
-                });
-            };
-
-            view.getUserByFbId = function(fbId, fbName) { // both Id and name are list
-                Server.getUserByFbId(fbId).then(function(data) {
-                    for(i=0; i<data.data.length; i++){
-                        if (data.data[i] === undefined) return;
-                        var userId = data.data[i].userId;
-                        var username = data.data[i].username;
-                        var name = null;
-                        if (username != null) {
-                            name = username;
-                        } else {
-                            name = fbName[i];
-                        }
-                        var newFriend = (new Friends()).addFriend(userId, name, 'normal');
-                        Storage.addUser(newFriend);
-                        $rootScope.friend_list = Storage.getUserList();
+                            if(friend_list != null){ // you are not alone!
+                                if (owned)
+                                    viewer = friend_list[taskData.viewer];
+                                else
+                                    viewer = friend_list[taskData.owner];
+                            }
+                             /* move new Task into if(owned)-else check
+                            * if user own the task, the partner field stores the viewer object
+                            * else, the partner field stores the owner object.
+                            * hence, when view the task owned, the viewer(partner) is displayed
+                            * when view the friend's task, the owner(friend who own the task) is displayed
+                            * although they share the same field 'partner'
+                            * */                 
+                            var newTask = (new TaskFact()).addTask(taskData.taskId, taskData.name,
+                                taskData.description, taskData.category, utcDate,
+                                viewer, null, taskData.evidence.type, owned);
+                            Storage.saveTask(newTask);
+                            $rootScope.task_list = Storage.getOwnedTaskList(true);
+                        };
                     }
-                });
-            };
+                })(owned));
+            }
+            // 
+        };
 
-            view.populateNotification = function() {
-                Server.getNotification().then(function(data) {
-                    for (i = 0; i < data.data.length; i++) {
-                        if (!Storage.existNotif(data.data[i].notificationId))
-                            view.getNotificationDetail(data.data[i].notificationId);
+        view.getViewTask = function(){
+            Server.getViewTask().then(function(data) {
+                view.populateTasks(data.data, false);
+            });
+        };
+
+        view.getUserByFbId = function(fbId, fbName) { // both Id and name are list
+            Server.getUserByFbId(fbId).then(function(data) {
+                for(i=0; i<data.data.length; i++){
+                    if (data.data[i] === undefined) return;
+                    var userId = data.data[i].userId;
+                    var username = data.data[i].username;
+                    var name = null;
+                    if (username != null) {
+                        name = username;
+                    } else {
+                        name = fbName[i];
                     }
-                    // $rootScope.notif_list = Storage.getNotifList();
-                });
-            };
+                    var newFriend = (new Friends()).addFriend(userId, name, 'normal');
+                    Storage.addUser(newFriend);
+                    $rootScope.friend_list = Storage.getUserList();
+                }
+            });
+        };
 
-            view.getNotificationDetail = function(notifId) { // TODO: make this a global method, thanks
-                Server.getNotificationDetail(notifId).then(function(data) {
-                    var notif = data.data[0];
-                    console.log("notif.type " + notif.type);
-                    var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, 
-                        notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
-                    Storage.addNotif(newNotif);
+        view.populateNotification = function() {
+            Server.getNotification().then(function(data) {
+                for (i = 0; i < data.data.length; i++) {
+                    if (!Storage.existNotif(data.data[i].notificationId))
+                        view.getNotificationDetail(data.data[i].notificationId);
+                }
+                // $rootScope.notif_list = Storage.getNotifList();
+            });
+        };
 
-                    if (notif.type == 6)  { // update viewer (owner side)
-                        if (notif.metadata == null)
-                            Storage.updateTaskViewer(notif.task, notif.sender);
-                        else  { // deadline ext (owner side)
-                            newDeadline = Utils.convertToUTC(parseInt(notif.metadata));
-                            Storage.updateTaskDeadline(notif.task, newDeadline);
-                        }
-                    } else if (notif.type >= 7 || notif.type == 2) {
-                        Storage.removeTask(notif.task);
+        view.getNotificationDetail = function(notifId) { // TODO: make this a global method, thanks
+            Server.getNotificationDetail(notifId).then(function(data) {
+                var notif = data.data[0];
+                console.log("notif.type " + notif.type);
+                var newNotif = (new Notif()).addNotif(notif.sender, notif.recipient, notif.type, 
+                    notif.sent_date, notif.notificationId, notif.task, notif.metadata, notif.file, notif.text);
+                Storage.addNotif(newNotif);
+
+                if (notif.type == 6)  { // update viewer (owner side)
+                    if (notif.metadata == null)
+                        Storage.updateTaskViewer(notif.task, notif.sender);
+                    else  { // deadline ext (owner side)
+                        newDeadline = Utils.convertToUTC(parseInt(notif.metadata));
+                        Storage.updateTaskDeadline(notif.task, newDeadline);
                     }
-                    $rootScope.notif_list = Storage.getNotifList();
-                });
-            };
+                } else if (notif.type >= 7 || notif.type == 2) {
+                    Storage.removeTask(notif.task);
+                }
+                $rootScope.notif_list = Storage.getNotifList();
+            });
+        };
 
-            /*view.populateAll = function(){
-                // view.getUserTasks();
-                view.populateNotification(); // seems like only notif populate need to happen at all tabs?
-            }*/
+        /*view.populateAll = function(){
+            // view.getUserTasks();
+            view.populateNotification(); // seems like only notif populate need to happen at all tabs?
+        }*/
         return view;
     }]);
 
