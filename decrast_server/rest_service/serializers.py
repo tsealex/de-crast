@@ -23,15 +23,6 @@ class CategorySerializer(serializers.ModelSerializer):
 		model = Category
 		fields = ('name', 'categoryId')
 
-class TaskSerializer(serializers.ModelSerializer):
-	taskId = serializers.IntegerField(source='id', read_only=True)
-	deadline = TimestampField()
-
-	class Meta:
-		model = Task
-		fields = ('owner', 'viewers', 'category', 'taskId', 'description', 
-			'last_notify_ts', 'deadline', 'name', 'ended')
-
 class NotificationSerializer(serializers.ModelSerializer):
 	notificationId = serializers.IntegerField(source='id', read_only=True)
 	# TODO: do something with the file (path)
@@ -55,6 +46,17 @@ class EvidenceSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Evidence
 		fields = ('type', 'taskId', 'upload_date', 'file')
+
+
+class TaskSerializer(serializers.ModelSerializer):
+	taskId = serializers.IntegerField(source='id', read_only=True)
+	evidence = EvidenceSerializer()
+	deadline = TimestampField()
+
+	class Meta:
+		model = Task
+		fields = ('owner', 'viewers', 'category', 'taskId', 'description', 
+			'last_notify_ts', 'deadline', 'name', 'ended', 'evidence')
 
 '''
 Id Serializers
