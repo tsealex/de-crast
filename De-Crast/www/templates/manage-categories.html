@@ -1,0 +1,21 @@
+<!--Test manage categories view-->
+<ion-view view-title="Manage Categories">
+    <ion-content class="padding">
+        <div class="bottom">
+            <div style="float: left; width: 70%;">
+                <label class="item item-input">
+                <input type="text" name="categoryName" id="categoryName-textarea" ng-model="data" placeholder="New Category">
+                </label>
+            </div>
+        <!--Task description-->
+                <button class="button button-full" style="width: 30%" ng-click="addCategory(data)">Create</button>
+        </div>
+        <ion-list>
+            <ion-item ng-repeat="category in category_list">
+                {{category.name}}
+            </ion-item>
+        </ion-list>
+    </ion-content>
+</ion-view>
+
+

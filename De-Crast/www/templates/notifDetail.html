@@ -1,0 +1,68 @@
+<!---Formatting for any of our Add, View, Edit task views. For now, I've put in general text boxes that don't necessarily
+link up to anything in particular in the controllers. We'll want to hook these up to the controllers and the task factory.
+-->
+<ion-view view-title="{{task.task_name}} Task">
+    <ion-content class="padding">
+        <!--Task name-->
+        <div class="bottom">
+            <div style="float: left; width: 100%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="taskName" id="taskName-textarea" placeholder="Title" style="background: transparent; resize: none;">{{task.task_name}}</textarea>
+                </label>
+            </div>
+            <!--Task description-->
+            <div style="float: left; width: 100%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="descrip" id="descrip-textarea" placeholder="Description" style="background: transparent; resize: none;">{{task.task_descrip}}</textarea>
+                </label>
+            </div>
+        </div>
+
+        <div class="bottom">
+            <div style="float: left; width: 100%;" >
+            <label class="item item-input">
+                <textarea disabled type="text" name="owner" id="owner-textarea" placeholder="Owner" ng-click="populateViewers()" style="background: transparent; resize: none;">{{task.task_partner.friend_name}}</textarea>
+            </label>
+            </div>
+        </div>
+        
+        <!--Task Category wont be displayed since its from friends-->
+        <!--div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="category" id="category-textarea" style="background: transparent; resize: none;">{{category_list[task.category].name}}</textarea>
+                </label>
+            </div>
+        </div-->
+
+        <!--Old Due Time: I don't like how this is displaying so we should fix this-->
+        <div class="bottom">
+            <div style="float: left; width: 100%;">
+                <label class="item item-input">
+                    <textarea disabled type="text" name="time" id="time-textarea" placeholder="Original Deadline" style="background: transparent; resize: none;">{{task.task_time | date: 'medium' : 'UTC'}}</textarea>
+                </label>
+            </div>
+        </div>
+        <!--New Due Time, this field only used/display in deadline change notif-->
+        <div class="bottom" id="new-time-textarea">
+        </div>
+
+        <!--Task Evidence Type wont be displayed for now to keep the interface looks normal-->
+        <!--div class="bottom">
+            <div style="float: left; width: 50%;">
+                <label class="item item-input">
+                    <input disabled type="text" name="evidenceType" id="evidenceType-textarea" style="background: transparent; resize: none;" ng-model="evidenceTypeName"></input>
+                </label>
+            </div>
+        </div-->
+        
+        
+
+        <!--TODO add additional fields, submit button that feeds to factory, and add variations so that this one HTML
+        TODO file can be used by add, view, and edit -->
+        <div id="footer">
+            <button style="float: left; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(false)">Decline</button>
+            <button style="float: right; width: 49%;" class="button button-positive button-top-margin" ng-click="onDecision(true)">Accept</button>
+        </div>
+    </ion-content>
+</ion-view>
