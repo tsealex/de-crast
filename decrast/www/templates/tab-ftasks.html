@@ -1,0 +1,26 @@
+<!--Test Friends' Task tab-->
+<ion-view view-title="Friends' Tasks">
+  <ion-content>
+      <!--TODO this will likely need some facebook api calls to load up friends. if not, ng-repeat-->
+    <div class="bottom">
+        <div style="float:top; width: 120px;" >
+            <label class="item item-input">
+                <!--set height absolutely as 36px to match with other input textbox, may cause problem-->
+                <!--and the text color may need further change-->
+                <select id="sorting-select" class="item item-input" ng-model="HomeCtrl" ng-change="doSorting()" style="height:36px; border: 0px;">
+                    <option disabled selected value="">Sort By</option>
+                    <option>Due Date</option><option>Name</option><option>Category</option>
+                </select>
+            </label>
+        </div>
+    </div>
+    <ion-list>
+      <ion-item ng-repeat="task in viewTask_list| orderObjectBy: sorting" class="item-icon-right" ng-click="goDetail(task)">
+          {{task.task_name}}      <object align="right">Due: {{ task.task_time | date : 'short' : 'UTC'}}</object>
+          <!--  icon-accessory make it small -->
+          <i class="icon ion-chevron-right icon-accessory"></i>
+      </ion-item>
+    </ion-list>
+
+  </ion-content>
+</ion-view>

@@ -1,19 +1,19 @@
 # de-crast
 Take the "pro" out of procrastination.
 
-ISSUE TRACKING ===================
+## ISSUE TRACKING 
 
 We are using Github's Issues feature for bug tracking.
 Please feel free to submit any and all bugs through this system, following the link below:
 	https://github.com/timdohm/de-crast/issues
 
-TAGS ===================
+## TAGS 
 
 Frontend branch tag: frontend_to_qa
 Backend  branch tag: to_qa
 
 
-Building and Running Instructions ==============
+## Building and Running Instructions 
 How to run and test our current version of De-Crast fronted:
 
 First, install NodeJS and Ionic according to the instructions on slides 3 and 4 here: https://docs.google.com/presentation/d/1qgip6iJKOP06yRoMFPNgLZCfVkOosg63OTWK1_OpCm0/edit#slide=id.g1c3c317cf2_0_0
@@ -77,7 +77,7 @@ version of our application.
 
 Finally, if you wish to download a compiled version of our Android code, you may do so from: https://drive.google.com/open?id=0Bw-Msnfg9-lzaXpFWDlOTGRJOEE
 
-BACKEND INFO ================================
+## BACKEND INFO 
 
 NOTE: Our server is running on an AWS instance, so you will not need to run it locally.
 
